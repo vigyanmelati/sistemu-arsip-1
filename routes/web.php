@@ -1,25 +1,58 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-
-Route::get('/', function () {
-    return view('welcome');
-});
-
-// Route::get('/dashboard', function () {
-//     return view('dashboard');
-// })->middleware(['auth', 'verified'])->name('dashboard');
-
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth'])->name('dashboard');
-
-
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ArsipController;
+use App\Http\Controllers\PemusnahanController;
 
 require __DIR__.'/auth.php';
+
+Route::middleware(['auth'])->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // Arsip (untuk Admin dan Super Admin)
+    Route::middleware(['admin'])->group(function () {
+        Route::resource('arsip', ArsipController::class);
+        // Route untuk pemusnahan
+        Route::get('/pemusnahan', [PemusnahanController::class, 'index'])->name('pemusnahan.index');
+        Route::get('/pemusnahan/create', [PemusnahanController::class, 'create'])->name('pemusnahan.create');
+        Route::post('/pemusnahan', [PemusnahanController::class, 'store'])->name('pemusnahan.store');
+        Route::get('/pemusnahan/{id}/approve', [PemusnahanController::class, 'approve'])->name('pemusnahan.approve');
+        Route::post('/pemusnahan/{id}/approve', [PemusnahanController::class, 'processApprove'])->name('pemusnahan.process-approve');
+        Route::post('/pemusnahan/{id}/reject', [PemusnahanController::class, 'reject'])->name('pemusnahan.reject');
+
+        // Route untuk laporan
+        Route::get('/laporan', function () {
+            return view('laporan.index');
+        })->name('laporan.index');
+
+    });
+    
+    // Master Data (hanya Super Admin)
+    Route::middleware(['super_admin'])->group(function () {
+        Route::prefix('master')->name('master.')->group(function () {
+            Route::resource('kode-klasifikasi', KodeKlasifikasiController::class);
+            Route::resource('sub-bagian', SubBagianController::class);
+        });
+        
+        Route::resource('users', UserController::class);
+    });
+});
+
+Route::get('/', function () {
+    return redirect()->route('dashboard');
+});
+
+// Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+// // Route untuk arsip
+// Route::resource('arsip', ArsipController::class);
+
+
+// Route untuk pengaturan
+// Route::get('/pengaturan', function () {
+//     return view('pengaturan.index');
+// })->name('pengaturan.index');
+
+
