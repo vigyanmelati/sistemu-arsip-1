@@ -23,7 +23,7 @@
         </div>
     </div>
     
-    <div class="col-xl-3 col-lg-6 mb-4">
+    <!-- <div class="col-xl-3 col-lg-6 mb-4">
         <div class="card h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
@@ -40,7 +40,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
     
     <div class="col-xl-3 col-lg-6 mb-4">
         <div class="card h-100">
@@ -79,9 +79,28 @@
             </div>
         </div>
     </div>
+
+    <div class="col-xl-3 col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Permanen</h6>
+                        <h2 class="fw-bold text-info mb-0">{{ $arsipPermanen }}</h2>
+                        <small class="text-info">
+                            {{ $totalArsip > 0 ? number_format(($arsipPermanen/$totalArsip)*100, 1) : 0 }}% dari total
+                        </small>
+                    </div>
+                    <div class="icon-shape bg-info bg-opacity-10 rounded-circle p-3">
+                        <i class="bi bi-archive-fill text-info fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="row">
+<!-- <div class="row">
     <div class="col-xl-3 col-lg-6 mb-4">
         <div class="card h-100">
             <div class="card-body">
@@ -119,11 +138,11 @@
             </div>
         </div>
     </div>
-</div>
+</div> -->
 
 <div class="row">
     <!-- Chart Distribusi -->
-    <div class="col-lg-8 mb-4">
+    <div class="col-lg-16 mb-4">
         <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i> Distribusi Arsip per Tahun</h5>
@@ -161,7 +180,7 @@
     </div>
     
     <!-- Ringkasan Status -->
-    <div class="col-lg-4 mb-4">
+    <!-- <div class="col-lg-4 mb-4">
         <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i> Ringkasan Status</h5>
@@ -216,7 +235,7 @@
             </div>
         </div>
     </div>
-</div>
+</div> -->
 
 <div class="row">
     <!-- Arsip Terbaru -->
@@ -245,8 +264,8 @@
                             @foreach($arsipTerbaru as $arsip)
                             <tr>
                                 <td><strong>{{ $arsip->kodeKlasifikasi->kode ?? 'N/A' }}</strong></td>
-                                <td>{{ Str::limit($arsip->judul_arsip, 50) }}</td>
-                                <td>{{ $arsip->subBagian->nama ?? 'N/A' }}</td>
+                                <td>{{ Str::limit($arsip->uraian_arsip, 50) }}</td>
+                                <td>{{ $arsip->subBagian->nama_sub_bagian ?? 'N/A' }}</td>
                                 <td>{{ $arsip->tahun_arsip }}</td>
                                 <td>
                                     @php

@@ -8,7 +8,8 @@
     <!-- Bootstrap CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
     <!-- Custom CSS -->
     <style>
         :root {
@@ -429,24 +430,24 @@
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('arsip.*') ? 'active' : '' }}" href="{{ route('arsip.index') }}">
                     <i class="bi bi-folder"></i> <span>Kelola Arsip</span>
-                    @php
+                    <!-- @php
                         $totalArsip = App\Models\Arsip::count();
                     @endphp
                     @if($totalArsip > 0)
                     <span class="badge bg-warning text-dark badge-notification">{{ $totalArsip }}</span>
-                    @endif
+                    @endif -->
                 </a>
             </li>
             
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('pemusnahan.*') ? 'active' : '' }}" href="#">
                     <i class="bi bi-trash"></i> <span>Pemusnahan</span>
-                    @php
+                    <!-- @php
                         $arsipMusnah = App\Models\Arsip::where('status_arsip', 'UMSUL_MUSNAH')->count();
                     @endphp
                     @if($arsipMusnah > 0)
                     <span class="badge bg-danger badge-notification">{{ $arsipMusnah }}</span>
-                    @endif
+                    @endif -->
                 </a>
             </li>
             

@@ -21,7 +21,7 @@
                         <option value="">Pilih Kode Klasifikasi</option>
                         @foreach($kodeKlasifikasiOptions as $kode)
                             <option value="{{ $kode->id }}" {{ old('kode_klasifikasi_id') == $kode->id ? 'selected' : '' }}>
-                                {{ $kode->kode }} - {{ $kode->nama }}
+                                {{ $kode->kode }} - {{ $kode->uraian }}
                             </option>
                         @endforeach
                     </select>
@@ -122,7 +122,7 @@
                 </div>
                 
                 <!-- Status Arsip -->
-                <div class="col-md-6 mb-3">
+                <!-- <div class="col-md-6 mb-3">
                     <label for="status_arsip" class="form-label">Status Arsip <span class="text-danger">*</span></label>
                     <select class="form-control @error('status_arsip') is-invalid @enderror" 
                             id="status_arsip" name="status_arsip" required>
@@ -134,6 +134,22 @@
                         @endforeach
                     </select>
                     @error('status_arsip')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div> -->
+
+                
+                <!-- Keterangan (Kondisi Fisik) -->
+                <div class="col-md-3 mb-3">
+                    <label for="keterangan" class="form-label">Kondisi Fisik <span class="text-danger">*</span></label>
+                    <select class="form-control @error('keterangan') is-invalid @enderror" 
+                            id="keterangan" name="keterangan" required>
+                        <option value="">Pilih Kondisi</option>
+                        <option value="BAIK" {{ old('keterangan') == 'BAIK' ? 'selected' : '' }}>Baik</option>
+                        <option value="RUSAK" {{ old('keterangan') == 'RUSAK' ? 'selected' : '' }}>Rusak</option>
+                        <option value="HILANG" {{ old('keterangan') == 'HILANG' ? 'selected' : '' }}>Hilang</option>
+                    </select>
+                    @error('keterangan')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
@@ -159,41 +175,8 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
-                
-                <!-- Nomor Rak -->
-                <div class="col-md-3 mb-3">
-                    <label for="nomor_rak" class="form-label">Nomor Rak <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control @error('nomor_rak') is-invalid @enderror" 
-                           id="nomor_rak" name="nomor_rak" 
-                           value="{{ old('nomor_rak') }}" required>
-                    @error('nomor_rak')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-                
-                <!-- Nomor Box -->
-                <div class="col-md-3 mb-3">
-                    <label for="nomor_box" class="form-label">Nomor Box <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control @error('nomor_box') is-invalid @enderror" 
-                           id="nomor_box" name="nomor_box" 
-                           value="{{ old('nomor_box') }}" required>
-                    @error('nomor_box')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-                
-                <!-- Tanggal Masuk -->
-                <div class="col-md-4 mb-3">
-                    <label for="tanggal_masuk" class="form-label">Tanggal Masuk</label>
-                    <input type="date" class="form-control @error('tanggal_masuk') is-invalid @enderror" 
-                           id="tanggal_masuk" name="tanggal_masuk" 
-                           value="{{ old('tanggal_masuk', date('Y-m-d')) }}">
-                    @error('tanggal_masuk')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-                
-                <!-- Keterangan JRA -->
+
+                 <!-- Keterangan JRA -->
                 <div class="col-md-4 mb-3">
                     <label for="keterangan_jra" class="form-label">Keterangan JRA</label>
                     <select class="form-control @error('keterangan_jra') is-invalid @enderror" 
@@ -206,6 +189,53 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
+                
+                <!-- Nomor Rak -->
+                <div class="col-md-3 mb-3">
+                    <label for="nomor_rak" class="form-label">Nomor Rak <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control @error('nomor_rak') is-invalid @enderror" 
+                           id="nomor_rak" name="nomor_rak" 
+                           value="{{ old('nomor_rak') }}" placeholder="Misal: 1" required>
+                    @error('nomor_rak')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                
+                <!-- Nomor Box -->
+                <div class="col-md-3 mb-3">
+                    <label for="nomor_box" class="form-label">Nomor Box <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control @error('nomor_box') is-invalid @enderror" 
+                           id="nomor_box" name="nomor_box" 
+                           value="{{ old('nomor_box') }}" placeholder="Misal: 1" required>
+                    @error('nomor_box')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <!-- Nomor Sampul -->
+                <div class="col-md-3 mb-3">
+                    <label for="no_sampul" class="form-label">Nomor Sampul</label>
+                    <input type="text" class="form-control @error('no_sampul') is-invalid @enderror" 
+                        id="no_sampul" name="no_sampul" 
+                        value="{{ old('no_sampul') }}" 
+                        placeholder="Misal: 1">
+                    @error('no_sampul')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                
+                <!-- Tanggal Masuk -->
+                <!-- <div class="col-md-4 mb-3">
+                    <label for="tanggal_masuk" class="form-label">Tanggal Masuk</label>
+                    <input type="date" class="form-control @error('tanggal_masuk') is-invalid @enderror" 
+                           id="tanggal_masuk" name="tanggal_masuk" 
+                           value="{{ old('tanggal_masuk', date('Y-m-d')) }}">
+                    @error('tanggal_masuk')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div> -->
+                
+               
                 
                 <!-- File Dokumen -->
                 <div class="col-md-4 mb-3">
@@ -221,7 +251,7 @@
                 </div>
                 
                 <!-- Keterangan Tambahan -->
-                <div class="col-md-12 mb-3">
+                <!-- <div class="col-md-12 mb-3">
                     <label for="keterangan_jra" class="form-label">Keterangan Tambahan</label>
                     <textarea class="form-control @error('keterangan_jra') is-invalid @enderror" 
                               id="keterangan_jra" name="keterangan_jra" 
@@ -229,7 +259,7 @@
                     @error('keterangan_jra')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
-                </div>
+                </div> -->
             </div>
             
             <div class="d-flex justify-content-between mt-4">

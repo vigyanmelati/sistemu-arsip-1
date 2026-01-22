@@ -85,6 +85,18 @@
                         <td><strong>Nomor Box</strong></td>
                         <td>: {{ $arsip->nomor_box }}</td>
                     </tr>
+                     <tr>
+                        <td><strong>Nomor Sampul</strong></td>
+                        <td>: {{ $arsip->no_sampul ?? '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Kondisi Fisik</strong></td>
+                        <td>: 
+                            <span >
+                                {{ $arsip->keterangan }}
+                            </span>
+                        </td>
+                    </tr>
                     <tr>
                         <td><strong>File Dokumen</strong></td>
                         <td>: 
@@ -110,10 +122,10 @@
                         <td><strong>Inaktif (Tahun)</strong></td>
                         <td>: {{ $arsip->inaktif_tahun }} tahun</td>
                     </tr>
-                    <tr>
+                    <!-- <tr>
                         <td><strong>Tanggal Masuk</strong></td>
                         <td>: {{ $arsip->tanggal_masuk ? \Carbon\Carbon::parse($arsip->tanggal_masuk)->format('d/m/Y') : '-' }}</td>
-                    </tr>
+                    </tr> -->
                     <tr>
                         <td><strong>Aktif Sampai</strong></td>
                         <td>: {{ $arsip->aktif_sampai ? \Carbon\Carbon::parse($arsip->aktif_sampai)->format('d/m/Y') : '-' }}</td>

@@ -32,23 +32,45 @@ class ArsipController extends Controller
         if ($request->has('kode_klasifikasi_id') && $request->kode_klasifikasi_id != '') {
             $query->where('kode_klasifikasi_id', $request->kode_klasifikasi_id);
         }
-        
+
+        if ($request->has('keterangan') && $request->keterangan != '') {
+            $query->where('keterangan', $request->keterangan);
+        }
+
+         $kondisiOptions = [
+            'BAIK' => 'Baik',
+            'RUSAK' => 'Rusak',
+            'HILANG' => 'Hilang'
+        ];
+            
         // Search - Perbaikan: Search melalui relasi
         if ($request->has('search') && $request->search != '') {
             $query->where(function($q) use ($request) {
                 $q->whereHas('kodeKlasifikasi', function($subQuery) use ($request) {
                     $subQuery->where('kode', 'like', "%{$request->search}%")
-                            ->orWhere('nama', 'like', "%{$request->search}%");
+                            ->orWhere('uraian', 'like', "%{$request->search}%");
                 })
                 ->orWhere('uraian_arsip', 'like', "%{$request->search}%")
                 ->orWhereHas('subBagian', function($subQuery) use ($request) {
-                    $subQuery->where('nama', 'like', "%{$request->search}%");
+                    $subQuery->where('nama_sub_bagian', 'like', "%{$request->search}%");
                 });
             });
         }
+         // Sorting
+        $sort = $request->get('sort', 'id'); // Default sort by id
+        $direction = $request->get('direction', 'desc'); // Default direction
         
-        $arsips = $query->orderBy('id', 'desc')->paginate(15);
+        // Handle sorting berdasarkan relasi
+        if ($sort === 'kode_klasifikasi') {
+            $query->join('kode_klasifikasis', 'arsips.kode_klasifikasi_id', '=', 'kode_klasifikasis.id')
+                  ->orderBy('kode_klasifikasis.kode', $direction)
+                  ->select('arsips.*');
+        } else {
+            $query->orderBy($sort, $direction);
+        }
+        // $arsips = $query->orderBy('id', 'desc')->paginate(15);
         
+         $arsips = $query->paginate(15);
         // Data untuk filter
         $tahunOptions = Arsip::select('tahun_arsip')
             ->distinct()
@@ -72,7 +94,7 @@ class ArsipController extends Controller
             'PERMANEN' => 'Permanen'
         ];
         
-        return view('arsip.index', compact('arsips', 'tahunOptions', 'subBagianOptions', 'kodeKlasifikasiOptions', 'statusOptions'));
+        return view('arsip.index', compact('arsips', 'tahunOptions', 'subBagianOptions', 'kodeKlasifikasiOptions', 'statusOptions','kondisiOptions'));
     }
 
     public function create()

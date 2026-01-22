@@ -29,7 +29,9 @@ class Arsip extends Model
         'inaktif_sampai',
         'nomor_rak',
         'nomor_box',
+        'nomor_sampul',
         'status_arsip',
+        'keterangan',
         'file_dokumen',
         'created_by'
     ];
