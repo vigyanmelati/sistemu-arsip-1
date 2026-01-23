@@ -100,10 +100,20 @@
                     <tr>
                         <td><strong>File Dokumen</strong></td>
                         <td>: 
+                           
                             @if($arsip->file_dokumen)
-                                <a href="#" class="text-primary">{{ $arsip->file_dokumen }}</a>
-                            @else
-                                -
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">File Saat Ini</label>
+                                    <div>
+                                        <a href="{{ asset('storage/arsip/' . $arsip->file_dokumen) }}" 
+                                        target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Lihat File
+                                        </a>
+                                        <small class="text-muted d-block mt-1">
+                                            {{ $arsip->file_dokumen }}
+                                        </small>
+                                    </div>
+                                </div>
                             @endif
                         </td>
                     </tr>
@@ -116,11 +126,17 @@
                 <table class="table table-borderless">
                     <tr>
                         <td width="40%"><strong>Aktif (Tahun)</strong></td>
-                        <td>: {{ $arsip->aktif_tahun }} tahun</td>
+                        <td>: {{ $arsip->aktif_tahun }} Tahun
+                            @if($arsip->aktif_keterangan)
+                                <br><small class="text-muted">({{ $arsip->aktif_keterangan }})</small>
+                            @endif </td>
                     </tr>
                     <tr>
                         <td><strong>Inaktif (Tahun)</strong></td>
-                        <td>: {{ $arsip->inaktif_tahun }} tahun</td>
+                    <td>:   {{ $arsip->inaktif_tahun }} Tahun
+                            @if($arsip->inaktif_keterangan)
+                                <br><small class="text-muted">({{ $arsip->inaktif_keterangan }})</small>
+                            @endif </td>
                     </tr>
                     <!-- <tr>
                         <td><strong>Tanggal Masuk</strong></td>

@@ -400,6 +400,23 @@
             z-index: 1000;
         }
     </style>
+    @push('styles')
+    <style>
+    /* CSS-only solution untuk toggle */
+    #mode_tidak_keterangan:checked ~ #mode_tidak_keterangan_container {
+        display: block !important;
+    }
+    #mode_tidak_keterangan:checked ~ #mode_isi_keterangan_container {
+        display: none !important;
+    }
+    #mode_isi_keterangan:checked ~ #mode_tidak_keterangan_container {
+        display: none !important;
+    }
+    #mode_isi_keterangan:checked ~ #mode_isi_keterangan_container {
+        display: block !important;
+    }
+    </style>
+    @endpush
 </head>
 <body>
 
