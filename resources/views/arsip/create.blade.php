@@ -9,6 +9,15 @@
         <h6 class="m-0 font-weight-bold text-primary">Form Tambah Arsip</h6>
     </div>
     <div class="card-body">
+        @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
         <form action="{{ route('arsip.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             
@@ -40,7 +49,7 @@
                         <option value="">Pilih Sub Bagian</option>
                         @foreach($subBagianOptions as $subBagian)
                             <option value="{{ $subBagian->id }}" {{ old('sub_bagian_id') == $subBagian->id ? 'selected' : '' }}>
-                                {{ $subBagian->nama }}
+                                {{ $subBagian->nama_sub_bagian}}
                             </option>
                         @endforeach
                     </select>
@@ -396,16 +405,16 @@
                 
                 <!-- No Sampul -->
                 <div class="col-md-3 mb-3">
-                    <label for="no_sampul" class="form-label">Nomor Sampul</label>
-                    <input type="text" class="form-control @error('no_sampul') is-invalid @enderror" 
-                           id="no_sampul" name="no_sampul" 
-                           value="{{ old('no_sampul') }}" 
-                           placeholder="Misal: 1">
-                    @error('no_sampul')
+                    <label for="nomor_sampul" class="form-label">Nomor Sampul</label>
+                    <input type="text" class="form-control @error('nomor_sampul') is-invalid @enderror" 
+                        id="nomor_sampul" name="nomor_sampul" 
+                        value="{{ old('nomor_sampul') }}" 
+                        placeholder="Misal: 1">
+                    @error('nomor_sampul')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
-                
+                                
                 
             </div>
             
@@ -426,6 +435,9 @@
                     @enderror
                 </div>
             </div>
+
+            <input type="hidden" name="status_arsip" id="status_arsip_final" value="AKTIF">
+
             
             <!-- TOMBOL SIMPAN -->
             <div class="d-flex justify-content-between mt-4">
@@ -824,5 +836,39 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 200);
     
     console.log('JavaScript loaded successfully');
+
+    // Fungsi untuk update status_arsip_final
+function updateStatusArsipFinal() {
+    let status = 'AKTIF';
+    
+    if (modeTidakKeterangan.checked) {
+        status = document.getElementById('status_arsip_otomatis').value || 'AKTIF';
+    } else if (modeIsiKeterangan.checked) {
+        if (tanggalReferensi && tanggalReferensi.value) {
+            status = document.getElementById('status_arsip_deskriptif').value || 'AKTIF';
+        } else {
+            status = document.getElementById('status_arsip_deskriptif_select').value || 'AKTIF';
+        }
+    }
+    
+    document.getElementById('status_arsip_final').value = status;
+    console.log('status_arsip_final diisi: ' + status);
+}
+
+// Update saat mode berubah
+modeTidakKeterangan.addEventListener('change', function() {
+    setTimeout(updateStatusArsipFinal, 100);
+});
+modeIsiKeterangan.addEventListener('change', function() {
+    setTimeout(updateStatusArsipFinal, 100);
+});
+
+// Update saat input berubah
+[tanggalArsip, aktifTahun, inaktifTahun, tanggalReferensi, aktifKeterangan, inaktifKeterangan].forEach(el => {
+    if (el) {
+        el.addEventListener('input', updateStatusArsipFinal);
+        el.addEventListener('change', updateStatusArsipFinal);
+    }
+});
 });
 </script>

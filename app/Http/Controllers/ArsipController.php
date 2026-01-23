@@ -148,65 +148,172 @@ class ArsipController extends Controller
         ));
     }
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-                // WAJIB
-                'kode_klasifikasi_id' => 'required|exists:kode_klasifikasi,id',
-                'uraian_arsip' => 'required|string|max:500',
-                'sub_bagian_id' => 'required|exists:sub_bagians,id',
-                'tahun_arsip' => 'required|integer|min:2000|max:' . (date('Y') + 1),
-                'tanggal_arsip' => 'required|date',
-                'jumlah_berkas' => 'required|integer|min:1',
-                'satuan_arsip' => 'required|in:BENDEL,LEMBAR',
-                
-                // MODE PENGISIAN
-                'is_isi_keterangan' => 'required|boolean',
-                
-                // MODE 1: Validasi jika tidak isi keterangan
-                'aktif_tahun' => 'required_if:is_isi_keterangan,0|nullable|integer|min:1',
-                'inaktif_tahun' => 'required_if:is_isi_keterangan,0|nullable|integer|min:1|gt:aktif_tahun',
-                
-                // MODE 2: Validasi jika isi keterangan
-                'aktif_keterangan' => 'required_if:is_isi_keterangan,1|nullable|string|max:255',
-                'inaktif_keterangan' => 'required_if:is_isi_keterangan,1|nullable|string|max:255',
-                'tanggal_referensi' => 'nullable|date',
-                
-                // KETERANGAN JRA (untuk kedua mode)
-                'keterangan_jra' => 'nullable|in:MUSNAH,PERMANEN',
-                
-                // HASIL PERHITUNGAN
-                'aktif_sampai' => 'nullable|date',
-                'inaktif_sampai' => 'nullable|date',
-                'status_arsip' => 'required|in:AKTIF,INAKTIF,USUL_MUSNAH,MUSNAH,PERMANEN',
-                
-                // OPTIONAL LAINNYA
-                'nomor_rak' => 'nullable|string|max:50',
-                'nomor_box' => 'nullable|string|max:50',
-                'no_sampul' => 'nullable|string|max:50',
-                'tingkat_perkembangan' => 'nullable|in:ASLI,COPY,SALINAN',
-                'keterangan' => 'nullable|in:BAIK,RUSAK,HILANG',
-                'file_dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            ]);
-            
-            // Tambahkan created_by jika ada user login
-            if (auth()->check()) {
-                $validated['created_by'] = auth()->id();
+public function store(Request $request)
+{
+    // Debug data yang dikirim
+    \Log::info('Data yang dikirim:', $request->all());
+    
+    // Validate data
+    $validated = $request->validate([
+        // WAJIB
+        'kode_klasifikasi_id' => 'required|exists:kode_klasifikasis,id',
+        'uraian_arsip' => 'required|string|max:500',
+'sub_bagian_id' => 'required|exists:sub_bagians,id',
+        'tahun_arsip' => 'required|integer|min:2000|max:' . (date('Y') + 1),
+        'tanggal_arsip' => 'required|date',
+        'jumlah_berkas' => 'required|integer|min:1',
+        'satuan_arsip' => 'required|in:BENDEL,LEMBAR',
+        
+        // MODE PENGISIAN
+        'is_isi_keterangan' => 'required|boolean',
+        
+        // MODE 1: Validasi jika tidak isi keterangan
+        'aktif_tahun' => 'nullable|integer|min:0',
+        'inaktif_tahun' => 'nullable|integer|min:0',
+        
+        // MODE 2: Validasi jika isi keterangan
+        'aktif_keterangan' => 'nullable|string|max:255',
+        'inaktif_keterangan' => 'nullable|string|max:255',
+        'tanggal_referensi' => 'nullable|date',
+        
+        // KETERANGAN JRA (untuk kedua mode)
+        'keterangan_jra' => 'nullable|in:MUSNAH,PERMANEN',
+        
+        // HASIL PERHITUNGAN
+        'aktif_sampai' => 'nullable|date',
+        'inaktif_sampai' => 'nullable|date',
+        
+        // OPTIONAL LAINNYA
+        'nomor_rak' => 'nullable|string|max:50',
+        'nomor_box' => 'nullable|string|max:50',
+        'nomor_sampul' => 'nullable|string|max:100',
+        'tingkat_perkembangan' => 'nullable|in:ASLI,COPY,SALINAN',
+        'keterangan' => 'nullable|in:BAIK,RUSAK,HILANG',
+        'file_dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+    ]);
+    
+    \Log::info('Data yang lolos validasi:', $validated);
+    
+    try {
+        // Pastikan tahun_arsip dalam format string
+        if (isset($validated['tahun_arsip'])) {
+            $validated['tahun_arsip'] = (string) $validated['tahun_arsip'];
+        }
+        
+        // Tambahkan created_by jika ada user login
+        if (auth()->check()) {
+            $validated['created_by'] = auth()->id();
+        }
+        
+        // Tambahkan tanggal_masuk (otomatis hari ini)
+        $validated['tanggal_masuk'] = now()->format('Y-m-d');
+        
+        // Set default untuk kolom yang mungkin null tapi required di DB
+        $defaults = [
+            'is_isi_keterangan' => 0,
+            'aktif_tahun' => 0,
+            'inaktif_tahun' => 0,
+            'nomor_rak' => '',
+            'nomor_box' => '',
+            'nomor_sampul' => '',
+            'keterangan_jra' => 'MUSNAH',
+            'keterangan' => 'BAIK',
+            'tingkat_perkembangan' => 'ASLI',
+        ];
+        
+        foreach ($defaults as $field => $defaultValue) {
+            if (!isset($validated[$field]) || $validated[$field] === '') {
+                $validated[$field] = $defaultValue;
             }
-            
-            // Handle file upload
-            if ($request->hasFile('file_dokumen')) {
-                $file = $request->file('file_dokumen');
-                $fileName = time() . '_' . $file->getClientOriginalName();
-                $filePath = $file->storeAs('arsip', $fileName, 'public');
-                $validated['file_dokumen'] = $fileName;
+        }
+        
+        // Konversi is_isi_keterangan ke integer
+        $validated['is_isi_keterangan'] = (int) $validated['is_isi_keterangan'];
+        
+        // Konversi nilai numerik
+        $validated['aktif_tahun'] = (int) $validated['aktif_tahun'];
+        $validated['inaktif_tahun'] = (int) $validated['inaktif_tahun'];
+        
+        // Handle file upload
+        if ($request->hasFile('file_dokumen')) {
+            $file = $request->file('file_dokumen');
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            $filePath = $file->storeAs('arsip', $fileName, 'public');
+            $validated['file_dokumen'] = $fileName;
+        }
+        
+        // Hitung aktif_sampai dan inaktif_sampai jika belum ada
+        if (empty($validated['aktif_sampai'])) {
+            // Mode 1: Hitung dari tahun
+            if ($validated['is_isi_keterangan'] == 0 && $validated['aktif_tahun'] > 0) {
+                $tanggalArsip = \Carbon\Carbon::parse($validated['tanggal_arsip']);
+                $validated['aktif_sampai'] = $tanggalArsip->addYears($validated['aktif_tahun'])->format('Y-m-d');
+                
+                if ($validated['inaktif_tahun'] > 0) {
+                    $validated['inaktif_sampai'] = $tanggalArsip->addYears($validated['inaktif_tahun'])->format('Y-m-d');
+                } else {
+                    // Jika inaktif tahun 0, set inaktif_sampai sama dengan aktif_sampai
+                    $validated['inaktif_sampai'] = $validated['aktif_sampai'];
+                }
             }
+            // Mode 2: Hitung dari tanggal referensi
+            elseif ($validated['is_isi_keterangan'] == 1 && !empty($validated['tanggal_referensi'])) {
+                // Ekstrak angka dari keterangan
+                $aktifTahun = $this->extractYearFromDescription($validated['aktif_keterangan'] ?? '');
+                $inaktifTahun = $this->extractYearFromDescription($validated['inaktif_keterangan'] ?? '');
+                
+                if ($aktifTahun > 0) {
+                    $tanggalRef = \Carbon\Carbon::parse($validated['tanggal_referensi']);
+                    $validated['aktif_sampai'] = $tanggalRef->addYears($aktifTahun)->format('Y-m-d');
+                    
+                    if ($inaktifTahun > 0) {
+                        $validated['inaktif_sampai'] = $tanggalRef->addYears($inaktifTahun)->format('Y-m-d');
+                    } else {
+                        $validated['inaktif_sampai'] = $validated['aktif_sampai'];
+                    }
+                }
+            }
+        }
+        
+        // Jika aktif_sampai atau inaktif_sampai masih kosong, set default
+        if (empty($validated['aktif_sampai'])) {
+            $validated['aktif_sampai'] = now()->format('Y-m-d');
+        }
+        if (empty($validated['inaktif_sampai'])) {
+            $validated['inaktif_sampai'] = $validated['aktif_sampai'];
+        }
+        
+        \Log::info('Data sebelum disimpan:', $validated);
+        
+        // Simpan data
+        $arsip = Arsip::create($validated);
+        
+        \Log::info('Arsip berhasil dibuat dengan ID: ' . $arsip->id);
+        
+        return redirect()->route('arsip.index')
+            ->with('success', 'Arsip berhasil ditambahkan.');
             
-            Arsip::create($validated);
-            
-            return redirect()->route('arsip.index')
-                ->with('success', 'Arsip berhasil ditambahkan.');
+    } catch (\Exception $e) {
+        \Log::error('Gagal menyimpan arsip: ' . $e->getMessage());
+        \Log::error('Trace: ' . $e->getTraceAsString());
+        
+        return back()->withInput()
+            ->with('error', 'Gagal menyimpan arsip: ' . $e->getMessage());
     }
+}
+
+    // Fungsi bantuan untuk ekstrak tahun dari keterangan
+    private function extractYearFromDescription($description)
+    {
+        if (empty($description)) return null;
+        
+        // Cari angka di awal string
+        if (preg_match('/^(\d+)/', $description, $matches)) {
+            return (int) $matches[1];
+        }
+        
+        return null;
+}
 
     public function show(Arsip $arsip)
     {
