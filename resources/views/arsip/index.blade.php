@@ -8,12 +8,15 @@
     <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Daftar Arsip</h5>
-            <div>
+            <div class="action-buttons">
                 <a href="{{ route('arsip.create') }}" class="btn btn-primary">
                     <i class="bi bi-plus-circle"></i> Tambah Arsip
                 </a>
-                <button class="btn btn-outline-secondary" id="filterButton">
+                <button class="btn btn-outline-secondary" id="openFilterModal">
                     <i class="bi bi-filter"></i> Filter
+                </button>
+                <button type="button" class="btn btn-success" id="openImportModal">
+                    <i class="bi bi-upload"></i> Import Excel
                 </button>
             </div>
         </div>
@@ -237,198 +240,174 @@
     </div>
 </div>
 
-<!-- Filter Modal -->
-<div id="filterModal" class="custom-modal">
-    <div class="custom-modal-overlay" onclick="closeModal()"></div>
-    <div class="custom-modal-content">
-        <div class="custom-modal-header">
-            <h5 class="mb-0">Filter Arsip</h5>
-            <button type="button" onclick="closeModal()" class="custom-modal-close">&times;</button>
-        </div>
-        <form method="GET" action="{{ route('arsip.index') }}">
-            <div class="custom-modal-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Status Arsip</label>
-                        <select name="status_arsip" class="form-select">
-                            <option value="">Semua Status</option>
-                            @foreach($statusOptions as $value => $label)
-                            <option value="{{ $value }}" {{ request('status_arsip') == $value ? 'selected' : '' }}>
-                                {{ $label }}
-                            </option>
-                            @endforeach
-                        </select>
+<!-- MODAL OVERLAY - FIXED POSITION -->
+<div class="modal-overlay" id="modalOverlay" style="display: none;"></div>
+
+<!-- Filter Modal - CUSTOM MODAL -->
+<div class="modal-container" id="filterModalContainer" style="display: none;">
+    <div class="modal-content-wrapper">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-funnel me-2"></i> Filter Arsip
+                </h5>
+                <button type="button" class="btn-close-modal" id="closeFilterModal">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <form method="GET" action="{{ route('arsip.index') }}" id="filterForm">
+                <div class="modal-body p-4">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Status Arsip</label>
+                            <select name="status_arsip" class="form-select">
+                                <option value="">Semua Status</option>
+                                @foreach($statusOptions as $value => $label)
+                                <option value="{{ $value }}" {{ request('status_arsip') == $value ? 'selected' : '' }}>
+                                    {{ $label }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Tahun Arsip</label>
+                            <select name="tahun_arsip" class="form-select">
+                                <option value="">Semua Tahun</option>
+                                @foreach($tahunOptions as $tahun)
+                                <option value="{{ $tahun }}" {{ request('tahun_arsip') == $tahun ? 'selected' : '' }}>
+                                    {{ $tahun }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Sub Bagian</label>
+                            <select name="sub_bagian_id" class="form-select">
+                                <option value="">Semua Sub Bagian</option>
+                                @foreach($subBagianOptions as $subBagian)
+                                <option value="{{ $subBagian->id }}" {{ request('sub_bagian_id') == $subBagian->id ? 'selected' : '' }}>
+                                    {{ $subBagian->nama }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Kondisi Fisik</label>
+                            <select class="form-select" name="keterangan">
+                                <option value="">Semua Kondisi</option>
+                                <option value="BAIK" {{ request('keterangan') == 'BAIK' ? 'selected' : '' }}>Baik</option>
+                                <option value="RUSAK" {{ request('keterangan') == 'RUSAK' ? 'selected' : '' }}>Rusak</option>
+                                <option value="HILANG" {{ request('keterangan') == 'HILANG' ? 'selected' : '' }}>Hilang</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Kode Klasifikasi</label>
+                            <select name="kode_klasifikasi_id" class="form-select">
+                                <option value="">Semua Kode</option>
+                                @foreach($kodeKlasifikasiOptions as $kode)
+                                <option value="{{ $kode->id }}" {{ request('kode_klasifikasi_id') == $kode->id ? 'selected' : '' }}>
+                                    {{ $kode->kode }} - {{ Str::limit($kode->nama, 30) }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Rak</label>
+                            <input type="text" name="nomor_rak" class="form-control" value="{{ request('nomor_rak') }}" placeholder="Contoh: A-01">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Box</label>
+                            <input type="text" name="nomor_box" class="form-control" value="{{ request('nomor_box') }}" placeholder="Contoh: B-01">
+                        </div>
                     </div>
                     
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Tahun Arsip</label>
-                        <select name="tahun_arsip" class="form-select">
-                            <option value="">Semua Tahun</option>
-                            @foreach($tahunOptions as $tahun)
-                            <option value="{{ $tahun }}" {{ request('tahun_arsip') == $tahun ? 'selected' : '' }}>
-                                {{ $tahun }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Sub Bagian</label>
-                        <select name="sub_bagian_id" class="form-select">
-                            <option value="">Semua Sub Bagian</option>
-                            @foreach($subBagianOptions as $subBagian)
-                            <option value="{{ $subBagian->id }}" {{ request('sub_bagian_id') == $subBagian->id ? 'selected' : '' }}>
-                                {{ $subBagian->nama }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label for="keterangan" class="form-label">Kondisi Fisik</label>
-                        <select class="form-select" id="keterangan" name="keterangan">
-                            <option value="">Semua Kondisi</option>
-                            <option value="BAIK" {{ request('keterangan') == 'BAIK' ? 'selected' : '' }}>Baik</option>
-                            <option value="RUSAK" {{ request('keterangan') == 'RUSAK' ? 'selected' : '' }}>Rusak</option>
-                            <option value="HILANG" {{ request('keterangan') == 'HILANG' ? 'selected' : '' }}>Hilang</option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Kode Klasifikasi</label>
-                        <select name="kode_klasifikasi_id" class="form-select">
-                            <option value="">Semua Kode</option>
-                            @foreach($kodeKlasifikasiOptions as $kode)
-                            <option value="{{ $kode->id }}" {{ request('kode_klasifikasi_id') == $kode->id ? 'selected' : '' }}>
-                                {{ $kode->kode }} - {{ Str::limit($kode->nama, 30) }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Rak</label>
-                        <input type="text" name="nomor_rak" class="form-control" value="{{ request('nomor_rak') }}" placeholder="Nomor Rak">
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Box</label>
-                        <input type="text" name="nomor_box" class="form-control" value="{{ request('nomor_box') }}" placeholder="Nomor Box">
+                    <div class="alert alert-info mt-3 mb-0 d-flex align-items-center">
+                        <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                        <div>
+                            <strong>Tips:</strong> Gunakan filter untuk menyaring data sesuai kebutuhan. 
+                            Anda dapat mengkombinasikan beberapa filter sekaligus.
+                        </div>
                     </div>
                 </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" id="resetFilter">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Reset Filter
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i> Terapkan Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Import Excel Modal - CUSTOM MODAL -->
+<div class="modal-container" id="importModalContainer" style="display: none;">
+    <div class="modal-content-wrapper">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-file-earmark-excel me-2"></i>
+                    Import Data Arsip
+                </h5>
+                <button type="button" class="btn-close-modal" id="closeImportModal">
+                    <i class="bi bi-x-lg"></i>
+                </button>
             </div>
-            <div class="custom-modal-footer">
-                <a href="{{ route('arsip.index') }}" class="btn btn-secondary">Reset</a>
-                <button type="submit" class="btn btn-primary">Terapkan Filter</button>
-            </div>
-        </form>
+            <form action="{{ route('arsip.import') }}" method="POST" enctype="multipart/form-data" id="importForm">
+                @csrf
+                <div class="modal-body p-4">
+                    <div class="text-center mb-4">
+                        <div class="import-icon-wrapper mb-3">
+                            <i class="bi bi-cloud-upload text-success" style="font-size: 3rem;"></i>
+                        </div>
+                        <h5 class="fw-semibold">Upload File Excel</h5>
+                        <p class="text-muted">Pilih file Excel yang berisi data arsip</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">File Excel</label>
+                        <div class="file-upload-area">
+                            <input type="file" name="file_excel" class="form-control" id="excelFile" accept=".xlsx,.xls" required>
+                            <div class="mt-2" id="fileInfo"></div>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            Format yang didukung: .xls, .xlsx (Maksimal 5MB)
+                        </small>
+                    </div>
+
+                    <div class="alert alert-warning d-flex align-items-center">
+                        <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                        <div>
+                            <strong>Perhatian!</strong> Pastikan format file sesuai dengan template sistem.
+                            <a href="#" class="alert-link d-block mt-1">
+                                <i class="bi bi-download me-1"></i> Download Template Excel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" id="cancelImport">
+                        <i class="bi bi-x-circle me-1"></i> Batal
+                    </button>
+                    <button type="submit" class="btn btn-success" id="submitImport">
+                        <i class="bi bi-upload me-1"></i> Import Sekarang
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 <style>
-    /* ===== MODAL STYLE DENGAN Z-INDEX TINGGI ===== */
-    .custom-modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 999999; /* Sangat tinggi untuk mengalahkan semua elemen */
-    }
-    
-    .custom-modal-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        z-index: 1;
-    }
-    
-    .custom-modal-content {
-        position: relative;
-        background: white;
-        border-radius: 8px;
-        width: 90%;
-        max-width: 600px;
-        max-height: 85vh;
-        overflow-y: auto;
-        margin: 50px auto;
-        z-index: 2;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-        animation: modalFadeIn 0.3s ease;
-    }
-    
-    @keyframes modalFadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(-50px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    .custom-modal-header {
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid #dee2e6;
-        background: #f8f9fa;
-        border-radius: 8px 8px 0 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        position: sticky;
-        top: 0;
-        z-index: 3;
-    }
-    
-    .custom-modal-body {
-        padding: 1.5rem;
-    }
-    
-    .custom-modal-footer {
-        padding: 1rem 1.5rem;
-        border-top: 1px solid #dee2e6;
-        background: #f8f9fa;
-        border-radius: 0 0 8px 8px;
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        position: sticky;
-        bottom: 0;
-        z-index: 3;
-    }
-    
-    .custom-modal-close {
-        background: none;
-        border: none;
-        font-size: 1.8rem;
-        line-height: 1;
-        cursor: pointer;
-        color: #6c757d;
-        padding: 0;
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 4px;
-        transition: all 0.2s;
-    }
-    
-    .custom-modal-close:hover {
-        background: rgba(0, 0, 0, 0.1);
-        color: #000;
-    }
-    
-    /* Pastikan modal di atas semua elemen */
-    body.modal-open {
-        overflow: hidden;
-    }
-    
     /* ===== STYLE UNTUK SORTING ===== */
     .sortable-header {
         cursor: pointer;
@@ -453,7 +432,6 @@
         text-decoration: none !important;
     }
     
-    /* Simbol sorting selalu terlihat */
     .sortable-header i {
         font-size: 14px;
         transition: all 0.2s;
@@ -462,13 +440,11 @@
         display: inline-block !important;
     }
     
-    /* Simbol sorting default (tidak aktif) - WARNA ABU */
     .sortable-header .bi-caret-up-down {
         color: #6c757d !important;
         opacity: 0.8;
     }
     
-    /* Simbol sorting aktif - WARNA HITAM */
     .sortable-header .bi-caret-up-fill.text-dark,
     .sortable-header .bi-caret-down-fill.text-dark {
         color: #212529 !important;
@@ -476,7 +452,6 @@
         font-weight: bold;
     }
     
-    /* Hover effect untuk simbol sorting */
     .sortable-header:hover .bi-caret-up-down {
         color: #495057 !important;
         opacity: 1;
@@ -506,53 +481,441 @@
         background: #555;
     }
     
-    /* Pastikan elemen lain tidak memiliki z-index lebih tinggi */
-    .navbar, .sidebar, .footer {
-        z-index: auto !important;
+    /* ===== CUSTOM MODAL STYLES ===== */
+    /* Overlay untuk modal */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        z-index: 9998;
+        backdrop-filter: blur(3px);
+    }
+    
+    /* Container untuk modal */
+    .modal-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+    }
+    
+    .modal-container.active {
+        pointer-events: all;
+    }
+    
+    /* Wrapper untuk konten modal */
+    .modal-content-wrapper {
+        max-width: 90%;
+        max-height: 90vh;
+        width: 900px;
+        animation: modalSlideIn 0.3s ease-out;
+        pointer-events: all;
+    }
+    
+    /* Konten modal utama */
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+    }
+    
+    /* Header modal */
+    .modal-header {
+        padding: 1.2rem 1.5rem;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+    }
+    
+    /* Tombol close modal */
+    .btn-close-modal {
+        position: absolute;
+        right: 1.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+    
+    .btn-close-modal:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Body modal */
+    .modal-body {
+        padding: 1.5rem;
+        overflow-y: auto;
+        flex: 1;
+    }
+    
+    /* Footer modal */
+    .modal-footer {
+        padding: 1.2rem 1.5rem;
+        border-top: 1px solid #dee2e6;
+        background: #f8f9fa;
+    }
+    
+    /* Form controls dalam modal */
+    .modal-content .form-select,
+    .modal-content .form-control {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        border-radius: 8px;
+        border: 2px solid #e0e0e0;
+        transition: all 0.3s;
+    }
+    
+    .modal-content .form-select:focus,
+    .modal-content .form-control:focus {
+        border-color: #4dabf7;
+        box-shadow: 0 0 0 0.25rem rgba(77, 171, 247, 0.25);
+    }
+    
+    /* Alert dalam modal */
+    .modal-content .alert {
+        border-radius: 8px;
+        border: none;
+        padding: 1rem;
+    }
+    
+    /* Import modal khusus */
+    #importModalContainer .import-icon-wrapper {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto;
+        background: #e8f5e9;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    #importModalContainer .file-upload-area {
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    #importModalContainer .file-upload-area:hover {
+        border-color: #28a745;
+        background-color: #f8f9fa;
+    }
+    
+    /* Animasi modal */
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-50px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    
+    /* Tombol dalam modal */
+    .modal-footer .btn {
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .modal-footer .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+    }
+    
+    .modal-footer .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .modal-content-wrapper {
+            max-width: 95%;
+            width: 95%;
+        }
+        
+        .modal-header, .modal-body, .modal-footer {
+            padding: 1rem;
+        }
+        
+        .card-header .d-flex {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .card-header .action-buttons {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .card-header .action-buttons .btn {
+            flex: 1;
+            min-width: 120px;
+            margin: 2px;
+        }
+    }
+    
+    /* Tampilan untuk modal yang lebih kecil */
+    @media (max-width: 576px) {
+        .modal-content-wrapper {
+            max-width: 98%;
+            width: 98%;
+        }
+        
+        .modal-content {
+            max-height: 95vh;
+        }
+    }
+    
+    /* Scrollbar untuk modal body */
+    .modal-body::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .modal-body::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+    
+    .modal-body::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+    
+    .modal-body::-webkit-scrollbar-thumb:hover {
+        background: #555;
     }
 </style>
 
 <script>
-    // Fungsi untuk menampilkan modal
-    document.getElementById('filterButton').addEventListener('click', function() {
-        const modal = document.getElementById('filterModal');
-        modal.style.display = 'block';
-        document.body.classList.add('modal-open');
-        document.body.style.overflow = 'hidden';
-    });
-    
-    function closeModal() {
-        const modal = document.getElementById('filterModal');
-        modal.style.display = 'none';
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = 'auto';
-    }
-    
-    // Close modal dengan ESC
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeModal();
-        }
-    });
-    
-    // Saat halaman dimuat, tambahkan event listener untuk overlay
     document.addEventListener('DOMContentLoaded', function() {
-        // Cegah event bubbling
-        const modalContent = document.querySelector('.custom-modal-content');
-        if (modalContent) {
-            modalContent.addEventListener('click', function(e) {
+        // Elements
+        const modalOverlay = document.getElementById('modalOverlay');
+        const filterModalContainer = document.getElementById('filterModalContainer');
+        const importModalContainer = document.getElementById('importModalContainer');
+        const openFilterBtn = document.getElementById('openFilterModal');
+        const openImportBtn = document.getElementById('openImportModal');
+        const closeFilterBtn = document.getElementById('closeFilterModal');
+        const closeImportBtn = document.getElementById('closeImportModal');
+        const cancelImportBtn = document.getElementById('cancelImport');
+        const resetFilterBtn = document.getElementById('resetFilter');
+        const filterForm = document.getElementById('filterForm');
+        const importForm = document.getElementById('importForm');
+        const excelFileInput = document.getElementById('excelFile');
+        const fileInfo = document.getElementById('fileInfo');
+        const submitImportBtn = document.getElementById('submitImport');
+        
+        // Fungsi untuk membuka modal
+        function openModal(modalContainer) {
+            // Sembunyikan semua modal terlebih dahulu
+            filterModalContainer.style.display = 'none';
+            importModalContainer.style.display = 'none';
+            
+            // Tampilkan overlay
+            modalOverlay.style.display = 'block';
+            
+            // Tampilkan modal yang dipilih
+            modalContainer.style.display = 'flex';
+            modalContainer.classList.add('active');
+            
+            // Tambahkan class untuk mencegah scroll body
+            document.body.classList.add('modal-open');
+            
+            // Focus ke elemen pertama dalam modal
+            setTimeout(() => {
+                const firstInput = modalContainer.querySelector('input, select, textarea');
+                if (firstInput) firstInput.focus();
+            }, 100);
+        }
+        
+        // Fungsi untuk menutup modal
+        function closeModal() {
+            modalOverlay.style.display = 'none';
+            filterModalContainer.style.display = 'none';
+            importModalContainer.style.display = 'none';
+            filterModalContainer.classList.remove('active');
+            importModalContainer.classList.remove('active');
+            document.body.classList.remove('modal-open');
+            
+            // Reset form import
+            if (fileInfo) fileInfo.innerHTML = '';
+            if (excelFileInput) excelFileInput.value = '';
+            if (submitImportBtn) {
+                submitImportBtn.disabled = false;
+                submitImportBtn.innerHTML = '<i class="bi bi-upload me-1"></i> Import Sekarang';
+            }
+        }
+        
+        // Event listeners untuk tombol buka modal
+        if (openFilterBtn) {
+            openFilterBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                openModal(filterModalContainer);
+            });
+        }
+        
+        if (openImportBtn) {
+            openImportBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                openModal(importModalContainer);
+            });
+        }
+        
+        // Event listeners untuk tombol tutup modal
+        if (closeFilterBtn) {
+            closeFilterBtn.addEventListener('click', closeModal);
+        }
+        
+        if (closeImportBtn) {
+            closeImportBtn.addEventListener('click', closeModal);
+        }
+        
+        if (cancelImportBtn) {
+            cancelImportBtn.addEventListener('click', closeModal);
+        }
+        
+        // Tutup modal saat klik overlay
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', closeModal);
+        }
+        
+        // Mencegah modal tertutup saat klik di dalam modal
+        if (filterModalContainer) {
+            filterModalContainer.addEventListener('click', function(e) {
                 e.stopPropagation();
             });
         }
         
-        // Pastikan z-index modal adalah yang tertinggi
-        const modal = document.getElementById('filterModal');
-        if (modal) {
-            // Force set z-index tinggi
-            modal.style.zIndex = '999999';
+        if (importModalContainer) {
+            importModalContainer.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
         }
         
-        // Tambahkan hover effect untuk sortable headers
+        // Reset filter
+        if (resetFilterBtn) {
+            resetFilterBtn.addEventListener('click', function() {
+                window.location.href = "{{ route('arsip.index') }}";
+            });
+        }
+        
+        // File upload preview untuk import
+        if (excelFileInput) {
+            excelFileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+                    const fileName = file.name;
+                    const fileExtension = fileName.split('.').pop().toLowerCase();
+                    
+                    // Validasi ekstensi
+                    const allowedExtensions = ['xlsx', 'xls'];
+                    if (!allowedExtensions.includes(fileExtension)) {
+                        fileInfo.innerHTML = `
+                            <div class="alert alert-danger alert-dismissible fade show py-2" role="alert">
+                                <i class="bi bi-exclamation-circle me-2"></i>
+                                Format file tidak didukung. Hanya file Excel (.xlsx, .xls) yang diperbolehkan.
+                                <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+                            </div>
+                        `;
+                        excelFileInput.value = '';
+                        if (submitImportBtn) submitImportBtn.disabled = true;
+                        return;
+                    }
+                    
+                    // Validasi ukuran file
+                    const maxSize = 5;
+                    if (fileSize > maxSize) {
+                        fileInfo.innerHTML = `
+                            <div class="alert alert-danger alert-dismissible fade show py-2" role="alert">
+                                <i class="bi bi-exclamation-circle me-2"></i>
+                                Ukuran file terlalu besar (${fileSize} MB). Maksimal ${maxSize}MB.
+                                <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+                            </div>
+                        `;
+                        excelFileInput.value = '';
+                        if (submitImportBtn) submitImportBtn.disabled = true;
+                        return;
+                    }
+                    
+                    // Tampilkan info file valid
+                    fileInfo.innerHTML = `
+                        <div class="alert alert-success alert-dismissible fade show py-2" role="alert">
+                            <i class="bi bi-check-circle me-2"></i>
+                            File <strong>${fileName}</strong> (${fileSize} MB) siap diimport.
+                            <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+                        </div>
+                    `;
+                    if (submitImportBtn) submitImportBtn.disabled = false;
+                }
+            });
+        }
+        
+        // Validasi form import
+        if (importForm) {
+            importForm.addEventListener('submit', function(e) {
+                const fileInput = this.querySelector('input[type="file"]');
+                if (!fileInput || !fileInput.files.length) {
+                    e.preventDefault();
+                    alert('Silakan pilih file Excel terlebih dahulu.');
+                    return;
+                }
+                
+                // Tampilkan loading
+                if (submitImportBtn) {
+                    submitImportBtn.innerHTML = `
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Mengimport...
+                    `;
+                    submitImportBtn.disabled = true;
+                }
+            });
+        }
+        
+        // Tutup modal dengan tombol ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modalOverlay.style.display === 'block') {
+                closeModal();
+            }
+        });
+        
+        // Handle delete confirmation
+        const deleteForms = document.querySelectorAll('form[action*="/arsip/"]');
+        deleteForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                if (!confirm('Apakah Anda yakin ingin menghapus arsip ini?')) {
+                    e.preventDefault();
+                }
+            });
+        });
+        
+        // Sortable headers hover effect
         const sortableHeaders = document.querySelectorAll('.sortable-header');
         sortableHeaders.forEach(header => {
             header.addEventListener('mouseenter', function() {
@@ -563,6 +926,12 @@
                 this.style.backgroundColor = '#f8f9fa';
             });
         });
+        
+        // Auto-focus pada input pencarian
+        const searchInput = document.querySelector('input[name="search"]');
+        if (searchInput) {
+            searchInput.focus();
+        }
     });
 </script>
 @endsection

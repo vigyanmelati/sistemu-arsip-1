@@ -14,6 +14,9 @@ Route::middleware(['auth'])->group(function () {
     // Arsip (untuk Admin dan Super Admin)
     Route::middleware(['admin'])->group(function () {
         Route::resource('arsip', ArsipController::class);
+        Route::post('/arsip/import', [ArsipController::class, 'import'])
+            ->name('arsip.import');
+
         // Route untuk pemusnahan
         Route::get('/pemusnahan', [PemusnahanController::class, 'index'])->name('pemusnahan.index');
         Route::get('/pemusnahan/create', [PemusnahanController::class, 'create'])->name('pemusnahan.create');

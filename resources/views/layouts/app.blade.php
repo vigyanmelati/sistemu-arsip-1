@@ -12,6 +12,7 @@
 
     <!-- Custom CSS -->
     <style>
+
         :root {
             --primary-color: #8B0000; /* Dark red/maroon */
             --secondary-color: #A52A2A;
@@ -38,7 +39,7 @@
             color: white;
             padding-top: 20px;
             box-shadow: 3px 0 15px rgba(0,0,0,0.08);
-            z-index: 1000;
+            z-index: 900;
             transition: all 0.3s ease;
             overflow-x: hidden;
         }
@@ -295,7 +296,7 @@
             position: fixed;
             top: 100px; /* Adjust position */
             left: calc(var(--sidebar-width) - 20px);
-            z-index: 1001;
+            z-index: 901;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -601,7 +602,7 @@
 </div>
 
 <!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script> -->
 
 <!-- Custom Script -->
 <script>

@@ -7,6 +7,9 @@ use App\Models\KodeKlasifikasi;
 use App\Models\SubBagian;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\ArsipImport;
+
 
 class ArsipController extends Controller
 {
@@ -507,5 +510,22 @@ public function store(Request $request)
 
         return back()->with('success', "Status {$updated} arsip berhasil diperbarui.");
     }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file_excel' => 'required|file|mimes:xlsx,xls'
+        ]);
+
+        try {
+            Excel::import(new ArsipImport, $request->file('file_excel'));
+
+            return redirect()->route('arsip.index')
+                ->with('success', 'Data arsip berhasil diimport.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal import: ' . $e->getMessage());
+        }
+    }
+
 
 }
