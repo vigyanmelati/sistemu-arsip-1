@@ -205,7 +205,11 @@
                                 <a href="{{ route('arsip.edit', $arsip->id) }}" class="btn btn-warning" title="Edit" style="padding: 0.25rem 0.5rem;">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <form action="{{ route('arsip.destroy', $arsip->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus arsip ini?')">
+                               <form action="{{ route('arsip.destroy', $arsip->id) }}"
+                                method="POST"
+                                data-confirm="delete"
+                                class="d-inline">
+
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-danger" title="Hapus" style="padding: 0.25rem 0.5rem;">
@@ -503,11 +507,11 @@
         height: 100%;
         z-index: 9999;
         display: flex;
-        align-items: center;
+        align-items: flex-start; 
         justify-content: center;
+        padding-top: 50px; 
         pointer-events: none;
     }
-    
     .modal-container.active {
         pointer-events: all;
     }
@@ -625,13 +629,21 @@
     @keyframes modalSlideIn {
         from {
             opacity: 0;
-            transform: translateY(-50px) scale(0.95);
+            transform: translateY(-20px) scale(0.95); /* sebelumnya -50px */
         }
         to {
             opacity: 1;
             transform: translateY(0) scale(1);
         }
     }
+
+    @media (max-height: 600px) {
+        .modal-container {
+            padding-top: 20px;
+            align-items: flex-start;
+        }
+    }
+
     
     /* Tombol dalam modal */
     .modal-footer .btn {
@@ -906,7 +918,7 @@
         });
         
         // Handle delete confirmation
-        const deleteForms = document.querySelectorAll('form[action*="/arsip/"]');
+        const deleteForms = document.querySelectorAll('form[data-confirm="delete"]');
         deleteForms.forEach(form => {
             form.addEventListener('submit', function(e) {
                 if (!confirm('Apakah Anda yakin ingin menghapus arsip ini?')) {
@@ -914,7 +926,7 @@
                 }
             });
         });
-        
+                
         // Sortable headers hover effect
         const sortableHeaders = document.querySelectorAll('.sortable-header');
         sortableHeaders.forEach(header => {
