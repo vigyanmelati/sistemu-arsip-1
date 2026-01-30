@@ -12,39 +12,113 @@ use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 class ArsipImport implements ToModel, WithHeadingRow
 {
-    private function parseRetensi($value)
-    {
-        if ($value === null || trim((string) $value) === '') {
-            return ['tahun' => null, 'keterangan' => null];
-        }
+    // private function parseRetensi($value)
+    // {
+    //     if ($value === null || trim((string) $value) === '') {
+    //         return ['tahun' => null, 'keterangan' => null];
+    //     }
 
-        $raw = trim((string) $value);
+    //     $raw = trim((string) $value);
         
-        // 1. Cek jika hanya angka (misal: "2" atau "2 tahun")
-        if (is_numeric($raw)) {
-            return ['tahun' => (int) $raw, 'keterangan' => null];
-        }
+    //     // 1. Cek jika hanya angka (misal: "2" atau "2 tahun")
+    //     if (is_numeric($raw)) {
+    //         return ['tahun' => (int) $raw, 'keterangan' => null];
+    //     }
         
-        // 2. Cek pola "X tahun" (case insensitive, boleh ada spasi)
-        // Contoh: "2 tahun", "2 Tahun", "2  tahun"
-        if (preg_match('/^\s*(\d+)\s*tahun\s*$/i', $raw)) {
-            preg_match('/\d+/', $raw, $matches);
-            return ['tahun' => (int) $matches[0], 'keterangan' => null];
-        }
+    //     // 2. Cek pola "X tahun" (case insensitive, boleh ada spasi)
+    //     // Contoh: "2 tahun", "2 Tahun", "2  tahun"
+    //     if (preg_match('/^\s*(\d+)\s*tahun\s*$/i', $raw)) {
+    //         preg_match('/\d+/', $raw, $matches);
+    //         return ['tahun' => (int) $matches[0], 'keterangan' => null];
+    //     }
         
-        // 3. Cek jika mengandung teks lebih dari sekedar "tahun"
-        // Contoh: "1 Tahun Setelah Barang Tidak Dikuasai"
-        // Ambil angka pertama dan seluruh teks sebagai keterangan
-        if (preg_match('/(\d+)/', $raw, $matches)) {
-            return [
-                'tahun' => (int) $matches[1],
-                'keterangan' => $raw
-            ];
-        }
+    //     // 3. Cek jika mengandung teks lebih dari sekedar "tahun"
+    //     // Contoh: "1 Tahun Setelah Barang Tidak Dikuasai"
+    //     // Ambil angka pertama dan seluruh teks sebagai keterangan
+    //     if (preg_match('/(\d+)/', $raw, $matches)) {
+    //         return [
+    //             'tahun' => (int) $matches[1],
+    //             'keterangan' => $raw
+    //         ];
+    //     }
         
-        // 4. Fallback
-        return ['tahun' => null, 'keterangan' => $raw];
+    //     // 4. Fallback
+    //     return ['tahun' => null, 'keterangan' => $raw];
+    // }
+
+
+private function parseRetensi($value)
+{
+    if ($value === null) {
+        return ['tahun' => null, 'keterangan' => null];
     }
+
+    // Normalisasi string Excel
+    $raw = (string) $value;
+    $raw = str_replace("\xc2\xa0", ' ', $raw); // NBSP Excel
+    $raw = preg_replace('/\s+/', ' ', trim($raw));
+
+    if ($raw === '') {
+        return ['tahun' => null, 'keterangan' => null];
+    }
+
+    /**
+     * =========================
+     * 1️⃣ ANGKA SAJA
+     * =========================
+     */
+    if (ctype_digit($raw)) {
+        return [
+            'tahun' => (int) $raw,
+            'keterangan' => null
+        ];
+    }
+
+    /**
+     * =========================
+     * 2️⃣ "5 tahun" (tanpa keterangan tambahan)
+     * =========================
+     */
+    // Cek jika string hanya berisi angka + "tahun" (dengan variasi spasi)
+    // Contoh: "5 tahun", "5tahun", "5  tahun", "5 TAHUN"
+    if (preg_match('/^(\d+)\s*tahun\s*$/i', $raw, $matches)) {
+        return [
+            'tahun' => (int) $matches[1],
+            'keterangan' => null
+        ];
+    }
+
+    /**
+     * =========================
+     * 3️⃣ "1 tahun setelah ..." (dengan keterangan)
+     * =========================
+     */
+    // Cek jika mengandung angka + "tahun" + keterangan
+    // Contoh: "1 Tahun Setelah Barang Tidak Dikuasai"
+    if (preg_match('/^(\d+)\s*tahun\s+.+$/i', $raw, $matches)) {
+        return [
+            'tahun' => (int) $matches[1],
+            'keterangan' => $raw
+        ];
+    }
+
+    /**
+     * =========================
+     * 4️⃣ Format lainnya yang mengandung angka
+     * =========================
+     */
+    // Cek jika ada angka di string manapun
+    if (preg_match('/(\d+)/', $raw, $matches)) {
+        return [
+            'tahun' => (int) $matches[1],
+            'keterangan' => $raw
+        ];
+    }
+
+    return ['tahun' => null, 'keterangan' => null];
+}
+
+
 
     public function model(array $row)
     {

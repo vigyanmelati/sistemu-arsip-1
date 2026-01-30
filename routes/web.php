@@ -17,13 +17,28 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/arsip/import', [ArsipController::class, 'import'])
             ->name('arsip.import');
 
-        // Route untuk pemusnahan
-        Route::get('/pemusnahan', [PemusnahanController::class, 'index'])->name('pemusnahan.index');
-        Route::get('/pemusnahan/create', [PemusnahanController::class, 'create'])->name('pemusnahan.create');
-        Route::post('/pemusnahan', [PemusnahanController::class, 'store'])->name('pemusnahan.store');
-        Route::get('/pemusnahan/{id}/approve', [PemusnahanController::class, 'approve'])->name('pemusnahan.approve');
-        Route::post('/pemusnahan/{id}/approve', [PemusnahanController::class, 'processApprove'])->name('pemusnahan.process-approve');
-        Route::post('/pemusnahan/{id}/reject', [PemusnahanController::class, 'reject'])->name('pemusnahan.reject');
+  /* -------- P E M U S N A H A N  A R S I P -------- */
+        Route::prefix('pemusnahan')->name('pemusnahan.')->group(function () {
+
+            Route::get('/usulan', [PemusnahanController::class, 'usulan'])
+                ->name('usulan');
+
+            Route::get('/penilaian', [PemusnahanController::class, 'penilaian'])
+                ->name('penilaian');
+
+            Route::get('/pengajuan-anri', [PemusnahanController::class, 'pengajuanAnri'])
+                ->name('anri');
+
+            Route::get('/persetujuan', [PemusnahanController::class, 'persetujuan'])
+                ->name('persetujuan');
+
+            Route::get('/pelaksanaan', [PemusnahanController::class, 'pelaksanaan'])
+                ->name('pelaksanaan');
+
+            Route::get('/riwayat', [PemusnahanController::class, 'riwayat'])
+                ->name('riwayat');
+
+        });
 
         // Route untuk laporan
         Route::get('/laporan', function () {

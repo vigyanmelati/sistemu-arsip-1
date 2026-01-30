@@ -457,16 +457,78 @@
                 </a>
             </li>
             
-            <li class="nav-item">
+            <!-- <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('pemusnahan.*') ? 'active' : '' }}" href="#">
                     <i class="bi bi-trash"></i> <span>Pemusnahan</span>
-                    <!-- @php
-                        $arsipMusnah = App\Models\Arsip::where('status_arsip', 'UMSUL_MUSNAH')->count();
-                    @endphp
-                    @if($arsipMusnah > 0)
-                    <span class="badge bg-danger badge-notification">{{ $arsipMusnah }}</span>
-                    @endif -->
                 </a>
+            </li> -->
+
+            {{-- PEMUSNAHAN ARSIP --}}
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center {{ request()->routeIs('pemusnahan.*') ? 'active' : '' }}"
+                data-bs-toggle="collapse"
+                href="#menuPemusnahan"
+                role="button"
+                aria-expanded="{{ request()->routeIs('pemusnahan.*') ? 'true' : 'false' }}"
+                aria-controls="menuPemusnahan">
+                    <i class="bi bi-trash"></i>
+                    <span>Pemusnahan Arsip</span>
+                    <i class="bi bi-chevron-down ms-auto"></i>
+                </a>
+
+                <div class="collapse {{ request()->routeIs('pemusnahan.*') ? 'show' : '' }}" id="menuPemusnahan">
+                    <ul class="nav flex-column ms-3 mt-2">
+
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('pemusnahan.usulan') ? 'active' : '' }}"
+                            href="{{ route('pemusnahan.usulan') }}">
+                                <i class="bi bi-file-earmark-text"></i>
+                                <span>Usulan Pemusnahan</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('pemusnahan.penilaian') ? 'active' : '' }}"
+                            href="{{ route('pemusnahan.penilaian') }}">
+                                <i class="bi bi-clipboard-check"></i>
+                                <span>Penilaian Arsip</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('pemusnahan.anri') ? 'active' : '' }}"
+                            href="{{ route('pemusnahan.anri') }}">
+                                <i class="bi bi-send"></i>
+                                <span>Pengajuan ke ANRI</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('pemusnahan.persetujuan') ? 'active' : '' }}"
+                            href="{{ route('pemusnahan.persetujuan') }}">
+                                <i class="bi bi-patch-check"></i>
+                                <span>Persetujuan ANRI & KPU RI</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('pemusnahan.pelaksanaan') ? 'active' : '' }}"
+                            href="{{ route('pemusnahan.pelaksanaan') }}">
+                                <i class="bi bi-fire"></i>
+                                <span>Pelaksanaan Pemusnahan</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('pemusnahan.riwayat') ? 'active' : '' }}"
+                            href="{{ route('pemusnahan.riwayat') }}">
+                                <i class="bi bi-clock-history"></i>
+                                <span>Riwayat Pemusnahan</span>
+                            </a>
+                        </li>
+
+                    </ul>
+                </div>
             </li>
             
             <li class="nav-item">
