@@ -41,42 +41,75 @@
     {{-- ================= TABEL ARSIP ================= --}}
     <div class="card shadow-sm">
         <div class="card-body table-responsive">
-            <table class="table table-bordered table-striped align-middle">
+           <table class="table table-bordered table-striped align-middle">
                 <thead class="table-light text-center">
                     <tr>
                         <th width="5%">No</th>
                         <th>Jenis Arsip</th>
-                        <th width="10%">Tahun</th>
+                        <th width="8%">Tahun Arsip</th>
+                        <th width="8%">Aktif (Th)</th>
+                        <th width="8%">Inaktif (Th)</th>
+                        <th width="15%">Keterangan JRA</th>
                         <th width="15%">Jumlah</th>
-                        <th width="15%">Tingkat Perkembangan</th>
-                        <th width="10%">Keterangan</th>
+                        <th width="13%">Tingkat Perkembangan</th>
+                        <th width="13%">File Dokumen</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($arsip as $index => $item)
                         <tr>
                             <td class="text-center">{{ $index + 1 }}</td>
+
                             <td>{{ $item->uraian_arsip }}</td>
-                            <td class="text-center">{{ $item->tahun_arsip }}</td>
+
+                            <td class="text-center">
+                                {{ $item->tahun_arsip }}
+                            </td>
+
+                            <td class="text-center">
+                                {{ $item->aktif_tahun ?? '-' }}
+                            </td>
+
+                            <td class="text-center">
+                                {{ $item->inaktif_tahun ?? '-' }}
+                            </td>
+
+                            <td class="text-center">
+                                <span class="badge bg-danger">
+                                    {{ $item->keterangan_jra ?? 'MUSNAH' }}
+                                </span>
+                            </td>
+
                             <td class="text-center">
                                 {{ $item->jumlah_berkas }} {{ $item->satuan_arsip }}
                             </td>
+
                             <td class="text-center">
                                 {{ $item->tingkat_perkembangan }}
                             </td>
+
                             <td class="text-center">
-                                <span class="badge bg-success">Baik</span>
+                                @if ($item->file_dokumen)
+                                    <a href="{{ asset('storage/' . $item->file_dokumen) }}"
+                                    target="_blank"
+                                    class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> Lihat
+                                    </a>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center text-muted">
+                            <td colspan="9" class="text-center text-muted">
                                 Tidak ada arsip usul musnah.
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
+
         </div>
     </div>
 

@@ -487,42 +487,10 @@
                     <ul class="nav flex-column ms-3 mt-2">
 
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('pemusnahan.usulan') ? 'active' : '' }}"
-                            href="{{ route('pemusnahan.usulan') }}">
-                                <i class="bi bi-file-earmark-text"></i>
-                                <span>Usulan Pemusnahan</span>
-                            </a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('pemusnahan.penilaian') ? 'active' : '' }}"
-                            href="{{ route('pemusnahan.penilaian') }}">
-                                <i class="bi bi-clipboard-check"></i>
-                                <span>Penilaian Arsip</span>
-                            </a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('pemusnahan.anri') ? 'active' : '' }}"
-                            href="{{ route('pemusnahan.anri') }}">
-                                <i class="bi bi-send"></i>
-                                <span>Pengajuan ke ANRI</span>
-                            </a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('pemusnahan.persetujuan') ? 'active' : '' }}"
-                            href="{{ route('pemusnahan.persetujuan') }}">
-                                <i class="bi bi-patch-check"></i>
-                                <span>Persetujuan ANRI & KPU RI</span>
-                            </a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('pemusnahan.pelaksanaan') ? 'active' : '' }}"
-                            href="{{ route('pemusnahan.pelaksanaan') }}">
+                            <a class="nav-link {{ request()->routeIs('pemusnahan.proses') ? 'active' : '' }}"
+                            href="{{ route('pemusnahan.proses') }}">
                                 <i class="bi bi-fire"></i>
-                                <span>Pelaksanaan Pemusnahan</span>
+                                <span>Proses Pemusnahan</span>
                             </a>
                         </li>
 

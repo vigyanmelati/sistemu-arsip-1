@@ -448,10 +448,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 statusText = `Status Arsip saat ini: INAKTIF`;
             } else if (sekarang <= musnahDate) {
                 statusArsip = 'MUSNAH';
-                statusText = `Status Arsip saat ini: MUSNAH`;
+                statusText = `Status Arsip saat ini: USUL MUSNAH`;
             } else {
                 statusArsip = 'MUSNAH';
-                statusText = `Status Arsip saat ini: MUSNAH (telah lewat)`;
+                statusText = `Status Arsip saat ini: USUL MUSNAH (telah lewat)`;
             }
         } else {
             // Jika keterangan tidak ada, gunakan logika biasa
