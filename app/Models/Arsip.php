@@ -14,7 +14,7 @@ class Arsip extends Model
     public $incrementing = true;
     
     protected $fillable = [
-        // WAJIB
+        // WAJIB - Data Dasar
         'kode_klasifikasi_id',
         'uraian_arsip',
         'sub_bagian_id',
@@ -23,40 +23,29 @@ class Arsip extends Model
         'jumlah_berkas',
         'satuan_arsip',
         
-        // MODE PENGISIAN
-        'is_isi_keterangan',
+        // MODE PENGISIAN - KINI DUA MODE
+        'is_isi_keterangan',        // 0 = Otomatis (angka), 1 = Deskriptif (string)
         
-        // MODE 1
-        'aktif_tahun',
-        'inaktif_tahun',
-        
-        // MODE 2
-        'aktif_keterangan',
-        'inaktif_keterangan',
-        'tanggal_referensi',
+        // Input retensi (bisa angka ATAU string)
+        'aktif_tahun',              // BISA: 2 (integer) ATAU "2 TAHUN SETELAH..." (string)
+        'inaktif_tahun',            // BISA: 5 (integer) ATAU "5 TAHUN" (string)
+        'tanggal_referensi',        // Untuk mode "SETELAH"
         
         // HASIL PERHITUNGAN
         'aktif_sampai',
         'inaktif_sampai',
+        'status_arsip',
         
         // LAINNYA
-        'keterangan_jra',
+        'keterangan_jra',           // "MUSNAH" atau "PERMANEN"
         'tanggal_masuk',
         'nomor_rak',
         'nomor_box',
         'nomor_sampul',
-        'status_arsip',
         'tingkat_perkembangan',
         'keterangan',
         'file_dokumen',
         'created_by'
-    ];
-    
-    protected $casts = [
-        'is_isi_keterangan' => 'boolean',
-        'aktif_tahun' => 'integer',
-        'inaktif_tahun' => 'integer',
-        'jumlah_berkas' => 'integer',
     ];
     
     protected $attributes = [
@@ -64,23 +53,26 @@ class Arsip extends Model
         'status_arsip' => 'AKTIF',
         'jumlah_berkas' => 1,
         'satuan_arsip' => 'LEMBAR',
-        'aktif_tahun' => 0,
-        'inaktif_tahun' => 0,
+        'aktif_tahun' => '0 TAHUN',    // ← UBAH KE STRING!
+        'inaktif_tahun' => '0 TAHUN',  // ← UBAH KE STRING!
         'nomor_rak' => '',
         'nomor_box' => '',
         'nomor_sampul' => '',
-        'keterangan_jra' => 'MUSNAH',
+        'keterangan_jra' => 'MUSNAH',  // ← PERBAIKI DEFAULT!
         'keterangan' => 'BAIK',
         'tingkat_perkembangan' => 'ASLI',
         'aktif_sampai' => null,
         'inaktif_sampai' => null,
     ];
     
-    protected $dates = [
-        'tanggal_arsip',
-        'tanggal_referensi',
-        'aktif_sampai', 
-        'inaktif_sampai'
+    protected $casts = [
+        'tanggal_arsip' => 'date',
+        'tanggal_referensi' => 'date',
+        'aktif_sampai' => 'date',
+        'inaktif_sampai' => 'date',
+        'tanggal_masuk' => 'date',
+        'jumlah_berkas' => 'integer',
+        'is_isi_keterangan' => 'boolean',
     ];
     
     /**
@@ -106,103 +98,88 @@ class Arsip extends Model
     }
     
     /**
-     * Boot method
+     * Boot method - NONAKTIFKAN SEMENTARA karena konflik
+     * Biarkan Controller yang menghitung
      */
-    protected static function boot()
-    {
-        parent::boot();
+    // protected static function boot()
+    // {
+    //     parent::boot();
         
-        static::saving(function ($arsip) {
-            $arsip->hitungSemua();
-        });
+    //     static::saving(function ($arsip) {
+    //         // JANGAN panggil hitungSemua() di sini
+    //         // Biarkan Controller yang bertanggung jawab
+    //     });
+    // }
+    
+    /**
+     * Ekstrak angka dari teks retensi
+     * Contoh: "2 TAHUN" → 2, "2 TAHUN SETELAH KEGIATAN" → 2
+     */
+    public function extractNumberFromText($text)
+    {
+        if (is_numeric($text)) {
+            return (int) $text;
+        }
+        
+        if (preg_match('/\d+/', (string) $text, $matches)) {
+            return (int) $matches[0];
+        }
+        
+        return 0;
     }
     
     /**
-     * Hitung semua berdasarkan mode
+     * Cek apakah teks mengandung kata "SETELAH"
      */
-    public function hitungSemua()
+    public function containsSetelah($text)
     {
-        // PRIORITAS 1: Jika keterangan_jra = PERMANEN, langsung set status
+        return stripos((string) $text, 'setelah') !== false;
+    }
+    
+    /**
+     * Hitung retensi berdasarkan logika baru
+     * Ini dipanggil dari Controller
+     */
+    public function hitungRetensiBaru()
+    {
+        // 1. Jika PERMANEN, langsung set status
         if ($this->keterangan_jra === 'PERMANEN') {
             $this->status_arsip = 'PERMANEN';
             return;
         }
         
-        // MODE 1: TIDAK ISI KETERANGAN (OTOMATIS)
-        if (!$this->is_isi_keterangan) {
-            $this->hitungModeOtomatis();
-        }
-        // MODE 2: ISI KETERANGAN (DESKRIPTIF)
-        else {
-            $this->hitungModeDeskriptif();
+        // 2. Ekstrak angka dari input
+        $aktifAngka = $this->extractNumberFromText($this->aktif_tahun);
+        $inaktifAngka = $this->extractNumberFromText($this->inaktif_tahun);
+        
+        // 3. Tentukan tanggal dasar
+        $tanggalDasar = $this->tanggal_arsip;
+        
+        // Jika mengandung "SETELAH" dan ada tanggal_referensi
+        if ($this->containsSetelah($this->aktif_tahun) || 
+            $this->containsSetelah($this->inaktif_tahun)) {
+            
+            if ($this->tanggal_referensi) {
+                $tanggalDasar = $this->tanggal_referensi;
+            }
         }
         
-        // Default status jika kosong
-        if (empty($this->status_arsip)) {
-            $this->status_arsip = 'AKTIF';
-        }
-    }
-    
-    /**
-     * MODE 1: Hitung otomatis (tidak isi keterangan)
-     */
-    protected function hitungModeOtomatis()
-    {
-        // 1. Hitung aktif_sampai dari tanggal_arsip
-        if ($this->tanggal_arsip && $this->aktif_tahun > 0) {
-            $this->aktif_sampai = Carbon::parse($this->tanggal_arsip)
-                ->addYears($this->aktif_tahun);
+        // 4. Hitung tanggal aktif sampai
+        if ($aktifAngka > 0 && $tanggalDasar) {
+            $this->aktif_sampai = Carbon::parse($tanggalDasar)->addYears($aktifAngka);
         } else {
-            // Default jika tidak ada
-            $this->aktif_sampai = Carbon::parse($this->tanggal_arsip);
+            $this->aktif_sampai = Carbon::parse($tanggalDasar);
         }
         
-        // 2. Hitung inaktif_sampai dari aktif_sampai
-        if ($this->aktif_sampai && $this->inaktif_tahun > 0) {
-            $this->inaktif_sampai = Carbon::parse($this->aktif_sampai)
-                ->addYears($this->inaktif_tahun);
+        // 5. Hitung tanggal inaktif sampai
+        if ($inaktifAngka > 0 && $this->aktif_sampai) {
+            $this->inaktif_sampai = Carbon::parse($this->aktif_sampai)->addYears($inaktifAngka);
         } else {
-            // Default jika tidak ada
             $this->inaktif_sampai = $this->aktif_sampai;
         }
         
-        // 3. Hitung status berdasarkan tanggal sekarang
+        // 6. Tentukan status berdasarkan tanggal sekarang
         $this->hitungStatusDariTanggal();
-    }
-    
-    /**
-     * MODE 2: Hitung deskriptif (isi keterangan)
-     */
-    protected function hitungModeDeskriptif()
-    {
-        // Jika ada tanggal_referensi, hitung aktif_sampai dan inaktif_sampai
-        if ($this->tanggal_referensi) {
-            // Ekstrak angka tahun dari keterangan (contoh: "1 Tahun Setelah..." → 1)
-            $aktifTahun = $this->ekstrakTahunDariKeterangan($this->aktif_keterangan);
-            $inaktifTahun = $this->ekstrakTahunDariKeterangan($this->inaktif_keterangan);
-            
-            if ($aktifTahun) {
-                $this->aktif_sampai = Carbon::parse($this->tanggal_referensi)
-                    ->addYears($aktifTahun);
-            } else {
-                $this->aktif_sampai = Carbon::parse($this->tanggal_referensi);
-            }
-            
-            if ($this->aktif_sampai && $inaktifTahun) {
-                $this->inaktif_sampai = Carbon::parse($this->aktif_sampai)
-                    ->addYears($inaktifTahun);
-            } else {
-                $this->inaktif_sampai = $this->aktif_sampai;
-            }
-            
-            // Hitung status berdasarkan tanggal sekarang
-            $this->hitungStatusDariTanggal();
-        } else {
-            // Jika tanggal_referensi KOSONG, set default
-            $this->status_arsip = 'AKTIF';
-            $this->aktif_sampai = Carbon::now();
-            $this->inaktif_sampai = Carbon::now();
-        }
     }
     
     /**
@@ -212,62 +189,35 @@ class Arsip extends Model
     {
         $now = Carbon::now();
         
-        // 1. Cek jika keterangan_jra = MUSNAH dan sudah lewat inaktif_sampai + 1 tahun
-        if ($this->keterangan_jra === 'MUSNAH' && $this->inaktif_sampai) {
+        if (!$this->aktif_sampai || !$this->inaktif_sampai) {
+            $this->status_arsip = 'AKTIF';
+            return;
+        }
+        
+        // Untuk keterangan_jra = MUSNAH
+        if ($this->keterangan_jra === 'MUSNAH') {
             $tahunSetelahInaktif = Carbon::parse($this->inaktif_sampai)->addYear();
+            
             if ($now->greaterThanOrEqualTo($tahunSetelahInaktif)) {
-                $this->status_arsip = 'USUL_MUSNAH';
-                return;
+                $this->status_arsip = 'MUSNAH';
+            } elseif ($now->greaterThan($this->inaktif_sampai)) {
+                $this->status_arsip = 'INAKTIF';
+            } elseif ($now->greaterThan($this->aktif_sampai)) {
+                $this->status_arsip = 'INAKTIF';
+            } else {
+                $this->status_arsip = 'AKTIF';
+            }
+        } 
+        // Untuk selain MUSNAH
+        else {
+            if ($now->lessThanOrEqualTo($this->aktif_sampai)) {
+                $this->status_arsip = 'AKTIF';
+            } elseif ($now->lessThanOrEqualTo($this->inaktif_sampai)) {
+                $this->status_arsip = 'INAKTIF';
+            } else {
+                $this->status_arsip = 'INAKTIF';
             }
         }
-        
-        // 2. Cek masa aktif/inaktif
-        if ($this->aktif_sampai && $now->lessThanOrEqualTo($this->aktif_sampai)) {
-            $this->status_arsip = 'AKTIF';
-        } elseif ($this->inaktif_sampai && $now->lessThanOrEqualTo($this->inaktif_sampai)) {
-            $this->status_arsip = 'INAKTIF';
-        } elseif ($this->inaktif_sampai && $now->greaterThan($this->inaktif_sampai)) {
-            // Sudah lewat masa inaktif
-            $this->status_arsip = 'INAKTIF'; // atau USUL_MUSNAH jika MUSNAH (sudah dicek di atas)
-        } else {
-            // Default
-            $this->status_arsip = 'AKTIF';
-        }
-    }
-    
-    /**
-     * Ekstrak angka tahun dari keterangan
-     * Contoh: "1 Tahun Setelah Barang Tidak Dikuasai" → 1
-     */
-    protected function ekstrakTahunDariKeterangan($keterangan)
-    {
-        if (empty($keterangan)) return 0;
-        
-        // Cari angka di awal string
-        if (preg_match('/^(\d+)/', $keterangan, $matches)) {
-            return (int) $matches[1];
-        }
-        
-        return 0;
-    }
-    
-    /**
-     * Accessor untuk menampilkan tahun dari keterangan
-     */
-    public function getAktifTahunFromKeteranganAttribute()
-    {
-        if ($this->is_isi_keterangan && $this->aktif_keterangan) {
-            return $this->ekstrakTahunDariKeterangan($this->aktif_keterangan);
-        }
-        return $this->aktif_tahun;
-    }
-    
-    public function getInaktifTahunFromKeteranganAttribute()
-    {
-        if ($this->is_isi_keterangan && $this->inaktif_keterangan) {
-            return $this->ekstrakTahunDariKeterangan($this->inaktif_keterangan);
-        }
-        return $this->inaktif_tahun;
     }
     
     /**
@@ -286,6 +236,38 @@ class Arsip extends Model
     public function getInaktifSampaiFormattedAttribute()
     {
         return $this->inaktif_sampai ? Carbon::parse($this->inaktif_sampai)->format('d-m-Y') : null;
+    }
+    
+    /**
+     * Mutator untuk aktif_tahun - terima string atau integer
+     */
+    public function setAktifTahunAttribute($value)
+    {
+        // Terima string atau integer
+        $this->attributes['aktif_tahun'] = $value;
+        
+        // Auto-set is_isi_keterangan jika mengandung kata
+        if (is_string($value) && $this->containsSetelah($value)) {
+            $this->attributes['is_isi_keterangan'] = 1;
+        }
+    }
+    
+    public function setInaktifTahunAttribute($value)
+    {
+        $this->attributes['inaktif_tahun'] = $value;
+    }
+    
+    /**
+     * Accessor untuk mendapatkan angka saja
+     */
+    public function getAktifTahunAngkaAttribute()
+    {
+        return $this->extractNumberFromText($this->aktif_tahun);
+    }
+    
+    public function getInaktifTahunAngkaAttribute()
+    {
+        return $this->extractNumberFromText($this->inaktif_tahun);
     }
     
     /**
@@ -321,5 +303,29 @@ class Arsip extends Model
             return $query->where('kode_klasifikasi_id', $kodeKlasifikasiId);
         }
         return $query;
+    }
+
+    /**
+     * Accessor untuk tanggal_arsip format Y-m-d (untuk input type="date")
+     */
+    public function getTanggalArsipForInputAttribute()
+    {
+        return $this->tanggal_arsip ? $this->tanggal_arsip->format('Y-m-d') : null;
+    }
+
+    /**
+     * Accessor untuk tanggal_referensi format Y-m-d
+     */
+    public function getTanggalReferensiForInputAttribute()
+    {
+        return $this->tanggal_referensi ? $this->tanggal_referensi->format('Y-m-d') : null;
+    }
+
+    /**
+     * Accessor untuk tanggal_masuk format Y-m-d
+     */
+    public function getTanggalMasukForInputAttribute()
+    {
+        return $this->tanggal_masuk ? $this->tanggal_masuk->format('Y-m-d') : null;
     }
 }

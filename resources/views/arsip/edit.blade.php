@@ -18,7 +18,7 @@
             </ul>
         </div>
         @endif
-        <form action="{{ route('arsip.update', $arsip->id) }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('arsip.update', $arsip->id) }}" method="POST" enctype="multipart/form-data" id="arsipForm">
             @csrf
             @method('PUT')
             
@@ -87,7 +87,7 @@
                     <label for="tanggal_arsip" class="form-label">Tanggal Arsip <span class="text-danger">*</span></label>
                     <input type="date" class="form-control @error('tanggal_arsip') is-invalid @enderror" 
                         id="tanggal_arsip" name="tanggal_arsip" 
-                        value="{{ old('tanggal_arsip', $arsip->tanggal_arsip) }}" required>
+                        value="{{ old('tanggal_arsip', $arsip->tanggal_arsip_for_input) }}" required>
                     @error('tanggal_arsip')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -150,229 +150,88 @@
             
             <hr class="my-4">
             
-             <!-- MODE PENGISIAN RETENSI -->
-            <h6 class="mb-3 text-primary">Mode Pengisian Masa Retensi Arsip</h6>
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="is_isi_keterangan" 
-                                       id="mode_tidak_keterangan" value="0" 
-                                       {{ old('is_isi_keterangan', $arsip->aktif_keterangan ? 1 : 0) == 0 ? 'checked' : '' }}
-                                <label class="form-check-label" for="mode_tidak_keterangan">
-                                    <strong>Mode 1: Tidak Isi Keterangan (Otomatis)</strong>
-                                </label>
-                                <small class="d-block text-muted">
-                                    Input angka tahun saja, sistem hitung otomatis
-                                </small>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="is_isi_keterangan" 
-                                       id="mode_isi_keterangan" value="1"
-                                       {{ old('is_isi_keterangan', $arsip->aktif_keterangan ? 1 : 0) == 1 ? 'checked' : '' }}
-                                <label class="form-check-label" for="mode_isi_keterangan">
-                                    <strong>Mode 2: Isi Keterangan (Deskriptif)</strong>
-                                </label>
-                                <small class="d-block text-muted">
-                                    Input deskripsi lengkap, hitung berdasarkan tanggal referensi
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- MODE 1: TIDAK ISI KETERANGAN (OTOMATIS) -->
-            <div id="mode_tidak_keterangan_container" style="display: none;">
-                <div class="card mb-4">
-                    <div class="card-header bg-success text-white">
-                        <h6 class="mb-0">Mode Otomatis</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <!-- Aktif Tahun (angka) -->
-                            <div class="col-md-4 mb-3">
-                                <label for="aktif_tahun" class="form-label">Aktif (Tahun)</label>
-                                <input type="number" class="form-control @error('aktif_tahun') is-invalid @enderror" 
-                                       id="aktif_tahun" name="aktif_tahun" 
-                                       value="{{ old('aktif_tahun', $arsip->aktif_tahun) }}"
-                                       placeholder="Contoh: 1" min="1">
-                                <small class="text-muted">Angka tahun masa aktif</small>
-                                @error('aktif_tahun')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            
-                            <!-- Inaktif Tahun (angka) -->
-                            <div class="col-md-4 mb-3">
-                                <label for="inaktif_tahun" class="form-label">Inaktif (Tahun)</label>
-                                <input type="number" class="form-control @error('inaktif_tahun') is-invalid @enderror" 
-                                       id="inaktif_tahun" name="inaktif_tahun" 
-                                       value="{{ old('inaktif_tahun', $arsip->inaktif_tahun) }}"
-                                       placeholder="Contoh: 5" min="1">
-                                <small class="text-muted">Angka tahun masa inaktif</small>
-                                @error('inaktif_tahun')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            
-                            <!-- Keterangan JRA -->
-                            <div class="col-md-4 mb-3">
-                                <label for="keterangan_jra_otomatis" class="form-label">Keterangan JRA</label>
-                                <select class="form-control @error('keterangan_jra') is-invalid @enderror" 
-                                        id="keterangan_jra_otomatis" name="keterangan_jra">
-                                    <option value="">Pilih Keterangan</option>
-                                    <option value="MUSNAH" {{ old('keterangan_jra', $arsip->keterangan_jra) == 'MUSNAH' ? 'selected' : '' }}>
-                                    <option value="PERMANEN" {{ old('keterangan_jra') == 'PERMANEN' ? 'selected' : '' }}>PERMANEN</option>
-                                </select>
-                                @error('keterangan_jra')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                        
-                        <!-- HASIL PERHITUNGAN OTOMATIS -->
-                        <div class="row mt-3">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Aktif Sampai (Otomatis)</label>
-                                <div class="form-control" style="background-color: #e9ecef;">
-                                    <span id="aktif_sampai_otomatis_preview">-</span>
-                                </div>
-                                <input type="hidden" name="aktif_sampai" id="aktif_sampai_otomatis">
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Inaktif Sampai (Otomatis)</label>
-                                <div class="form-control" style="background-color: #e9ecef;">
-                                    <span id="inaktif_sampai_otomatis_preview">-</span>
-                                </div>
-                                <input type="hidden" name="inaktif_sampai" id="inaktif_sampai_otomatis">
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Status Arsip (Otomatis)</label>
-                                <div class="form-control" style="background-color: #e9ecef;">
-                                    <span id="status_arsip_otomatis_preview">AKTIF</span>
-                                </div>
-                                <input type="hidden" name="status_arsip" id="status_arsip_otomatis" value="AKTIF">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- MODE 2: ISI KETERANGAN (DESKRIPTIF) -->
-            <div id="mode_isi_keterangan_container" style="display: none;">
-                <div class="card mb-4">
-                    <div class="card-header bg-info text-white">
-                        <h6 class="mb-0">Mode Deskriptif</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <!-- Aktif Keterangan -->
-                            <div class="col-md-6 mb-3">
-                                <label for="aktif_keterangan" class="form-label">Masa Aktif (Deskripsi)</label>
-                                <input type="text" class="form-control @error('aktif_keterangan') is-invalid @enderror" 
-                                       id="aktif_keterangan" name="aktif_keterangan" 
-                                       value="{{ old('aktif_keterangan', $arsip->aktif_keterangan) }}"
-                                       placeholder="Contoh: 1 Tahun Setelah Barang Tidak Dikuasai">
-                                @error('aktif_keterangan')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            
-                            <!-- Inaktif Keterangan -->
-                            <div class="col-md-6 mb-3">
-                                <label for="inaktif_keterangan" class="form-label">Masa Inaktif (Deskripsi)</label>
-                                <input type="text" class="form-control @error('inaktif_keterangan') is-invalid @enderror" 
-                                       id="inaktif_keterangan" name="inaktif_keterangan" 
-                                      value="{{ old('inaktif_keterangan', $arsip->inaktif_keterangan) }}"
-                                       placeholder="Contoh: 5 Tahun Setelah UU Pertanggung-jawaban APBN...">
-                                @error('inaktif_keterangan')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                        
-                        <!-- Tanggal Referensi -->
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="tanggal_referensi" class="form-label">Tanggal Referensi</label>
-                                <input type="date" class="form-control @error('tanggal_referensi') is-invalid @enderror" 
-                                       id="tanggal_referensi" name="tanggal_referensi" 
-                                       value="{{ old('tanggal_referensi', $arsip->tanggal_referensi) }}"
-                                <small class="text-muted">
-                                    Tanggal barang tidak digunakan / APBN disahkan / acuan lainnya
-                                </small>
-                                @error('tanggal_referensi')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            
-                            <!-- Keterangan JRA -->
-                            <div class="col-md-6 mb-3">
-                                <label for="keterangan_jra_deskriptif" class="form-label">Keterangan JRA</label>
-                                <select class="form-control @error('keterangan_jra') is-invalid @enderror" 
-                                        id="keterangan_jra_deskriptif" name="keterangan_jra">
-                                    <option value="">Pilih Keterangan</option>
-                                    <option value="MUSNAH" {{ old('keterangan_jra') == 'MUSNAH' ? 'selected' : '' }}>MUSNAH</option>
-                                    <option value="PERMANEN" {{ old('keterangan_jra', $arsip->keterangan_jra) == 'PERMANEN' ? 'selected' : '' }}>
+            <!-- MODE PENGISIAN RETENSI -->
+            <h6 class="mb-3 text-primary">Masa Retensi Arsip</h6>
 
-                                </select>
-                                @error('keterangan_jra')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                        
-                        <!-- HASIL PERHITUNGAN DESKRIPTIF -->
-                        <div class="row mt-3">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Aktif Sampai</label>
-                                <div class="form-control" style="background-color: #e9ecef;">
-                                    <span id="aktif_sampai_deskriptif_preview">-</span>
-                                </div>
-                                <input type="hidden" name="aktif_sampai" id="aktif_sampai_deskriptif">
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Inaktif Sampai</label>
-                                <div class="form-control" style="background-color: #e9ecef;">
-                                    <span id="inaktif_sampai_deskriptif_preview">-</span>
-                                </div>
-                                <input type="hidden" name="inaktif_sampai" id="inaktif_sampai_deskriptif">
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Status Arsip</label>
-                                <div id="status_arsip_deskriptif_container">
-                                    <!-- Jika tanggal referensi kosong, tampilkan dropdown -->
-                                    <select class="form-control" id="status_arsip_deskriptif_select" name="status_arsip">
-                                        <option value="AKTIF" {{ old('status_arsip', 'AKTIF') == 'AKTIF' ? 'selected' : '' }}>Aktif</option>
-                                        <option value="INAKTIF" {{ old('status_arsip') == 'INAKTIF' ? 'selected' : '' }}>Inaktif</option>
-                                        <option value="USUL_MUSNAH" {{ old('status_arsip') == 'USUL_MUSNAH' ? 'selected' : '' }}>Usul Musnah</option>
-                                        <option value="MUSNAH" {{ old('status_arsip') == 'MUSNAH' ? 'selected' : '' }}>Musnah</option>
-                                        <option value="PERMANEN" {{ old('status_arsip') == 'PERMANEN' ? 'selected' : '' }}>Permanen</option>
-                                    </select>
-                                    <!-- Jika tanggal referensi diisi, tampilkan hasil otomatis -->
-                                    <div id="status_arsip_deskriptif_preview_container" style="display: none;">
-                                        <div class="form-control" style="background-color: #e9ecef;">
-                                            <span id="status_arsip_deskriptif_preview">-</span>
-                                        </div>
-                                        <input type="hidden" name="status_arsip" id="status_arsip_deskriptif">
-                                    </div>
-                                </div>
-                                <small class="text-muted">
-                                    Pilih manual jika tanggal referensi belum diisi
-                                </small>
-                            </div>
-                        </div>
-                    </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">
+                        Masa Retensi Aktif
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input type="text"
+                        id="aktif_tahun"
+                        name="aktif_tahun"
+                        class="form-control"
+                        placeholder="Contoh: 2 TAHUN / 2 TAHUN SETELAH KEGIATAN"
+                        value="{{ old('aktif_tahun', $arsip->aktif_tahun) }}"
+                        required>
+                    <small class="text-muted">
+                        Gunakan kata <strong>SETELAH</strong> jika berbasis tanggal referensi
+                    </small>
+                    @error('aktif_tahun')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">
+                        Masa Retensi Inaktif
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input type="text"
+                        id="inaktif_tahun"
+                        name="inaktif_tahun"
+                        class="form-control"
+                        placeholder="Contoh: 3 TAHUN / 3 TAHUN SETELAH KEGIATAN"
+                        value="{{ old('inaktif_tahun', $arsip->inaktif_tahun) }}"
+                        required>
+                    @error('inaktif_tahun')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="col-md-4 mb-3" id="tanggal_referensi_wrapper" style="{{ (stripos($arsip->aktif_tahun, 'SETELAH') !== false || stripos($arsip->inaktif_tahun, 'SETELAH') !== false) ? 'display:block;' : 'display:none;' }}">
+                    <label class="form-label">
+                        Tanggal Referensi
+                    </label>
+                    <input type="date"
+                        id="tanggal_referensi"
+                        name="tanggal_referensi"
+                        class="form-control"
+                        value="{{ old('tanggal_referensi', $arsip->tanggal_referensi_for_input) }}">
+                    <small class="text-muted">
+                        Diisi jika masa retensi mengandung kata <strong>SETELAH</strong> (Opsional)
+                    </small>
+                    @error('tanggal_referensi')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                
+                <!-- Keterangan JRA -->
+                <div class="col-md-4 mb-3">
+                    <label for="keterangan_jra" class="form-label">Keterangan JRA <span class="text-danger">*</span></label>
+                    <select class="form-control @error('keterangan_jra') is-invalid @enderror" 
+                            id="keterangan_jra" name="keterangan_jra" required>
+                        <option value="">Pilih Keterangan</option>
+                        <option value="PERMANEN" {{ old('keterangan_jra', $arsip->keterangan_jra) == 'PERMANEN' ? 'selected' : '' }}>Permanen</option>
+                        <option value="MUSNAH" {{ old('keterangan_jra', $arsip->keterangan_jra) == 'MUSNAH' ? 'selected' : '' }}>Musnah</option>
+                    </select>
+                    @error('keterangan_jra')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+
+            <!-- HASIL PERHITUNGAN RETENSI (HIDDEN) -->
+            <input type="hidden" name="aktif_sampai" id="aktif_sampai" value="{{ old('aktif_sampai', $arsip->aktif_sampai) }}">
+            <input type="hidden" name="inaktif_sampai" id="inaktif_sampai" value="{{ old('inaktif_sampai', $arsip->inaktif_sampai) }}">
+            <input type="hidden" name="status_arsip" id="status_arsip_final" value="{{ old('status_arsip', $arsip->status_arsip) }}">
+
+            <!-- PREVIEW PERHITUNGAN -->
+            <div class="alert alert-info" id="previewRetensi" style="display:none;">
+                <h6>Preview Perhitungan Retensi:</h6>
+                <p id="previewText"></p>
             </div>
 
             <hr class="my-4">
@@ -422,7 +281,7 @@
                     <label for="tanggal_masuk" class="form-label">Tanggal Masuk</label>
                     <input type="date" class="form-control @error('tanggal_masuk') is-invalid @enderror" 
                            id="tanggal_masuk" name="tanggal_masuk" 
-                           value="{{ old('tanggal_masuk', $arsip->tanggal_masuk) }}">
+                           value="{{ old('tanggal_masuk', $arsip->tanggal_masuk_for_input) }}">
                     <small class="text-muted">Tanggal arsip dimasukkan ke sistem</small>
                     @error('tanggal_masuk')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -457,10 +316,6 @@
                     @enderror
                 </div>
             </div>
-
-            <!-- Hidden input untuk status arsip final -->
-           <input type="hidden" name="status_arsip" id="status_arsip_final" value="{{ old('status_arsip', $arsip->status_arsip) }}">
-
             
             <!-- TOMBOL SIMPAN -->
             <div class="d-flex justify-content-between mt-4">
@@ -476,434 +331,246 @@
 </div>
 @endsection
 
+@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('arsipForm');
+    const aktifInput = document.getElementById('aktif_tahun');
+    const inaktifInput = document.getElementById('inaktif_tahun');
+    const tanggalArsipInput = document.getElementById('tanggal_arsip');
+    const tanggalRefInput = document.getElementById('tanggal_referensi');
+    const wrapperRef = document.getElementById('tanggal_referensi_wrapper');
+    const keteranganJRA = document.getElementById('keterangan_jra');
+    const aktifSampaiInput = document.getElementById('aktif_sampai');
+    const inaktifSampaiInput = document.getElementById('inaktif_sampai');
+    const statusArsipInput = document.getElementById('status_arsip_final');
+    const previewRetensi = document.getElementById('previewRetensi');
+    const previewText = document.getElementById('previewText');
 
-    const modeTidakKeterangan = document.getElementById('mode_tidak_keterangan');
-    const modeIsiKeterangan = document.getElementById('mode_isi_keterangan');
-    const containerTidakKeterangan = document.getElementById('mode_tidak_keterangan_container');
-    const containerIsiKeterangan = document.getElementById('mode_isi_keterangan_container');
+    function cekSetelah() {
+        const aktifVal = aktifInput.value.toLowerCase();
+        const inaktifVal = inaktifInput.value.toLowerCase();
 
-    function toggleMode() {
-        if (modeTidakKeterangan.checked) {
-            containerTidakKeterangan.style.display = 'block';
-            containerIsiKeterangan.style.display = 'none';
-        } else if (modeIsiKeterangan.checked) {
-            containerTidakKeterangan.style.display = 'none';
-            containerIsiKeterangan.style.display = 'block';
-        }
-    }
-
-    // Event listener
-    modeTidakKeterangan.addEventListener('change', toggleMode);
-    modeIsiKeterangan.addEventListener('change', toggleMode);
-
-    // INITIAL LOAD — PAKAI STATE RADIO DARI BLADE
-    toggleMode();
-
-      // 2. KALKULASI MODE 1: OTOMATIS
-    // Elements untuk mode 1
-    const tanggalArsip = document.getElementById('tanggal_arsip');
-    const aktifTahun = document.getElementById('aktif_tahun');
-    const inaktifTahun = document.getElementById('inaktif_tahun');
-    const keteranganJraOtomatis = document.getElementById('keterangan_jra_otomatis');
-    
-    // Preview elements untuk mode 1
-    const aktifSampaiOtomatisPreview = document.getElementById('aktif_sampai_otomatis_preview');
-    const inaktifSampaiOtomatisPreview = document.getElementById('inaktif_sampai_otomatis_preview');
-    const statusArsipOtomatisPreview = document.getElementById('status_arsip_otomatis_preview');
-    const statusArsipOtomatisHidden = document.getElementById('status_arsip_otomatis');
-    
-    function hitungModeOtomatis() {
-        console.log('hitungModeOtomatis dipanggil');
-        
-        if (!tanggalArsip || !aktifTahun) {
-            console.log('Tanggal arsip atau aktif tahun tidak ditemukan');
-            return;
-        }
-        
-        if (!tanggalArsip.value || !aktifTahun.value) {
-            console.log('Tanggal arsip atau aktif tahun kosong');
-            resetPreviewOtomatis();
-            return;
-        }
-        
-        const tanggal = new Date(tanggalArsip.value);
-        const sekarang = new Date();
-        
-        // Hitung aktif sampai
-        const aktifSampai = new Date(tanggal);
-        aktifSampai.setFullYear(tanggal.getFullYear() + parseInt(aktifTahun.value));
-        
-        // Format tanggal untuk display
-        const formatTanggal = (date) => {
-            if (!date) return '-';
-            return date.toLocaleDateString('id-ID', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric'
-            });
-        };
-        
-        // Update preview aktif sampai
-        aktifSampaiOtomatisPreview.textContent = formatTanggal(aktifSampai);
-        document.getElementById('aktif_sampai_otomatis').value = aktifSampai.toISOString().split('T')[0];
-        
-        // Hitung inaktif sampai
-        let inaktifSampai = null;
-        if (inaktifTahun.value) {
-            inaktifSampai = new Date(aktifSampai);
-            inaktifSampai.setFullYear(aktifSampai.getFullYear() + parseInt(inaktifTahun.value));
-            
-            inaktifSampaiOtomatisPreview.textContent = formatTanggal(inaktifSampai);
-            document.getElementById('inaktif_sampai_otomatis').value = inaktifSampai.toISOString().split('T')[0];
+        if (aktifVal.includes('setelah') || inaktifVal.includes('setelah')) {
+            wrapperRef.style.display = 'block';
         } else {
-            inaktifSampaiOtomatisPreview.textContent = '-';
-            document.getElementById('inaktif_sampai_otomatis').value = '';
+            wrapperRef.style.display = 'none';
+            if (tanggalRefInput) {
+                tanggalRefInput.value = '';
+            }
         }
         
-        // Hitung status arsip
-        let status = hitungStatusArsip(sekarang, aktifSampai, inaktifSampai, keteranganJraOtomatis.value);
-        
-        // Update status preview
-        statusArsipOtomatisPreview.textContent = status;
-        statusArsipOtomatisHidden.value = status;
-        
-        console.log('Perhitungan selesai:', {
-            aktifSampai: formatTanggal(aktifSampai),
-            inaktifSampai: inaktifSampai ? formatTanggal(inaktifSampai) : '-',
-            status: status
-        });
+        hitungRetensi();
     }
-    
-    function resetPreviewOtomatis() {
-        aktifSampaiOtomatisPreview.textContent = '-';
-        inaktifSampaiOtomatisPreview.textContent = '-';
-        statusArsipOtomatisPreview.textContent = 'AKTIF';
-        if (statusArsipOtomatisHidden) {
-            statusArsipOtomatisHidden.value = 'AKTIF';
-        }
-    }
-    
-    // 3. KALKULASI MODE 2: DESKRIPTIF
-    // Elements untuk mode 2
-    const aktifKeterangan = document.getElementById('aktif_keterangan');
-    const inaktifKeterangan = document.getElementById('inaktif_keterangan');
-    const tanggalReferensi = document.getElementById('tanggal_referensi');
-    const keteranganJraDeskriptif = document.getElementById('keterangan_jra_deskriptif');
-    
-    // Preview elements untuk mode 2
-    const aktifSampaiDeskriptifPreview = document.getElementById('aktif_sampai_deskriptif_preview');
-    const inaktifSampaiDeskriptifPreview = document.getElementById('inaktif_sampai_deskriptif_preview');
-    const statusArsipDeskriptifSelect = document.getElementById('status_arsip_deskriptif_select');
-    const statusArsipDeskriptifPreviewContainer = document.getElementById('status_arsip_deskriptif_preview_container');
-    const statusArsipDeskriptifPreview = document.getElementById('status_arsip_deskriptif_preview');
-    const statusArsipDeskriptifHidden = document.getElementById('status_arsip_deskriptif');
-    
-    function hitungModeDeskriptif() {
-        console.log('hitungModeDeskriptif dipanggil');
+
+    function hitungRetensi() {
+        const aktifVal = aktifInput.value.trim().toUpperCase();
+        const inaktifVal = inaktifInput.value.trim().toUpperCase();
+        const keterangan = keteranganJRA.value;
+        const tanggalArsip = tanggalArsipInput.value;
+        const tanggalReferensi = tanggalRefInput ? tanggalRefInput.value : '';
         
-        // Reset preview
-        resetPreviewDeskriptif();
-        
-        // Jika tanggal referensi kosong, tampilkan dropdown manual
-        if (!tanggalReferensi || !tanggalReferensi.value) {
-            if (statusArsipDeskriptifSelect) {
-                statusArsipDeskriptifSelect.style.display = 'block';
-            }
-            if (statusArsipDeskriptifPreviewContainer) {
-                statusArsipDeskriptifPreviewContainer.style.display = 'none';
-            }
+        if (!aktifVal || !inaktifVal || !tanggalArsip) {
+            previewRetensi.style.display = 'none';
             return;
         }
+
+        // LOGIKA UTAMA: Jika aktif_tahun mengandung SETELAH tetapi tanggal_referensi belum diisi
+        if ((aktifVal.includes('SETELAH') || inaktifVal.includes('SETELAH')) && !tanggalReferensi) {
+            // Otomatis set status arsip ke AKTIF (sesuai permintaan)
+            statusArsipInput.value = 'AKTIF';
+            
+            // Set nilai default untuk aktif_sampai dan inaktif_sampai (null)
+            aktifSampaiInput.value = '';
+            inaktifSampaiInput.value = '';
+            
+            // Tampilkan preview khusus
+            let preview = `<strong>Perhatian:</strong><br>`;
+            preview += `Anda menggunakan format "SETELAH" untuk masa retensi, tetapi belum mengisi tanggal referensi.<br>`;
+            preview += `<strong>Status arsip otomatis di-set ke: AKTIF</strong><br>`;
+            preview += `Perhitungan retensi tidak dapat dilakukan tanpa tanggal referensi.<br>`;
+            preview += `Silakan isi tanggal referensi untuk perhitungan yang lebih akurat.`;
+            
+            previewText.innerHTML = preview;
+            previewRetensi.style.display = 'block';
+            return;
+        }
+
+        // Ekstrak angka tahun dari input
+        const aktifTahun = ekstrakAngka(aktifVal);
+        const inaktifTahun = ekstrakAngka(inaktifVal);
         
-        // Jika tanggal referensi diisi, hitung otomatis
-        const tanggalRef = new Date(tanggalReferensi.value);
+        if (!aktifTahun || !inaktifTahun) {
+            previewText.textContent = 'Format tahun tidak valid. Contoh: "2 TAHUN"';
+            previewRetensi.style.display = 'block';
+            return;
+        }
+
+        // Tentukan tanggal dasar perhitungan
+        let tanggalDasar;
+        let sumberTanggal = 'tanggal_arsip';
+        
+        if (aktifVal.includes('SETELAH') || inaktifVal.includes('SETELAH')) {
+            tanggalDasar = tanggalReferensi;
+            sumberTanggal = 'tanggal_referensi';
+        } else {
+            tanggalDasar = tanggalArsip;
+        }
+
+        // Hitung tanggal aktif sampai
+        const aktifSampai = tambahTahun(tanggalDasar, aktifTahun);
+        
+        // Hitung tanggal inaktif sampai (ditambahkan setelah aktif)
+        const inaktifSampai = tambahTahun(aktifSampai, inaktifTahun);
+
+        // Hitung tanggal musnah (hanya untuk display jika keterangan MUSNAH)
+        const musnahSampai = tambahTahun(inaktifSampai, 1);
+
+        // Tentukan status arsip berdasarkan tanggal hari ini
         const sekarang = new Date();
+        const aktifDate = new Date(aktifSampai);
+        const inaktifDate = new Date(inaktifSampai);
+        const musnahDate = new Date(musnahSampai);
+
+        let statusArsip = 'AKTIF';
+        let statusText = '';
         
-        // Ekstrak tahun dari keterangan
-        const tahunAktif = ekstrakTahunDariKeterangan(aktifKeterangan.value);
-        const tahunInaktif = ekstrakTahunDariKeterangan(inaktifKeterangan.value);
-        
-        // Hitung aktif sampai
-        let aktifSampai = null;
-        if (tahunAktif) {
-            aktifSampai = new Date(tanggalRef);
-            aktifSampai.setFullYear(tanggalRef.getFullYear() + tahunAktif);
-            
-            if (aktifSampaiDeskriptifPreview) {
-                aktifSampaiDeskriptifPreview.textContent = formatTanggal(aktifSampai);
-            }
-            document.getElementById('aktif_sampai_deskriptif').value = aktifSampai.toISOString().split('T')[0];
-        }
-        
-        // Hitung inaktif sampai
-        let inaktifSampai = null;
-        if (tahunInaktif && aktifSampai) {
-            inaktifSampai = new Date(aktifSampai);
-            inaktifSampai.setFullYear(aktifSampai.getFullYear() + tahunInaktif);
-            
-            if (inaktifSampaiDeskriptifPreview) {
-                inaktifSampaiDeskriptifPreview.textContent = formatTanggal(inaktifSampai);
-            }
-            document.getElementById('inaktif_sampai_deskriptif').value = inaktifSampai.toISOString().split('T')[0];
-        }
-        
-        // Hitung status arsip
-        let status = hitungStatusArsip(sekarang, aktifSampai, inaktifSampai, keteranganJraDeskriptif.value);
-        
-        // Tampilkan hasil otomatis, sembunyikan dropdown
-        if (statusArsipDeskriptifSelect) {
-            statusArsipDeskriptifSelect.style.display = 'none';
-        }
-        if (statusArsipDeskriptifPreviewContainer) {
-            statusArsipDeskriptifPreviewContainer.style.display = 'block';
-        }
-        if (statusArsipDeskriptifPreview) {
-            statusArsipDeskriptifPreview.textContent = status;
-        }
-        if (statusArsipDeskriptifHidden) {
-            statusArsipDeskriptifHidden.value = status;
-        }
-    }
-    
-    function resetPreviewDeskriptif() {
-        if (aktifSampaiDeskriptifPreview) {
-            aktifSampaiDeskriptifPreview.textContent = '-';
-        }
-        if (inaktifSampaiDeskriptifPreview) {
-            inaktifSampaiDeskriptifPreview.textContent = '-';
-        }
-        if (statusArsipDeskriptifPreview) {
-            statusArsipDeskriptifPreview.textContent = '-';
-        }
-        if (statusArsipDeskriptifHidden) {
-            statusArsipDeskriptifHidden.value = '';
-        }
-    }
-    
-    // 4. FUNGSI BANTUAN UMUM
-    function formatTanggal(date) {
-        if (!date) return '-';
-        return date.toLocaleDateString('id-ID', {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric'
-        });
-    }
-    
-    function ekstrakTahunDariKeterangan(keterangan) {
-        if (!keterangan) return null;
-        
-        // Cari angka di awal string (contoh: "1 Tahun Setelah..." → 1)
-        const match = keterangan.match(/^(\d+)/);
-        return match ? parseInt(match[1]) : null;
-    }
-    
-    function hitungStatusArsip(sekarang, aktifSampai, inaktifSampai, keteranganJra) {
-        // Rule 1: Jika PERMANEN
-        if (keteranganJra === 'PERMANEN') {
-            return 'PERMANEN';
-        }
-        
-        // Rule 2: Jika MUSNAH dan sudah lewat inaktif_sampai + 1 tahun
-        if (keteranganJra === 'MUSNAH' && inaktifSampai) {
-            const tahunSetelahInaktif = new Date(inaktifSampai);
-            tahunSetelahInaktif.setFullYear(inaktifSampai.getFullYear() + 1);
-            if (sekarang >= tahunSetelahInaktif) {
-                return 'USUL_MUSNAH';
-            }
-        }
-        
-        // Rule 3: Cek masa aktif/inaktif
-        if (aktifSampai && sekarang <= aktifSampai) {
-            return 'AKTIF';
-        } else if (inaktifSampai && sekarang <= inaktifSampai) {
-            return 'INAKTIF';
-        } else if (inaktifSampai && sekarang > inaktifSampai) {
-            // Sudah lewat masa inaktif
-            return 'INAKTIF';
-        }
-        
-        // Default
-        return 'AKTIF';
-    }
-    
-    // 5. EVENT LISTENERS UNTUK INPUT CHANGES
-    
-    // Mode 1 event listeners
-    if (tanggalArsip) {
-        tanggalArsip.addEventListener('change', function() {
-            if (modeTidakKeterangan.checked) {
-                hitungModeOtomatis();
-            }
-        });
-    }
-    
-    if (aktifTahun) {
-        aktifTahun.addEventListener('input', function() {
-            if (modeTidakKeterangan.checked) {
-                hitungModeOtomatis();
-            }
-        });
-    }
-    
-    if (inaktifTahun) {
-        inaktifTahun.addEventListener('input', function() {
-            if (modeTidakKeterangan.checked) {
-                hitungModeOtomatis();
-            }
-        });
-    }
-    
-    if (keteranganJraOtomatis) {
-        keteranganJraOtomatis.addEventListener('change', function() {
-            if (modeTidakKeterangan.checked) {
-                hitungModeOtomatis();
-            }
-        });
-    }
-    
-    // Mode 2 event listeners
-    if (aktifKeterangan) {
-        aktifKeterangan.addEventListener('input', function() {
-            if (modeIsiKeterangan.checked) {
-                hitungModeDeskriptif();
-            }
-        });
-    }
-    
-    if (inaktifKeterangan) {
-        inaktifKeterangan.addEventListener('input', function() {
-            if (modeIsiKeterangan.checked) {
-                hitungModeDeskriptif();
-            }
-        });
-    }
-    
-    if (tanggalReferensi) {
-        tanggalReferensi.addEventListener('change', function() {
-            if (modeIsiKeterangan.checked) {
-                hitungModeDeskriptif();
-            }
-        });
-    }
-    
-    if (keteranganJraDeskriptif) {
-        keteranganJraDeskriptif.addEventListener('change', function() {
-            if (modeIsiKeterangan.checked) {
-                hitungModeDeskriptif();
-            }
-        });
-    }
-    
-    // 6. VALIDASI FILE UPLOAD
-    const fileDokumenInput = document.getElementById('file_dokumen');
-    if (fileDokumenInput) {
-        fileDokumenInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const fileSize = (file.size / 1024 / 1024).toFixed(2);
-                const fileName = file.name;
-                const fileExtension = fileName.split('.').pop().toLowerCase();
-                
-                if (fileSize > 2) {
-                    alert('Ukuran file melebihi 2MB');
-                    e.target.value = '';
-                    return;
-                }
-                
-                const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
-                if (!allowedExtensions.includes(fileExtension)) {
-                    alert('Format file tidak didukung. Gunakan PDF, JPG, JPEG, atau PNG.');
-                    e.target.value = '';
-                    return;
-                }
-            }
-        });
-    }
-    
-    // 7. VALIDASI TAHUN INAKTIF > AKTIF
-    function validateYears() {
-        if (aktifTahun && aktifTahun.value && inaktifTahun && inaktifTahun.value) {
-            if (parseInt(inaktifTahun.value) <= parseInt(aktifTahun.value)) {
-                inaktifTahun.setCustomValidity('Tahun inaktif harus lebih besar dari tahun aktif');
+        if (keterangan === 'PERMANEN') {
+            statusArsip = 'PERMANEN';
+            statusText = 'Status Arsip saat ini: PERMANEN';
+        } else if (keterangan === 'MUSNAH') {
+            // Tentukan status saat ini berdasarkan tanggal
+            if (sekarang <= aktifDate) {
+                statusArsip = 'AKTIF';
+                statusText = `Status Arsip saat ini: AKTIF`;
+            } else if (sekarang <= inaktifDate) {
+                statusArsip = 'INAKTIF';
+                statusText = `Status Arsip saat ini: INAKTIF`;
+            } else if (sekarang <= musnahDate) {
+                statusArsip = 'MUSNAH';
+                statusText = `Status Arsip saat ini: MUSNAH`;
             } else {
-                inaktifTahun.setCustomValidity('');
+                statusArsip = 'MUSNAH';
+                statusText = `Status Arsip saat ini: MUSNAH (telah lewat)`;
+            }
+        } else {
+            // Jika keterangan tidak ada, gunakan logika biasa
+            if (sekarang <= aktifDate) {
+                statusArsip = 'AKTIF';
+                statusText = `Status Arsip saat ini: AKTIF`;
+            } else if (sekarang <= inaktifDate) {
+                statusArsip = 'INAKTIF';
+                statusText = `Status Arsip saat ini: INAKTIF`;
+            } else {
+                statusArsip = 'INAKTIF';
+                statusText = `Status Arsip saat ini: INAKTIF (telah lewat)`;
+            }
+        }
+
+        // Set nilai hidden inputs
+        aktifSampaiInput.value = aktifSampai;
+        inaktifSampaiInput.value = inaktifSampai;
+        statusArsipInput.value = statusArsip;
+
+        // Tampilkan preview dengan satu status saja
+        let preview = `<strong>Perhitungan Retensi:</strong><br>`;
+        preview += `Sumber Tanggal: ${sumberTanggal === 'tanggal_referensi' ? 'Tanggal Referensi' : 'Tanggal Arsip'}<br>`;
+        preview += `Tanggal Dasar: ${formatTanggal(tanggalDasar)}<br>`;
+        preview += `Aktif Sampai: ${formatTanggal(aktifSampai)}<br>`;
+        preview += `Inaktif Sampai: ${formatTanggal(inaktifSampai)}<br>`;
+        
+        if (keterangan === 'MUSNAH') {
+            preview += `Musnah: ${formatTanggal(musnahSampai)}<br>`;
+        }
+        
+        preview += `<strong>${statusText}</strong>`;
+        
+        previewText.innerHTML = preview;
+        previewRetensi.style.display = 'block';
+    }
+
+    function ekstrakAngka(text) {
+        const match = text.match(/\d+/);
+        return match ? parseInt(match[0]) : null;
+    }
+
+    function tambahTahun(tanggalString, tahun) {
+        const date = new Date(tanggalString);
+        date.setFullYear(date.getFullYear() + tahun);
+        return date.toISOString().split('T')[0];
+    }
+
+    function formatTanggal(tanggalString) {
+        const date = new Date(tanggalString);
+        return date.toLocaleDateString('id-ID', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    }
+
+    // Event listeners
+    aktifInput.addEventListener('input', cekSetelah);
+    inaktifInput.addEventListener('input', cekSetelah);
+    tanggalArsipInput.addEventListener('change', hitungRetensi);
+    if (tanggalRefInput) {
+        tanggalRefInput.addEventListener('change', hitungRetensi);
+    }
+    keteranganJRA.addEventListener('change', hitungRetensi);
+
+    // Form submission validation
+    form.addEventListener('submit', function(e) {
+        hitungRetensi(); // Pastikan perhitungan terakhir
+        
+        // Validasi minimal
+        if (!keteranganJRA.value) {
+            e.preventDefault();
+            alert('Silakan pilih Keterangan JRA.');
+            return;
+        }
+        
+        // Validasi file upload (opsional)
+        const fileInput = document.getElementById('file_dokumen');
+        if (fileInput && fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            const fileSize = (file.size / 1024 / 1024).toFixed(2);
+            const fileName = file.name;
+            const fileExtension = fileName.split('.').pop().toLowerCase();
+            
+            if (fileSize > 2) {
+                e.preventDefault();
+                alert('Ukuran file melebihi 2MB');
+                return;
+            }
+            
+            const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+            if (!allowedExtensions.includes(fileExtension)) {
+                e.preventDefault();
+                alert('Format file tidak didukung. Gunakan PDF, JPG, JPEG, atau PNG.');
+                return;
+            }
+        }
+    });
+
+    // Fungsi untuk menghapus file
+    window.hapusFile = function() {
+        if (confirm('Apakah Anda yakin ingin menghapus file ini?')) {
+            document.getElementById('hapus_file').value = '1';
+            const fileInfoDiv = document.querySelector('.mb-2');
+            if (fileInfoDiv) {
+                fileInfoDiv.style.display = 'none';
             }
         }
     }
-    
-    if (aktifTahun) {
-        aktifTahun.addEventListener('change', validateYears);
-    }
-    if (inaktifTahun) {
-        inaktifTahun.addEventListener('change', validateYears);
-    }
-    
-    // 8. INITIALIZATION
-    // Panggil toggleMode untuk pertama kali
-    toggleMode();
-    
-    // Jika ada old values, hitung ulang
+
+    // Initial load - tampilkan preview berdasarkan data yang ada
     setTimeout(function() {
-        if (modeTidakKeterangan.checked && aktifTahun && aktifTahun.value) {
-            hitungModeOtomatis();
-        }
-        if (modeIsiKeterangan.checked && tanggalReferensi && tanggalReferensi.value) {
-            hitungModeDeskriptif();
-        }
+        // Jalankan cekSetelah untuk menampilkan/menyembunyikan tanggal referensi
+        cekSetelah();
         
-        // Jalankan validasi tahun
-        validateYears();
-    }, 200);
-    
-    console.log('JavaScript loaded successfully');
-
-    // Fungsi untuk update status_arsip_final
-function updateStatusArsipFinal() {
-    let status = 'AKTIF';
-    
-    if (modeTidakKeterangan.checked) {
-        status = document.getElementById('status_arsip_otomatis').value || 'AKTIF';
-    } else if (modeIsiKeterangan.checked) {
-        if (tanggalReferensi && tanggalReferensi.value) {
-            status = document.getElementById('status_arsip_deskriptif').value || 'AKTIF';
-        } else {
-            status = document.getElementById('status_arsip_deskriptif_select').value || 'AKTIF';
-        }
-    }
-    
-    document.getElementById('status_arsip_final').value = status;
-    console.log('status_arsip_final diisi: ' + status);
-}
-
-// Update saat mode berubah
-modeTidakKeterangan.addEventListener('change', function() {
-    setTimeout(updateStatusArsipFinal, 100);
-});
-modeIsiKeterangan.addEventListener('change', function() {
-    setTimeout(updateStatusArsipFinal, 100);
-});
-
-// Update saat input berubah
-[tanggalArsip, aktifTahun, inaktifTahun, tanggalReferensi, aktifKeterangan, inaktifKeterangan].forEach(el => {
-    if (el) {
-        el.addEventListener('input', updateStatusArsipFinal);
-        el.addEventListener('change', updateStatusArsipFinal);
-    }
-});
-setTimeout(function () {
-    if (modeTidakKeterangan.checked) {
-        hitungModeOtomatis();
-    }
-
-    if (modeIsiKeterangan.checked) {
-        hitungModeDeskriptif();
-    }
-
-    updateStatusArsipFinal();
-}, 300);
-
+        // Jalankan hitungRetensi untuk menampilkan preview
+        hitungRetensi();
+    }, 300);
 });
 </script>
+@endpush

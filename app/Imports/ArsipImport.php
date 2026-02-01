@@ -9,119 +9,175 @@ use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
+use Carbon\Carbon;
 
 class ArsipImport implements ToModel, WithHeadingRow
 {
-    // private function parseRetensi($value)
-    // {
-    //     if ($value === null || trim((string) $value) === '') {
-    //         return ['tahun' => null, 'keterangan' => null];
-    //     }
+    /**
+     * Parse nilai retensi dari Excel - handle multiline text
+     */
+    private function parseRetensiString($value)
+    {
+        if ($value === null) {
+            return null;
+        }
 
-    //     $raw = trim((string) $value);
-        
-    //     // 1. Cek jika hanya angka (misal: "2" atau "2 tahun")
-    //     if (is_numeric($raw)) {
-    //         return ['tahun' => (int) $raw, 'keterangan' => null];
-    //     }
-        
-    //     // 2. Cek pola "X tahun" (case insensitive, boleh ada spasi)
-    //     // Contoh: "2 tahun", "2 Tahun", "2  tahun"
-    //     if (preg_match('/^\s*(\d+)\s*tahun\s*$/i', $raw)) {
-    //         preg_match('/\d+/', $raw, $matches);
-    //         return ['tahun' => (int) $matches[0], 'keterangan' => null];
-    //     }
-        
-    //     // 3. Cek jika mengandung teks lebih dari sekedar "tahun"
-    //     // Contoh: "1 Tahun Setelah Barang Tidak Dikuasai"
-    //     // Ambil angka pertama dan seluruh teks sebagai keterangan
-    //     if (preg_match('/(\d+)/', $raw, $matches)) {
-    //         return [
-    //             'tahun' => (int) $matches[1],
-    //             'keterangan' => $raw
-    //         ];
-    //     }
-        
-    //     // 4. Fallback
-    //     return ['tahun' => null, 'keterangan' => $raw];
-    // }
+        // Normalisasi string Excel - handle multiline dengan tag <br>
+        $raw = (string) $value;
+        $raw = str_replace("\xc2\xa0", ' ', $raw); // NBSP Excel
+        $raw = str_replace("<br>", " ", $raw); // Handle tag <br>
+        $raw = str_replace("\n", " ", $raw); // Handle newline
+        $raw = str_replace("\r", " ", $raw); // Handle carriage return
+        $raw = preg_replace('/\s+/', ' ', trim($raw));
 
+        if ($raw === '') {
+            return null;
+        }
 
-private function parseRetensi($value)
-{
-    if ($value === null) {
-        return ['tahun' => null, 'keterangan' => null];
-    }
+        /**
+         * =========================
+         * 1️⃣ ANGKA SAJA -> tambah "TAHUN"
+         * =========================
+         */
+        if (ctype_digit($raw)) {
+            return $raw . ' TAHUN';
+        }
 
-    // Normalisasi string Excel
-    $raw = (string) $value;
-    $raw = str_replace("\xc2\xa0", ' ', $raw); // NBSP Excel
-    $raw = preg_replace('/\s+/', ' ', trim($raw));
+        /**
+         * =========================
+         * 2️⃣ Sudah format lengkap
+         * =========================
+         */
+        // Cek jika sudah mengandung "TAHUN" (case insensitive)
+        if (preg_match('/tahun/i', $raw)) {
+            // Uppercase kata "TAHUN" untuk konsistensi
+            $raw = preg_replace('/tahun/i', 'TAHUN', $raw);
+            return $raw;
+        }
 
-    if ($raw === '') {
-        return ['tahun' => null, 'keterangan' => null];
+        /**
+         * =========================
+         * 3️⃣ Angka + spasi -> tambah "TAHUN"
+         * =========================
+         */
+        // Cek jika string berisi angka diikuti spasi
+        if (preg_match('/^(\d+)\s*$/i', $raw, $matches)) {
+            return $matches[1] . ' TAHUN';
+        }
+
+        /**
+         * =========================
+         * 4️⃣ Format lainnya
+         * =========================
+         */
+        return $raw;
     }
 
     /**
-     * =========================
-     * 1️⃣ ANGKA SAJA
-     * =========================
+     * Ekstrak angka dari string retensi untuk perhitungan
      */
-    if (ctype_digit($raw)) {
-        return [
-            'tahun' => (int) $raw,
-            'keterangan' => null
-        ];
+    private function extractNumberFromText($text)
+    {
+        if (!$text) {
+            return null;
+        }
+        
+        if (preg_match('/\d+/', $text, $matches)) {
+            return (int) $matches[0];
+        }
+        return null;
     }
 
     /**
-     * =========================
-     * 2️⃣ "5 tahun" (tanpa keterangan tambahan)
-     * =========================
+     * Hitung retensi seperti di controller
      */
-    // Cek jika string hanya berisi angka + "tahun" (dengan variasi spasi)
-    // Contoh: "5 tahun", "5tahun", "5  tahun", "5 TAHUN"
-    if (preg_match('/^(\d+)\s*tahun\s*$/i', $raw, $matches)) {
-        return [
-            'tahun' => (int) $matches[1],
-            'keterangan' => null
+    private function hitungRetensi($aktifTahunText, $inaktifTahunText, $keteranganJRA, $tanggalArsip, $tanggalReferensi = null)
+    {
+        $result = [
+            'aktif_sampai' => null,
+            'inaktif_sampai' => null,
+            'status_arsip' => 'AKTIF'
         ];
+        
+        // Cek apakah mengandung kata SETELAH
+        $aktifMengandungSetelah = stripos($aktifTahunText, 'SETELAH') !== false;
+        $inaktifMengandungSetelah = stripos($inaktifTahunText, 'SETELAH') !== false;
+        
+        // Jika mengandung SETELAH tapi tanggal referensi kosong, kembalikan status AKTIF saja
+        if (($aktifMengandungSetelah || $inaktifMengandungSetelah) && empty($tanggalReferensi)) {
+            $result['status_arsip'] = 'AKTIF';
+            return $result;
+        }
+        
+        // Ekstrak angka dari teks
+        $aktifTahun = $this->extractNumberFromText($aktifTahunText);
+        $inaktifTahun = $this->extractNumberFromText($inaktifTahunText);
+        
+        if (!$aktifTahun || !$inaktifTahun) {
+            $result['status_arsip'] = 'AKTIF';
+            return $result;
+        }
+        
+        // Tentukan tanggal dasar perhitungan
+        if ($aktifMengandungSetelah || $inaktifMengandungSetelah) {
+            // Jika ada SETELAH tapi tidak ada tanggal_referensi, gunakan tanggal_arsip
+            if ($tanggalReferensi) {
+                $tanggalDasar = Carbon::parse($tanggalReferensi);
+            } else {
+                $tanggalDasar = Carbon::parse($tanggalArsip);
+            }
+        } else {
+            $tanggalDasar = Carbon::parse($tanggalArsip);
+        }
+        
+        // Hitung tanggal aktif sampai
+        $aktifSampai = $tanggalDasar->copy()->addYears($aktifTahun);
+        
+        // Hitung tanggal inaktif sampai (ditambahkan setelah aktif)
+        $inaktifSampai = $aktifSampai->copy()->addYears($inaktifTahun);
+        
+        // Hitung tanggal musnah (untuk keterangan MUSNAH)
+        $musnahSampai = $inaktifSampai->copy()->addYears(1);
+        
+        // Tentukan status arsip berdasarkan tanggal hari ini
+        $sekarang = Carbon::now();
+        
+        if ($keteranganJRA === 'PERMANEN') {
+            $result['status_arsip'] = 'PERMANEN';
+        } elseif ($keteranganJRA === 'MUSNAH') {
+            if ($sekarang <= $aktifSampai) {
+                $result['status_arsip'] = 'AKTIF';
+            } elseif ($sekarang <= $inaktifSampai) {
+                $result['status_arsip'] = 'INAKTIF';
+            } elseif ($sekarang <= $musnahSampai) {
+                $result['status_arsip'] = 'MUSNAH';
+            } else {
+                $result['status_arsip'] = 'MUSNAH';
+            }
+        } else {
+            if ($sekarang <= $aktifSampai) {
+                $result['status_arsip'] = 'AKTIF';
+            } elseif ($sekarang <= $inaktifSampai) {
+                $result['status_arsip'] = 'INAKTIF';
+            } else {
+                $result['status_arsip'] = 'INAKTIF';
+            }
+        }
+        
+        // Set tanggal hasil perhitungan
+        $result['aktif_sampai'] = $aktifSampai->format('Y-m-d');
+        $result['inaktif_sampai'] = $inaktifSampai->format('Y-m-d');
+        
+        return $result;
     }
-
-    /**
-     * =========================
-     * 3️⃣ "1 tahun setelah ..." (dengan keterangan)
-     * =========================
-     */
-    // Cek jika mengandung angka + "tahun" + keterangan
-    // Contoh: "1 Tahun Setelah Barang Tidak Dikuasai"
-    if (preg_match('/^(\d+)\s*tahun\s+.+$/i', $raw, $matches)) {
-        return [
-            'tahun' => (int) $matches[1],
-            'keterangan' => $raw
-        ];
-    }
-
-    /**
-     * =========================
-     * 4️⃣ Format lainnya yang mengandung angka
-     * =========================
-     */
-    // Cek jika ada angka di string manapun
-    if (preg_match('/(\d+)/', $raw, $matches)) {
-        return [
-            'tahun' => (int) $matches[1],
-            'keterangan' => $raw
-        ];
-    }
-
-    return ['tahun' => null, 'keterangan' => null];
-}
-
-
 
     public function model(array $row)
     {
+        // =======================
+        // DEBUG LOG
+        // =======================
+        \Log::info('Importing row:', $row);
+        
         // =======================
         // NORMALISASI INPUT
         // =======================
@@ -131,21 +187,46 @@ private function parseRetensi($value)
         $subBagianInput = trim((string) ($row['sub_bagian'] ?? ''));
 
         if (!$kodeInput || !$subBagianInput) {
+            \Log::warning('Kode atau Sub Bagian kosong: ' . $kodeInput . ' - ' . $subBagianInput);
             return null;
         }
 
         $kode = KodeKlasifikasi::where('kode', $kodeInput)->first();
         $subBagian = SubBagian::where('nama_sub_bagian', $subBagianInput)->first();
 
-        if (!$kode || !$subBagian) {
+        if (!$kode) {
+            \Log::warning('Kode klasifikasi tidak ditemukan: ' . $kodeInput);
+            return null;
+        }
+        
+        if (!$subBagian) {
+            \Log::warning('Sub bagian tidak ditemukan: ' . $subBagianInput);
             return null;
         }
 
         // =======================
-        // RETENSI
+        // PARSING RETENSI (STRING LENGKAP) - HANDLE MULTILINE
         // =======================
-        $aktif   = $this->parseRetensi($row['aktif'] ?? null);
-        $inaktif = $this->parseRetensi($row['inaktif'] ?? null);
+        $aktifTahun = $this->parseRetensiString($row['aktif'] ?? null);
+        $inaktifTahun = $this->parseRetensiString($row['inaktif'] ?? null);
+
+        \Log::info('Parsed retensi:', [
+            'aktif_original' => $row['aktif'] ?? null,
+            'aktif_parsed' => $aktifTahun,
+            'inaktif_original' => $row['inaktif'] ?? null,
+            'inaktif_parsed' => $inaktifTahun
+        ]);
+
+        // Default jika null
+        if (!$aktifTahun) {
+            $aktifTahun = '0 TAHUN';
+            \Log::warning('Aktif tahun null, set to default: ' . $aktifTahun);
+        }
+        
+        if (!$inaktifTahun) {
+            $inaktifTahun = '0 TAHUN';
+            \Log::warning('Inaktif tahun null, set to default: ' . $inaktifTahun);
+        }
 
         // =======================
         // TANGGAL
@@ -156,49 +237,135 @@ private function parseRetensi($value)
                 if (is_numeric($row['tanggal_arsip'])) {
                     $tanggalArsip = Date::excelToDateTimeObject($row['tanggal_arsip']);
                 } else {
-                    $tanggalArsip =
-                        \DateTime::createFromFormat('d/m/Y', $row['tanggal_arsip'])
-                        ?: \DateTime::createFromFormat('Y-m-d', $row['tanggal_arsip'])
-                        ?: now();
+                    // Coba berbagai format
+                    $tanggalStr = trim($row['tanggal_arsip']);
+                    
+                    // Coba format dengan timestamp (2014-08-07 00:00:00)
+                    if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $tanggalStr)) {
+                        $tanggalArsip = \DateTime::createFromFormat('Y-m-d H:i:s', $tanggalStr);
+                    } 
+                    // Coba format Y-m-d
+                    elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggalStr)) {
+                        $tanggalArsip = \DateTime::createFromFormat('Y-m-d', $tanggalStr);
+                    }
+                    // Coba format d/m/Y
+                    elseif (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $tanggalStr)) {
+                        $tanggalArsip = \DateTime::createFromFormat('d/m/Y', $tanggalStr);
+                    }
+                    
+                    if (!$tanggalArsip) {
+                        $tanggalArsip = now();
+                        \Log::warning('Format tanggal tidak dikenali: ' . $tanggalStr . ', using now()');
+                    }
                 }
             } catch (\Exception $e) {
+                \Log::error('Error parsing tanggal_arsip: ' . $e->getMessage());
                 $tanggalArsip = now();
             }
         }
 
+        \Log::info('Tanggal arsip: ' . $tanggalArsip->format('Y-m-d'));
+
+        // =======================
+        // KETERANGAN JRA
+        // =======================
+        // Default ke MUSNAH karena Excel tidak punya kolom ini
+        $keteranganJRA = 'MUSNAH';
+        
+        // =======================
+        // TANGGAL REFERENSI (jika ada)
+        // =======================
+        $tanggalReferensi = null;
+        // Tidak ada kolom tanggal_referensi di Excel
+
+        // =======================
+        // HITUNG RETENSI OTOMATIS
+        // =======================
+        \Log::info('Menghitung retensi dengan parameter:', [
+            'aktif_tahun' => $aktifTahun,
+            'inaktif_tahun' => $inaktifTahun,
+            'keterangan_jra' => $keteranganJRA,
+            'tanggal_arsip' => $tanggalArsip->format('Y-m-d'),
+            'tanggal_referensi' => $tanggalReferensi
+        ]);
+
+        $perhitungan = $this->hitungRetensi(
+            $aktifTahun,
+            $inaktifTahun,
+            $keteranganJRA,
+            $tanggalArsip->format('Y-m-d'), // Convert to string
+            $tanggalReferensi
+        );
+
+        \Log::info('Hasil perhitungan:', $perhitungan);
+
+        // =======================
+        // NOMOR BOX (handle format Excel)
+        // =======================
         $nomorBox = $row['nomor_box'] ?? null;
-        if (is_numeric($nomorBox) && $nomorBox < 1) {
-            $totalMinutes = round($nomorBox * 24 * 60);
-            $jam = floor($totalMinutes / 60);
-            $menit = $totalMinutes % 60;
-            $nomorBox = $jam . '.' . str_pad($menit, 2, '0', STR_PAD_LEFT);
+        if (!empty($nomorBox)) {
+            // Handle format time (21:14:00) -> convert to string
+            if (preg_match('/^\d{2}:\d{2}:\d{2}$/', $nomorBox)) {
+                // Keep as is
+                \Log::info('Nomor box is time format: ' . $nomorBox);
+            } elseif (is_numeric($nomorBox) && $nomorBox < 1) {
+                $totalMinutes = round($nomorBox * 24 * 60);
+                $jam = floor($totalMinutes / 60);
+                $menit = $totalMinutes % 60;
+                $nomorBox = $jam . '.' . str_pad($menit, 2, '0', STR_PAD_LEFT);
+                \Log::info('Nomor box converted from Excel time: ' . $nomorBox);
+            }
         }
 
-        return new Arsip([
+        // =======================
+        // TINGKAT PERKEMBANGAN (default ASLI karena tidak ada di Excel)
+        // =======================
+        $tingkatPerkembangan = 'ASLI';
+
+        // =======================
+        // DATA UNTUK DISIMPAN
+        // =======================
+        $data = [
+            // WAJIB - Data Dasar
             'kode_klasifikasi_id' => $kode->id,
             'uraian_arsip'        => $row['uraian_arsip'] ?? '',
             'sub_bagian_id'       => $subBagian->id,
-            'tahun_arsip'         => (string) ($row['tahun_arsip'] ?? ''),
-            'tanggal_arsip'       => $tanggalArsip,
-            'jumlah_berkas'       => $row['jumlah_berkas'] ?? 1,
-            'satuan_arsip'        => $row['satuan_arsip'] ?? 'BENDEL',
+            'tahun_arsip'         => (string) ($row['tahun_arsip'] ?? date('Y')),
+            'tanggal_arsip'       => $tanggalArsip->format('Y-m-d'),
+            'jumlah_berkas'       => (int) ($row['jumlah_berkas'] ?? 1),
+            'satuan_arsip'        => strtoupper(trim(($row['satuan_arsip'] ?? 'BENDEL'))),
 
-            'nomor_rak'           => $row['nomor_rak'] ?? '',
-            'nomor_box'           => $nomorBox,
+            // Masa Retensi (STRING LENGKAP)
+            'aktif_tahun'         => $aktifTahun,
+            'inaktif_tahun'       => $inaktifTahun,
+            'tanggal_referensi'   => $tanggalReferensi,
+            'keterangan_jra'      => $keteranganJRA,
+
+            // Hasil Perhitungan OTOMATIS
+            'aktif_sampai'        => $perhitungan['aktif_sampai'],
+            'inaktif_sampai'      => $perhitungan['inaktif_sampai'],
+            'status_arsip'        => $perhitungan['status_arsip'],
+
+            // OPTIONAL
+            'nomor_rak'           => (string) ($row['nomor_rak'] ?? ''),
+            'nomor_box'           => (string) $nomorBox,
             'nomor_sampul'        => $row['nomor_sampul'] ?? '',
-            'keterangan'          => $row['keterangan'] ?? 'BAIK',
-
-            // RETENSI
-            'masa_aktif_tahun'    => $aktif['tahun'],
-            'aktif_keterangan'    => $aktif['keterangan'],
-
-            'masa_inaktif_tahun'  => $inaktif['tahun'],
-            'inaktif_keterangan'  => $inaktif['keterangan'],
-
-            'status_arsip'        => 'AKTIF',
-            'is_isi_keterangan'   => 0,
-            'tanggal_masuk'       => now(),
+            'tingkat_perkembangan' => $tingkatPerkembangan,
+            'keterangan'          => strtoupper(trim(($row['keterangan'] ?? 'BAIK'))),
+            'tanggal_masuk'       => now()->format('Y-m-d'),
             'created_by'          => Auth::id(),
-        ]);
+        ];
+
+        \Log::info('Data untuk disimpan:', $data);
+
+        return new Arsip($data);
+    }
+
+    /**
+     * Aturan heading row
+     */
+    public function headingRow(): int
+    {
+        return 1; // Baris pertama adalah header
     }
 }

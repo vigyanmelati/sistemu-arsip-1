@@ -8,14 +8,14 @@
 <div class="card shadow">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h6 class="m-0 font-weight-bold text-primary">Detail Arsip</h6>
-        <div class="btn-group">
+        {{-- <div class="btn-group">
             <a href="{{ route('arsip.index') }}" class="btn btn-secondary btn-sm">
                 <i class="bi bi-arrow-left"></i> Kembali
             </a>
             <a href="{{ route('arsip.edit', $arsip->id) }}" class="btn btn-warning btn-sm">
                 <i class="bi bi-pencil"></i> Edit
             </a>
-        </div>
+        </div> --}}
     </div>
     <div class="card-body">
         <div class="row">
@@ -33,7 +33,7 @@
                     </tr>
                     <tr>
                         <td><strong>Sub Bagian</strong></td>
-                        <td>: {{ $arsip->subBagian->nama ?? 'N/A' }}</td>
+                        <td>: {{ $arsip->subBagian->nama_sub_bagian ?? 'N/A' }}</td>
                     </tr>
                     <tr>
                         <td><strong>Tahun Arsip</strong></td>
@@ -79,41 +79,47 @@
                     </tr>
                     <tr>
                         <td><strong>Nomor Rak</strong></td>
-                        <td>: {{ $arsip->nomor_rak }}</td>
+                        <td>: {{ $arsip->nomor_rak ?: '-' }}</td>
                     </tr>
                     <tr>
                         <td><strong>Nomor Box</strong></td>
-                        <td>: {{ $arsip->nomor_box }}</td>
+                        <td>: {{ $arsip->nomor_box ?: '-' }}</td>
                     </tr>
                      <tr>
                         <td><strong>Nomor Sampul</strong></td>
-                        <td>: {{ $arsip->no_sampul ?? '-' }}</td>
+                        <td>: {{ $arsip->nomor_sampul ?: '-' }}</td>
                     </tr>
                     <tr>
                         <td><strong>Kondisi Fisik</strong></td>
                         <td>: 
-                            <span >
-                                {{ $arsip->keterangan }}
+                            @php
+                                $kondisiColors = [
+                                    'BAIK' => 'success',
+                                    'RUSAK' => 'warning',
+                                    'HILANG' => 'danger'
+                                ];
+                                $kondisiColor = $kondisiColors[$arsip->keterangan] ?? 'secondary';
+                            @endphp
+                            <span class="badge bg-{{ $kondisiColor }}">
+                                {{ $arsip->keterangan ?: '-' }}
                             </span>
                         </td>
                     </tr>
                     <tr>
                         <td><strong>File Dokumen</strong></td>
                         <td>: 
-                           
                             @if($arsip->file_dokumen)
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">File Saat Ini</label>
-                                    <div>
-                                        <a href="{{ asset('storage/arsip/' . $arsip->file_dokumen) }}" 
-                                        target="_blank" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-eye"></i> Lihat File
-                                        </a>
-                                        <small class="text-muted d-block mt-1">
-                                            {{ $arsip->file_dokumen }}
-                                        </small>
-                                    </div>
+                                <div>
+                                    <a href="{{ Storage::url('arsip/' . $arsip->file_dokumen) }}" 
+                                    target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> Lihat File
+                                    </a>
+                                    <small class="text-muted d-block mt-1">
+                                        {{ $arsip->file_dokumen }}
+                                    </small>
                                 </div>
+                            @else
+                                <span class="text-muted">Tidak ada file</span>
                             @endif
                         </td>
                     </tr>
@@ -125,34 +131,69 @@
                 <h6 class="font-weight-bold text-primary mb-3">Informasi Retensi</h6>
                 <table class="table table-borderless">
                     <tr>
-                        <td width="40%"><strong>Aktif (Tahun)</strong></td>
-                        <td>: {{ $arsip->aktif_tahun }} Tahun
-                            @if($arsip->aktif_keterangan)
-                                <br><small class="text-muted">({{ $arsip->aktif_keterangan }})</small>
-                            @endif </td>
+                        <td width="40%"><strong>Masa Retensi Aktif</strong></td>
+                        <td>: {{ $arsip->aktif_tahun ?: '-' }}</td>
                     </tr>
                     <tr>
-                        <td><strong>Inaktif (Tahun)</strong></td>
-                    <td>:   {{ $arsip->inaktif_tahun }} Tahun
-                            @if($arsip->inaktif_keterangan)
-                                <br><small class="text-muted">({{ $arsip->inaktif_keterangan }})</small>
-                            @endif </td>
+                        <td><strong>Masa Retensi Inaktif</strong></td>
+                        <td>: {{ $arsip->inaktif_tahun ?: '-' }}</td>
                     </tr>
-                    <!-- <tr>
-                        <td><strong>Tanggal Masuk</strong></td>
-                        <td>: {{ $arsip->tanggal_masuk ? \Carbon\Carbon::parse($arsip->tanggal_masuk)->format('d/m/Y') : '-' }}</td>
-                    </tr> -->
+                    @if($arsip->tanggal_referensi)
+                    <tr>
+                        <td><strong>Tanggal Referensi</strong></td>
+                        <td>: {{ $arsip->tanggal_referensi ? \Carbon\Carbon::parse($arsip->tanggal_referensi)->format('d/m/Y') : '-' }}</td>
+                    </tr>
+                    @endif
                     <tr>
                         <td><strong>Aktif Sampai</strong></td>
-                        <td>: {{ $arsip->aktif_sampai ? \Carbon\Carbon::parse($arsip->aktif_sampai)->format('d/m/Y') : '-' }}</td>
+                        <td>: 
+                            @if($arsip->aktif_sampai)
+                                {{ \Carbon\Carbon::parse($arsip->aktif_sampai)->format('d/m/Y') }}
+                                @php
+                                    $aktifDate = \Carbon\Carbon::parse($arsip->aktif_sampai);
+                                    $now = \Carbon\Carbon::now();
+                                    if($now > $aktifDate) {
+                                        echo '<span class="badge bg-danger ms-2">Lewat</span>';
+                                    } else {
+                                        echo '<span class="badge bg-success ms-2">Aktif</span>';
+                                    }
+                                @endphp
+                            @else
+                                -
+                            @endif
+                        </td>
                     </tr>
                     <tr>
                         <td><strong>Inaktif Sampai</strong></td>
-                        <td>: {{ $arsip->inaktif_sampai ? \Carbon\Carbon::parse($arsip->inaktif_sampai)->format('d/m/Y') : '-' }}</td>
+                        <td>: 
+                            @if($arsip->inaktif_sampai)
+                                {{ \Carbon\Carbon::parse($arsip->inaktif_sampai)->format('d/m/Y') }}
+                                @php
+                                    $inaktifDate = \Carbon\Carbon::parse($arsip->inaktif_sampai);
+                                    $now = \Carbon\Carbon::now();
+                                    if($now > $inaktifDate) {
+                                        echo '<span class="badge bg-danger ms-2">Lewat</span>';
+                                    } else {
+                                        echo '<span class="badge bg-warning ms-2">Akan Datang</span>';
+                                    }
+                                @endphp
+                            @else
+                                -
+                            @endif
+                        </td>
                     </tr>
                     <tr>
                         <td><strong>Keterangan JRA</strong></td>
-                        <td>: {{ $arsip->keterangan_jra ?? '-' }}</td>
+                        <td>: 
+                            @php
+                                $jraColors = [
+                                    'PERMANEN' => 'info',
+                                    'MUSNAH' => 'danger'
+                                ];
+                                $jraColor = $jraColors[$arsip->keterangan_jra] ?? 'secondary';
+                            @endphp
+                            <span class="badge bg-{{ $jraColor }}">{{ $arsip->keterangan_jra ?: '-' }}</span>
+                        </td>
                     </tr>
                 </table>
             </div>
@@ -162,7 +203,11 @@
                 <h6 class="font-weight-bold text-primary mb-3">Informasi Sistem</h6>
                 <table class="table table-borderless">
                     <tr>
-                        <td width="40%"><strong>Dibuat Oleh</strong></td>
+                        <td width="40%"><strong>Tanggal Masuk</strong></td>
+                        <td>: {{ $arsip->tanggal_masuk ? \Carbon\Carbon::parse($arsip->tanggal_masuk)->format('d/m/Y') : '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dibuat Oleh</strong></td>
                         <td>: {{ $arsip->created_by ? \App\Models\User::find($arsip->created_by)->name ?? 'System' : 'System' }}</td>
                     </tr>
                     <tr>
@@ -176,32 +221,41 @@
                 </table>
             </div>
             
-            <!-- Keterangan -->
-            @if($arsip->keterangan_jra)
-            <div class="col-md-12">
-                <h6 class="font-weight-bold text-primary mb-3">Keterangan</h6>
-                <div class="alert alert-info">
-                    {{ $arsip->keterangan_jra }}
+            <!-- Catatan Tambahan -->
+            @if($arsip->aktif_tahun && stripos($arsip->aktif_tahun, 'SETELAH') !== false && !$arsip->tanggal_referensi)
+            <div class="col-md-12 mt-3">
+                <div class="alert alert-warning">
+                    <strong>Catatan:</strong> Arsip ini menggunakan format "SETELAH" untuk masa retensi tetapi tanggal referensi belum diisi. Status arsip otomatis di-set ke <strong>{{ $arsip->status_arsip }}</strong>.
                 </div>
             </div>
             @endif
         </div>
         
         <div class="mt-4 pt-3 border-top">
-            <div class="btn-group">
+            <div class="d-flex gap-2">
+                <a href="{{ route('arsip.index') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Kembali ke Daftar
+                </a>
+
                 <a href="{{ route('arsip.edit', $arsip->id) }}" class="btn btn-warning">
                     <i class="bi bi-pencil"></i> Edit Arsip
                 </a>
-                <form action="{{ route('arsip.destroy', $arsip->id) }}" method="POST" class="d-inline">
+
+                <form action="{{ route('arsip.destroy', $arsip->id) }}" method="POST">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="btn btn-danger" 
-                            onclick="return confirm('Apakah Anda yakin ingin menghapus arsip ini?')">
+                    <button type="submit" class="btn btn-danger"
+                        onclick="return confirm('Apakah Anda yakin ingin menghapus arsip ini?')">
                         <i class="bi bi-trash"></i> Hapus Arsip
                     </button>
                 </form>
             </div>
         </div>
+
     </div>
 </div>
+
+
+
 @endsection
+
