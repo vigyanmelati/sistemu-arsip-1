@@ -23,6 +23,24 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/usulan', [PemusnahanController::class, 'usulan'])
                 ->name('usulan');
 
+            Route::get('/pemusnahan/usulan/nota-dinas', function () {
+                $path = public_path('template/Nota Dinas Penghapusan Arsip.docx');
+
+                if (!file_exists($path)) {
+                    abort(404, 'Template Nota Dinas tidak ditemukan');
+                }
+
+                return response()->download(
+                    $path,
+                    'Nota Dinas Penghapusan Arsip.docx'
+                );
+            })->name('usulan.nota_dinas_word');
+
+          Route::get('/usulan/daftar-arsip-excel',
+                [PemusnahanController::class, 'daftarArsipExcel']
+            )->name('usulan.excel');
+
+
             Route::get('/penilaian', [PemusnahanController::class, 'penilaian'])
                 ->name('penilaian');
 

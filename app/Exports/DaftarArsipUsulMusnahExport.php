@@ -1,0 +1,177 @@
+<?php
+
+namespace App\Exports;
+
+use App\Models\Arsip;
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithCustomStartCell;
+use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+
+class DaftarArsipUsulMusnahExport implements
+    FromCollection,
+    WithMapping,
+    WithEvents,
+    WithCustomStartCell
+{
+    protected $no = 1;
+
+    /**
+     * ================= DATA =================
+     */
+    public function collection()
+    {
+        return Arsip::where('status_arsip', 'USUL_MUSNAH')
+            ->where('keterangan_jra', 'MUSNAH')
+            ->orderBy('tahun_arsip', 'asc')
+            ->get();
+    }
+
+    public function map($arsip): array
+    {
+        return [
+            $this->no++,
+            $arsip->uraian_arsip,
+            $arsip->tahun_arsip,
+            $arsip->jumlah_berkas . ' ' . $arsip->satuan_arsip,
+            $arsip->tingkat_perkembangan,
+            'Baik',
+        ];
+    }
+
+    /**
+     * ================= DATA MULAI BARIS =================
+     * Header di baris 8, data mulai baris 9
+     */
+    public function startCell(): string
+    {
+        return 'A9';
+    }
+
+    /**
+     * ================= STYLING & LAYOUT =================
+     */
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+
+                $sheet   = $event->sheet->getDelegate();
+                $lastRow = $sheet->getHighestRow();
+
+                /* =================================================
+                 | PAGE SETUP (A4)
+                 ================================================= */
+                $sheet->getPageSetup()
+                    ->setPaperSize(PageSetup::PAPERSIZE_A4)
+                    ->setOrientation(PageSetup::ORIENTATION_PORTRAIT)
+                    ->setFitToWidth(1);
+
+                $sheet->getPageMargins()
+                    ->setTop(0.75)
+                    ->setBottom(0.75)
+                    ->setLeft(0.5)
+                    ->setRight(0.5);
+
+                /* =================================================
+                 | LAMPIRAN (KANAN ATAS)
+                 ================================================= */
+                $sheet->setCellValue('E1', 'Lampiran Surat Dinas');
+                $sheet->setCellValue('E2', 'Nomor : 1/TU.05.2-SD/51/1.2/2026');
+                $sheet->setCellValue('E3', 'Tanggal : 2 September 2026');
+
+                $sheet->getStyle('E1:E3')->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+                /* =================================================
+                 | JUDUL (DIBERI JARAK)
+                 ================================================= */
+                // Baris 4 dikosongkan → jarak visual
+                $sheet->mergeCells('A5:F5');
+                $sheet->setCellValue(
+                    'A5',
+                    'Daftar Arsip Musnah KPU Provinsi Bali'
+                );
+
+                $sheet->getStyle('A5')->applyFromArray([
+                    'font' => ['bold' => true],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical'   => Alignment::VERTICAL_CENTER,
+                        'wrapText'   => true,
+                    ],
+                ]);
+
+                /* =================================================
+                 | HEADER TABEL
+                 ================================================= */
+                $sheet->fromArray([
+                    ['No', 'Jenis Arsip', 'Tahun', 'Jumlah', 'Tingkat Perkembangan', 'Keterangan']
+                ], null, 'A8');
+
+                $sheet->getStyle('A8:F8')->applyFromArray([
+                    'font' => ['bold' => true],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical'   => Alignment::VERTICAL_CENTER,
+                    ],
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_THIN,
+                        ],
+                    ],
+                ]);
+
+                /* =================================================
+                 | BORDER DATA
+                 ================================================= */
+                $sheet->getStyle("A8:F{$lastRow}")
+                    ->getBorders()
+                    ->getAllBorders()
+                    ->setBorderStyle(Border::BORDER_THIN);
+
+                /* =================================================
+                 | ALIGNMENT DATA (CENTER & TENGAH)
+                 ================================================= */
+                // No
+                $sheet->getStyle("A9:A{$lastRow}")
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(Alignment::VERTICAL_CENTER);
+
+                // Tahun & Jumlah
+                $sheet->getStyle("C9:D{$lastRow}")
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(Alignment::VERTICAL_CENTER);
+
+                // Tingkat Perkembangan & Keterangan
+                $sheet->getStyle("E9:F{$lastRow}")
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(Alignment::VERTICAL_CENTER);
+
+                /* =================================================
+                 | WIDTH KOLOM
+                 ================================================= */
+                $sheet->getColumnDimension('A')->setWidth(6);
+                $sheet->getColumnDimension('B')->setWidth(45);
+                $sheet->getColumnDimension('C')->setWidth(10);
+                $sheet->getColumnDimension('D')->setWidth(14);
+                $sheet->getColumnDimension('E')->setWidth(22);
+                $sheet->getColumnDimension('F')->setWidth(12);
+
+                /* =================================================
+                 | WRAP TEXT JENIS ARSIP
+                 ================================================= */
+                $sheet->getStyle("B9:B{$lastRow}")
+                    ->getAlignment()
+                    ->setWrapText(true);
+            }
+        ];
+    }
+}

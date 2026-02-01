@@ -43,6 +43,13 @@
             transition: all 0.3s ease;
             overflow-x: hidden;
         }
+
+        .sidebar .nav {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 50px; /* aman dari logout */
+        }
+
         
         .sidebar.collapsed {
             width: var(--sidebar-collapsed);
@@ -170,7 +177,7 @@
         }
         
         .logout-btn {
-            position: absolute;
+            position: relative;
             bottom: 30px;
             width: calc(100% - 30px);
             left: 15px;
