@@ -53,6 +53,7 @@
                         <th width="15%">Jumlah</th>
                         <th width="13%">Tingkat Perkembangan</th>
                         <th width="13%">File Dokumen</th>
+                        <th width="10%">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -98,6 +99,12 @@
                                 @else
                                     <span class="text-muted">-</span>
                                 @endif
+                            </td>
+                            <td class="text-center">
+                                <a href="{{ route('pemusnahan.show', $item->id) }}"
+                                class="btn btn-sm btn-info">
+                                    <i class="bi bi-eye"></i> Detail
+                                </a>
                             </td>
                         </tr>
                     @empty

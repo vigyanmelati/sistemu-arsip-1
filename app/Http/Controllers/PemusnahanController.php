@@ -158,4 +158,10 @@ class PemusnahanController extends Controller
             'Daftar_Arsip_Usul_Musnah.xlsx'
         );
     }
+
+    public function show(Arsip $arsip)
+    {
+        $arsip->load(['kodeKlasifikasi', 'subBagian']);
+        return view('pemusnahan.usulan.detailArsip', compact('arsip'));
+    }
 }

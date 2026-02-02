@@ -20,21 +20,14 @@ Route::middleware(['auth'])->group(function () {
   /* -------- P E M U S N A H A N  A R S I P -------- */
        Route::prefix('pemusnahan')->name('pemusnahan.')->group(function () {
 
-    /*
-    |--------------------------------------------------------------------------
-    | PROSES PEMUSNAHAN (INTI)
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/proses', [PemusnahanController::class, 'usulan'])
-        ->name('proses');
+        Route::get('/proses', [PemusnahanController::class, 'usulan'])
+            ->name('proses');
 
-    /*
-    |--------------------------------------------------------------------------
-    | ROUTE LAMA (TETAP DIPAKAI)
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/usulan', [PemusnahanController::class, 'usulan'])
-        ->name('usulan');
+        // Route::get('/usulan', [PemusnahanController::class, 'usulan'])
+        //     ->name('usulan');
+        
+        Route::get('/pemusnahan/{arsip}', [PemusnahanController::class, 'show'])
+            ->name('show');
 
     /*
     |--------------------------------------------------------------------------
