@@ -9,7 +9,7 @@
     {{-- ================= HEADER ================= --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="mb-1">🟡 TAHAP 1 — Usulan Pemusnahan Arsip</h4>
+            <h4 class="mb-1">Proses Pemusnahan Arsip</h4>
             <small class="text-muted">
                 Identifikasi Arsip Usul Musnah (Internal KPU Provinsi)
             </small>
