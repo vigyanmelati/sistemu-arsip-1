@@ -96,6 +96,21 @@ class Arsip extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+     // 🔗 satu arsip bisa ikut banyak proses pemusnahan (lintas tahun)
+    public function pemusnahanDetails()
+    {
+        return $this->hasMany(PemusnahanDetail::class, 'arsip_id');
+    }
+
+    // 🔍 helper: cek apakah arsip disetujui dimusnahkan di pemusnahan tertentu
+    public function disetujuiDiPemusnahan($pemusnahanId)
+    {
+        return $this->pemusnahanDetails()
+            ->where('pemusnahan_id', $pemusnahanId)
+            ->where('keputusan', 'disetujui')
+            ->exists();
+    }
     
     /**
      * Boot method - NONAKTIFKAN SEMENTARA karena konflik
