@@ -111,7 +111,6 @@ class Arsip extends Model
             ->where('keputusan', 'disetujui')
             ->exists();
     }
-    
     /**
      * Boot method - NONAKTIFKAN SEMENTARA karena konflik
      * Biarkan Controller yang menghitung

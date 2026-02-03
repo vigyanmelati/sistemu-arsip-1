@@ -1,7 +1,6 @@
-@extends('layouts.app') 
-{{-- sesuaikan dengan layout kamu --}}
+@extends('layouts.app')
 
-@section('title', 'Usulan Pemusnahan Arsip')
+@section('title', 'Pemusnahan Arsip')
 
 @section('content')
 <div class="container-fluid">
@@ -9,108 +8,97 @@
     {{-- ================= HEADER ================= --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="mb-1">Proses Pemusnahan Arsip</h4>
+            <h4 class="mb-1">Pemusnahan Arsip</h4>
             <small class="text-muted">
-                Identifikasi Arsip Usul Musnah (Internal KPU Provinsi)
+                Daftar kegiatan pemusnahan arsip (per periode / tahun)
             </small>
         </div>
 
-        <div class="d-flex gap-2">
-            <a href="{{ route('pemusnahan.usulan.nota_dinas_word') }}"
-               class="btn btn-primary">
-                📄 Download Template Nota Dinas (Word)
-            </a>
-
-            <a href="{{ route('pemusnahan.usulan.excel') }}"
-               class="btn btn-success">
-                📊 Export Daftar Arsip (Excel)
-            </a>
-        </div>
+        <a href="{{ route('pemusnahan.usulan.create') }}"
+           class="btn btn-primary">
+            ➕ Buat Pemusnahan Baru
+        </a>
     </div>
 
-    {{-- ================= INFO BOX ================= --}}
+    {{-- ================= INFO ================= --}}
     <div class="alert alert-info">
-        <strong>Kondisi Arsip:</strong>
+        <strong>Catatan:</strong>
         <ul class="mb-0">
-            <li>✔ Masa Aktif & Inaktif telah terlewati</li>
-            <li>✔ JRA: <strong>MUSNAH</strong></li>
-            <li>✔ Status Sistem: <strong>USUL_MUSNAH</strong></li>
+            <li>Setiap pemusnahan merupakan <strong>satu kegiatan / batch</strong></li>
+            <li>Arsip tetap berstatus <strong>USUL_MUSNAH</strong></li>
+            <li>Keputusan akhir dicatat pada dokumen pemusnahan</li>
         </ul>
     </div>
 
-    {{-- ================= TABEL ARSIP ================= --}}
+    {{-- ================= TABLE ================= --}}
     <div class="card shadow-sm">
         <div class="card-body table-responsive">
-           <table class="table table-bordered table-striped align-middle">
+
+            <table class="table table-bordered table-striped align-middle">
                 <thead class="table-light text-center">
                     <tr>
                         <th width="5%">No</th>
-                        <th>Jenis Arsip</th>
-                        <th width="8%">Tahun Arsip</th>
-                        <th width="8%">Aktif (Th)</th>
-                        <th width="8%">Inaktif (Th)</th>
-                        <th width="15%">Keterangan JRA</th>
-                        <th width="15%">Jumlah</th>
-                        <th width="13%">Tingkat Perkembangan</th>
-                        <th width="13%">File Dokumen</th>
-                        <th width="10%">Aksi</th>
+                        <th>Tahun</th>
+                        <th>Tanggal Usulan</th>
+                        <th width="15%">Jumlah Arsip</th>
+                        <th width="15%">Status</th>
+                        <th width="20%">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($arsip as $index => $item)
+                    @forelse ($pemusnahans as $index => $item)
                         <tr>
                             <td class="text-center">{{ $index + 1 }}</td>
 
-                            <td>{{ $item->uraian_arsip }}</td>
-
                             <td class="text-center">
-                                {{ $item->tahun_arsip }}
+                                {{ $item->tahun }}
                             </td>
 
                             <td class="text-center">
-                                {{ $item->aktif_tahun ?? '-' }}
+                                {{ \Carbon\Carbon::parse($item->tanggal_usulan)->translatedFormat('d F Y') }}
                             </td>
 
                             <td class="text-center">
-                                {{ $item->inaktif_tahun ?? '-' }}
+                                {{ $item->details_count }} Arsip
                             </td>
 
                             <td class="text-center">
-                                <span class="badge bg-danger">
-                                    {{ $item->keterangan_jra ?? 'MUSNAH' }}
-                                </span>
-                            </td>
-
-                            <td class="text-center">
-                                {{ $item->jumlah_berkas }} {{ $item->satuan_arsip }}
-                            </td>
-
-                            <td class="text-center">
-                                {{ $item->tingkat_perkembangan }}
-                            </td>
-
-                            <td class="text-center">
-                                @if ($item->file_dokumen)
-                                    <a href="{{ asset('storage/' . $item->file_dokumen) }}"
-                                    target="_blank"
-                                    class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i> Lihat
-                                    </a>
+                                @if ($item->status == 'draft')
+                                    <span class="badge bg-warning text-dark">Draft</span>
+                                @elseif ($item->status == 'ditetapkan')
+                                    <span class="badge bg-success">Ditetapkan</span>
                                 @else
-                                    <span class="text-muted">-</span>
+                                    <span class="badge bg-secondary">-</span>
                                 @endif
                             </td>
-                            <td class="text-center">
-                                <a href="{{ route('pemusnahan.show', $item->id) }}"
-                                class="btn btn-sm btn-info">
-                                    <i class="bi bi-eye"></i> Detail
+
+                            <td class="text-center d-flex gap-1 justify-content-center">
+                                <a href="{{ route('pemusnahan.usulan.show', $item->id) }}"
+                                   class="btn btn-sm btn-info">
+                                    🔍 Detail
                                 </a>
+
+                                <!-- <a href="{{ route('pemusnahan.usulan.nota_dinas', $item->id) }}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    📄 Nota Dinas
+                                </a> -->
+
+                                @if ($item->status == 'draft')
+                                    <form action="{{ route('pemusnahan.finalisasi', $item->id) }}"
+                                          method="POST"
+                                          onsubmit="return confirm('Finalisasi pemusnahan ini?')">
+                                        @csrf
+                                        <button class="btn btn-sm btn-success">
+                                            ✔ Tetapkan
+                                        </button>
+                                    </form>
+                                @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="text-center text-muted">
-                                Tidak ada arsip usul musnah.
+                            <td colspan="6" class="text-center text-muted">
+                                Belum ada kegiatan pemusnahan.
                             </td>
                         </tr>
                     @endforelse

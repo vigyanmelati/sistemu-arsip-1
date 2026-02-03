@@ -22,6 +22,7 @@ class Pemusnahan extends Model
         return $this->hasMany(PemusnahanDetail::class, 'pemusnahan_id');
     }
 
+
     // 🔍 helper: hanya arsip yang disetujui
     public function arsipDisetujui()
     {

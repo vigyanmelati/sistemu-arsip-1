@@ -487,8 +487,8 @@
                     <ul class="nav flex-column ms-3 mt-2">
 
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('pemusnahan.proses') ? 'active' : '' }}"
-                            href="{{ route('pemusnahan.proses') }}">
+                            <a class="nav-link {{ request()->routeIs('pemusnahan.usulan.index') ? 'active' : '' }}"
+                            href="{{ route('pemusnahan.usulan.index') }}">
                                 <i class="bi bi-fire"></i>
                                 <span>Proses Pemusnahan</span>
                             </a>

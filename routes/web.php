@@ -16,55 +16,76 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('arsip', ArsipController::class);
         Route::post('/arsip/import', [ArsipController::class, 'import'])
             ->name('arsip.import');
+          
 
-  /* -------- P E M U S N A H A N  A R S I P -------- */
-       Route::prefix('pemusnahan')->name('pemusnahan.')->group(function () {
+    /* =====================================
+    |  P E M U S N A H A N  A R S I P
+    ===================================== */
+    Route::prefix('pemusnahan')
+        ->name('pemusnahan.')
+        ->group(function () {
 
-        Route::get('/proses', [PemusnahanController::class, 'usulan'])
-            ->name('proses');
+        // ===============================
+        // USULAN PEMUSNAHAN
+        // ===============================
+        Route::get('/usulan', [PemusnahanController::class, 'index'])
+            ->name('usulan.index');
 
-        // Route::get('/usulan', [PemusnahanController::class, 'usulan'])
-        //     ->name('usulan');
-        
-        Route::get('/pemusnahan/{arsip}', [PemusnahanController::class, 'show'])
-            ->name('show');
+        Route::get('/usulan/create', [PemusnahanController::class, 'create'])
+            ->name('usulan.create');
 
-    /*
-    |--------------------------------------------------------------------------
-    | TEMPLATE DOKUMEN
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/usulan/nota-dinas', function () {
-        $path = public_path('template/Nota Dinas Penghapusan Arsip.docx');
+        Route::post('/usulan', [PemusnahanController::class, 'store'])
+            ->name('usulan.store');
 
-        if (!file_exists($path)) {
-            abort(404, 'Template Nota Dinas tidak ditemukan');
-        }
+        Route::get('/usulan/{pemusnahan}', [PemusnahanController::class, 'show'])
+            ->name('usulan.show');
+        Route::get('/usulan/{pemusnahan}/sidang',
+            [PemusnahanController::class, 'sidang'])
+            ->name('sidang');
 
-        return response()->download(
-            $path,
-            'Nota Dinas Penghapusan Arsip.docx'
-        );
-    })->name('usulan.nota_dinas_word');
 
-    /*
-    |--------------------------------------------------------------------------
-    | DAFTAR ARSIP (EXCEL)
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/usulan/daftar-arsip-excel',
-        [PemusnahanController::class, 'daftarArsipExcel']
-    )->name('usulan.excel');
+        // ===============================
+        // TAMBAH / HAPUS ARSIP
+        // ===============================
+        Route::post(
+            'pemusnahan/usulan/{pemusnahan}/arsip',
+            [PemusnahanController::class, 'tambahArsip']
+        )->name('arsip.tambah');
 
-    /*
-    |--------------------------------------------------------------------------
-    | RIWAYAT PEMUSNAHAN
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/riwayat', [PemusnahanController::class, 'riwayat'])
-        ->name('riwayat');
 
-});
+        Route::delete('/usulan/{pemusnahan}/arsip/{arsip}', 
+            [PemusnahanController::class, 'hapusArsip'])
+            ->name('arsip.hapus');
+
+        Route::post('/detail/{detail}/keputusan', 
+            [PemusnahanController::class, 'updateKeputusan'])
+            ->name('detail.keputusan');
+
+        // ===============================
+        // FINALISASI
+        // ===============================
+        Route::post('/usulan/{pemusnahan}/finalisasi',
+            [PemusnahanController::class, 'finalisasi'])
+            ->name('finalisasi');
+
+        // ===============================
+        // DOKUMEN
+        // ===============================
+        Route::get('/usulan/nota-dinas',
+            [PemusnahanController::class, 'notaDinasWord'])
+            ->name('usulan.nota_dinas');
+
+        Route::get('/usulan/daftar-arsip-excel',
+            [PemusnahanController::class, 'daftarArsipExcel'])
+            ->name('usulan.excel');
+
+        // ===============================
+        // RIWAYAT PEMUSNAHAN
+        // ===============================
+        Route::get('/riwayat', [PemusnahanController::class, 'riwayat'])
+            ->name('riwayat');
+    });
+
 
         // Route untuk laporan
         Route::get('/laporan', function () {
