@@ -1,115 +1,90 @@
 @extends('layouts.app')
 
-@section('title','Riwayat Pemusnahan Arsip')
+@section('title', 'Riwayat Pemusnahan Arsip')
 
 @section('content')
 <div class="container-fluid">
 
-<h4 class="mb-4">📚 Riwayat Pemusnahan Arsip</h4>
-
-@forelse ($pemusnahans as $pemusnahan)
-
-<div class="card mb-4 shadow-sm">
-
     {{-- HEADER --}}
-    <div class="card-header bg-danger text-white">
-        <strong>Tahun {{ $pemusnahan->tahun }}</strong>
-        <span class="float-end">
-            Dimusnahkan:
-            {{ \Carbon\Carbon::parse($pemusnahan->tanggal_pemusnahan)
-                ->translatedFormat('d F Y') }}
-        </span>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-1">📚 Riwayat Pemusnahan Arsip</h4>
+            <small class="text-muted">
+                Daftar kegiatan pemusnahan arsip yang telah dilaksanakan
+            </small>
+        </div>
     </div>
 
-    {{-- BODY --}}
-    <div class="card-body table-responsive">
-
-        <h6 class="mb-3">Daftar Arsip Dimusnahkan</h6>
-
-        <table class="table table-bordered table-sm align-middle">
-            <thead class="table-light text-center">
-                <tr>
-                    <th width="5%">No</th>
-                    <th>Uraian Arsip</th>
-                    <th>Tahun</th>
-                    <th>Jumlah</th>
-                    <th>Tingkat</th>
-                    <th>Retensi</th>
-                </tr>
-            </thead>
-            <tbody>
-
-            @foreach ($pemusnahan->details as $i => $detail)
-                <tr>
-                    <td class="text-center">{{ $i+1 }}</td>
-                    <td>{{ $detail->arsip->uraian_arsip }}</td>
-                    <td class="text-center">{{ $detail->arsip->tahun_arsip }}</td>
-                    <td class="text-center">
-                        {{ $detail->arsip->jumlah_berkas }}
-                        {{ $detail->arsip->satuan_arsip }}
-                    </td>
-                    <td class="text-center">
-                        {{ ucfirst($detail->arsip->tingkat_perkembangan) }}
-                    </td>
-                    <td class="text-center">
-                        Aktif {{ $detail->arsip->aktif_tahun }} th /
-                        Inaktif {{ $detail->arsip->inaktif_tahun }} th
-                    </td>
-                </tr>
-            @endforeach
-
-            </tbody>
-        </table>
-
-        {{-- DOKUMEN --}}
-        <hr>
-        <h6>📎 Dokumen Pemusnahan</h6>
-
-        @php
-            $dokumen = $pemusnahan->dokumen_pemusnahan ?? [];
-        @endphp
-
-        @if(count($dokumen))
-        <ul class="list-group list-group-flush">
-            @foreach ($dokumen as $label => $file)
-            <li class="list-group-item d-flex justify-content-between">
-                {{ ucwords(str_replace('_',' ',$label)) }}
-                <a href="{{ asset('storage/'.$file) }}"
-                target="_blank"
-                class="btn btn-sm btn-outline-primary">
-                    Lihat
-                </a>
-            </li>
-            @endforeach
+    {{-- INFO --}}
+    <div class="alert alert-secondary">
+        <ul class="mb-0">
+            <li>Setiap baris merupakan <strong>satu batch pemusnahan</strong></li>
+            <li>Data bersifat <strong>final & read-only</strong></li>
+            <li>Dokumen pemusnahan dikelola pada detail</li>
         </ul>
-        @else
-        <small class="text-muted fst-italic">
-            Dokumen pemusnahan belum diunggah
-        </small>
-        @endif
-
-
-        <ul class="list-group list-group-flush">
-            @foreach ($dokumen as $label => $file)
-            <li class="list-group-item d-flex justify-content-between">
-                {{ ucwords(str_replace('_',' ',$label)) }}
-                <a href="{{ asset('storage/'.$file) }}"
-                   target="_blank"
-                   class="btn btn-sm btn-outline-primary">
-                    Lihat
-                </a>
-            </li>
-            @endforeach
-        </ul>
-
     </div>
-</div>
 
-@empty
-<div class="alert alert-info">
-    Belum ada riwayat pemusnahan arsip.
-</div>
-@endforelse
+    {{-- TABLE --}}
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+
+            <table class="table table-bordered table-striped align-middle">
+                <thead class="table-light text-center">
+                    <tr>
+                        <th width="5%">No</th>
+                        <th>Tahun</th>
+                        <th>Tanggal Pemusnahan</th>
+                        <th width="15%">Jumlah Arsip</th>
+                        <th width="15%">Status</th>
+                        <th width="15%">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                @forelse ($pemusnahans as $i => $item)
+                    <tr>
+                        <td class="text-center">{{ $i + 1 }}</td>
+
+                        <td class="text-center">
+                            {{ $item->tahun }}
+                        </td>
+
+                        <td class="text-center">
+                            {{ \Carbon\Carbon::parse($item->tanggal_pemusnahan)
+                                ->translatedFormat('d F Y') }}
+                        </td>
+
+                        <td class="text-center">
+                            {{ $item->details_count }} Arsip
+                        </td>
+
+                        <td class="text-center">
+                            <span class="badge bg-danger">
+                                Dimusnahkan
+                            </span>
+                        </td>
+
+                        <td class="text-center">
+                            <a href="{{ route('pemusnahan.riwayat.show', $item->id) }}"
+                               class="btn btn-sm btn-info">
+                                🔍 Lihat Detail
+                            </a>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6"
+                            class="text-center text-muted">
+                            Belum ada riwayat pemusnahan.
+                        </td>
+                    </tr>
+                @endforelse
+
+                </tbody>
+            </table>
+
+        </div>
+    </div>
 
 </div>
 @endsection

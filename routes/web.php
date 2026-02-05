@@ -105,6 +105,11 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/{pemusnahan}/eksekusi', [PemusnahanController::class, 'simpanEksekusi'])
             ->name('eksekusi.simpan');
 
+        Route::get(
+            '/riwayat/{pemusnahan}',
+            [PemusnahanController::class, 'riwayatShow']
+        )->name('riwayat.show');
+
     });
 
 

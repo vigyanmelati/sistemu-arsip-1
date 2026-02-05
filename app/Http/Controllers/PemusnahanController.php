@@ -242,13 +242,25 @@ class PemusnahanController extends Controller
      */
     public function riwayat()
     {
-        $pemusnahans = Pemusnahan::with(['details.arsip'])
+        $pemusnahans = Pemusnahan::withCount('details')
             ->where('status', 'dimusnahkan')
             ->orderByDesc('tanggal_usulan')
             ->get();
 
         return view('pemusnahan.riwayat.index', compact('pemusnahans'));
     }
+
+    public function riwayatShow(Pemusnahan $pemusnahan)
+    {
+        if ($pemusnahan->status !== 'dimusnahkan') {
+            abort(404);
+        }
+
+        $pemusnahan->load(['details.arsip']);
+
+        return view('pemusnahan.riwayat.show', compact('pemusnahan'));
+    }
+
 
 
     public function eksekusi(Pemusnahan $pemusnahan)
