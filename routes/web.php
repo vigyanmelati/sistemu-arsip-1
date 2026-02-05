@@ -16,7 +16,7 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('arsip', ArsipController::class);
         Route::post('/arsip/import', [ArsipController::class, 'import'])
             ->name('arsip.import');
-        Route::post('/arsip/export', [ArsipController::class, 'export'])
+        Route::get('/arsip/export-excel', [ArsipController::class, 'export'])
             ->name('arsip.export');
           
 
@@ -126,11 +126,11 @@ Route::middleware(['auth'])->group(function () {
     // Master Data (hanya Super Admin)
     Route::middleware(['super_admin'])->group(function () {
         Route::prefix('master')->name('master.')->group(function () {
-            Route::resource('kode-klasifikasi', KodeKlasifikasiController::class);
-            Route::resource('sub-bagian', SubBagianController::class);
+            // Route::resource('kode-klasifikasi', KodeKlasifikasiController::class);
+            // Route::resource('sub-bagian', SubBagianController::class);
         });
         
-        Route::resource('users', UserController::class);
+        // Route::resource('users', UserController::class);
     });
 });
 

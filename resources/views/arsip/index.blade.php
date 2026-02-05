@@ -429,7 +429,8 @@ Export excel openModal -->
                 </button>
             </div>
 
-            <form method="GET" action="{{ route('arsip.export') }}">
+          <form method="GET" action="{{ route('arsip.export') }}">
+
                 {{-- kirim SEMUA query filter yang aktif --}}
                 @foreach(request()->query() as $key => $value)
                     <input type="hidden" name="{{ $key }}" value="{{ $value }}">
