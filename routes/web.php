@@ -22,8 +22,8 @@ Route::middleware(['auth'])->group(function () {
     |  P E M U S N A H A N  A R S I P
     ===================================== */
     Route::prefix('pemusnahan')
-        ->name('pemusnahan.')
-        ->group(function () {
+    ->name('pemusnahan.')
+    ->group(function () {
 
         // ===============================
         // USULAN PEMUSNAHAN
@@ -39,52 +39,74 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/usulan/{pemusnahan}', [PemusnahanController::class, 'show'])
             ->name('usulan.show');
+
+        // ===============================
+        // SIDANG
+        // ===============================
         Route::get('/usulan/{pemusnahan}/sidang',
             [PemusnahanController::class, 'sidang'])
             ->name('sidang');
 
+        Route::post('/sidang/inline-update',
+            [PemusnahanController::class, 'inlineUpdate'])
+            ->name('sidang.inline.update');
 
-        // ===============================
-        // TAMBAH / HAPUS ARSIP
-        // ===============================
-        Route::post(
-            'pemusnahan/usulan/{pemusnahan}/arsip',
-            [PemusnahanController::class, 'tambahArsip']
-        )->name('arsip.tambah');
-
-
-        Route::delete('/usulan/{pemusnahan}/arsip/{arsip}', 
-            [PemusnahanController::class, 'hapusArsip'])
-            ->name('arsip.hapus');
-
-        Route::post('/detail/{detail}/keputusan', 
-            [PemusnahanController::class, 'updateKeputusan'])
-            ->name('detail.keputusan');
-
-        // ===============================
-        // FINALISASI
-        // ===============================
         Route::post('/usulan/{pemusnahan}/finalisasi',
             [PemusnahanController::class, 'finalisasi'])
             ->name('finalisasi');
 
         // ===============================
-        // DOKUMEN
+        // PROSES ANRI
         // ===============================
+        Route::get('/usulan/{pemusnahan}/anri',
+            [PemusnahanController::class, 'anri'])
+            ->name('anri');
+
+        Route::post('/usulan/{pemusnahan}/anri',
+            [PemusnahanController::class, 'simpanAnri'])
+            ->name('anri.simpan');
+
+        // ===============================
+        // TAMBAH / HAPUS ARSIP
+        // ===============================
+        Route::post('/usulan/{pemusnahan}/arsip',
+            [PemusnahanController::class, 'tambahArsip'])
+            ->name('arsip.tambah');
+
+        Route::delete('/usulan/{pemusnahan}/arsip/{arsip}',
+            [PemusnahanController::class, 'hapusArsip'])
+            ->name('arsip.hapus');
+
+        // ===============================
+        // EXPORT & DOKUMEN
+        // ===============================
+        Route::get('/export/arsip-usul',
+            [PemusnahanController::class, 'daftarArsipExcel'])
+            ->name('export.usul');
+
         Route::get('/usulan/nota-dinas',
             [PemusnahanController::class, 'notaDinasWord'])
             ->name('usulan.nota_dinas');
 
-        Route::get('/usulan/daftar-arsip-excel',
-            [PemusnahanController::class, 'daftarArsipExcel'])
-            ->name('usulan.excel');
-
         // ===============================
-        // RIWAYAT PEMUSNAHAN
+        // RIWAYAT
         // ===============================
-        Route::get('/riwayat', [PemusnahanController::class, 'riwayat'])
+        Route::get('/riwayat',
+            [PemusnahanController::class, 'riwayat'])
             ->name('riwayat');
+            Route::post(
+            '/pemusnahan/{pemusnahan}/setujui-anri',
+            [PemusnahanController::class, 'setujuiAnri']
+        )->name('anri.setujui');
+
+        Route::get('/{pemusnahan}/eksekusi', [PemusnahanController::class, 'eksekusi'])
+        ->name('eksekusi');
+
+        Route::post('/{pemusnahan}/eksekusi', [PemusnahanController::class, 'simpanEksekusi'])
+            ->name('eksekusi.simpan');
+
     });
+
 
 
         // Route untuk laporan

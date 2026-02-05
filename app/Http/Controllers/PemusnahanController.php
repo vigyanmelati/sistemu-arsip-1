@@ -110,34 +110,81 @@ class PemusnahanController extends Controller
      * ===============================
      */
 
-        public function finalisasi(Request $request, Pemusnahan $pemusnahan)
-        {
-            $request->validate([
-                'tanggal_pemusnahan' => 'required|date',
-            ]);
+     public function finalisasi(Pemusnahan $pemusnahan)
+    {
+        $jumlahMusnah = $pemusnahan->details()
+            ->where('keputusan', 'musnah')
+            ->count();
 
-            // simpan keputusan
-            foreach ($request->keputusan as $id => $keputusan) {
-                PemusnahanDetail::where('id', $id)->update([
-                    'keputusan' => $keputusan,
-                    'catatan'   => $request->catatan[$id] ?? null,
-                ]);
+        if ($jumlahMusnah < 1) {
+            return back()->with('error',
+                'Belum ada arsip yang diputuskan MUSNAH.'
+            );
+        }
+
+        $pemusnahan->update([
+            'status' => 'diajukan_ke_anri',
+            'tanggal_sidang' => now(),
+        ]);
+
+        return redirect()
+            ->route('pemusnahan.usulan.index')
+            ->with('success', 'Hasil sidang ditetapkan & diajukan ke ANRI.');
+    }
+
+
+        public function anri(Pemusnahan $pemusnahan)
+        {
+            if (!in_array($pemusnahan->status, ['diajukan_ke_anri', 'revisi_anri'])) {
+                abort(403);
             }
 
-            // validasi minimal 1 musnah
-            if ($pemusnahan->details()->where('keputusan', 'musnah')->count() === 0) {
-                return back()->with('error', 'Minimal satu arsip harus dimusnahkan');
+            return view('pemusnahan.anri.index', compact('pemusnahan'));
+        }
+
+        public function setujuiAnri(Pemusnahan $pemusnahan)
+        {
+            $jumlahMusnah = $pemusnahan->details()
+                ->where('keputusan', 'musnah')
+                ->count();
+
+            if ($jumlahMusnah < 1) {
+                return back()->with('error',
+                    'Minimal 1 arsip harus diputuskan MUSNAH.'
+                );
             }
 
             $pemusnahan->update([
-                'status' => 'ditetapkan',
-                'tanggal_pemusnahan' => $request->tanggal_pemusnahan,
+                'status' => 'disetujui_anri',
+                'tanggal_persetujuan_anri' => now(),
             ]);
 
             return redirect()
                 ->route('pemusnahan.riwayat')
-                ->with('success', 'Pemusnahan difinalisasi');
+                ->with('success', 'Pemusnahan arsip telah disetujui ANRI.');
         }
+
+
+        public function simpanAnri(Request $request, Pemusnahan $pemusnahan)
+        {
+            $request->validate([
+                'status' => 'required|in:disetujui_anri,revisi_anri',
+                'catatan_anri' => 'nullable|string'
+            ]);
+
+            $pemusnahan->update([
+                'status' => $request->status,
+                'catatan_anri' => $request->catatan_anri,
+                'tanggal_persetujuan_anri' =>
+                    $request->status === 'disetujui_anri' ? now() : null
+            ]);
+
+            return redirect()
+                ->route('pemusnahan.usulan.index')
+                ->with('success', 'Status ANRI berhasil disimpan.');
+        }
+
+
 
     /**
      * ===============================
@@ -186,12 +233,80 @@ class PemusnahanController extends Controller
      */
     public function riwayat()
     {
-        $pemusnahans = Pemusnahan::where('status', 'ditetapkan')
+        $pemusnahans = Pemusnahan::with([
+                'details' => function ($q) {
+                    $q->where('keputusan', 'musnah')
+                    ->with('arsip');
+                }
+            ])
+            ->where('status', 'dimusnahkan')
             ->latest()
             ->get();
 
         return view('pemusnahan.riwayat.index', compact('pemusnahans'));
     }
+
+    public function eksekusi(Pemusnahan $pemusnahan)
+    {
+        if ($pemusnahan->status !== 'disetujui_anri') {
+            abort(403);
+        }
+
+        return view('pemusnahan.riwayat.eksekusi', compact('pemusnahan'));
+    }
+
+    public function simpanEksekusi(Request $request, Pemusnahan $pemusnahan)
+    {
+        $request->validate([
+            'nota_dinas' => 'required|file|mimes:pdf',
+            'surat_undangan' => 'required|file|mimes:pdf',
+            'berita_acara_penilaian' => 'required|file|mimes:pdf',
+            'surat_pertimbangan' => 'required|file|mimes:pdf',
+            'notulen_rapat' => 'required|file|mimes:pdf',
+            'surat_permohonan_anri' => 'required|file|mimes:pdf',
+            'surat_persetujuan_anri' => 'required|file|mimes:pdf',
+            'surat_permohonan_kpu_ri' => 'required|file|mimes:pdf',
+            'surat_persetujuan_kpu_ri' => 'required|file|mimes:pdf',
+            'surat_undangan_pemusnahan' => 'required|file|mimes:pdf',
+            'notulen_pemusnahan' => 'required|file|mimes:pdf',
+            'berita_acara_pemusnahan' => 'required|file|mimes:pdf',
+        ]);
+
+        // 🔥 ubah status semua arsip
+        foreach ($pemusnahan->details as $detail) {
+            if ($detail->keputusan === 'musnah') {
+                $detail->arsip->update([
+                    'status_arsip' => 'MUSNAH'
+                ]);
+            }
+        }
+
+        // 📂 simpan dokumen
+        $dokumen = [];
+
+        if ($request->hasFile('nota_dinas')) {
+            $dokumen['nota_dinas'] = $request->file('nota_dinas')
+                ->store('dokumen-pemusnahan', 'public');
+        }
+
+        if ($request->hasFile('berita_acara')) {
+            $dokumen['berita_acara'] = $request->file('berita_acara')
+                ->store('dokumen-pemusnahan', 'public');
+        }
+
+        $pemusnahan->update([
+            'status' => 'dimusnahkan',
+            'dokumen_pemusnahan' => $dokumen,
+        ]);
+
+
+        return redirect()
+            ->route('pemusnahan.riwayat')
+            ->with('success', 'Pemusnahan arsip berhasil dicatat.');
+    }
+
+
+
 
     public function tambahArsip(Request $request, Pemusnahan $pemusnahan)
     {
@@ -233,6 +348,23 @@ class PemusnahanController extends Controller
         $pemusnahan->load('details.arsip');
 
         return view('pemusnahan.sidang.index', compact('pemusnahan'));
+    }
+
+    public function inlineUpdate(Request $request)
+    {
+        if ($request->model === 'arsip') {
+            $detail = PemusnahanDetail::findOrFail($request->id);
+            $detail->arsip->{$request->field} = $request->value;
+            $detail->arsip->save();
+        }
+
+        if ($request->model === 'detail') {
+            $detail = PemusnahanDetail::findOrFail($request->id);
+            $detail->{$request->field} = $request->value;
+            $detail->save();
+        }
+
+        return response()->json(['success' => true]);
     }
 
 

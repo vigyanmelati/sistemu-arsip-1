@@ -3,6 +3,12 @@
 @section('title', 'Pemusnahan Arsip')
 
 @section('content')
+@if(session('error'))
+<div class="alert alert-danger">
+    {{ session('error') }}
+</div>
+@endif
+
 <div class="container-fluid">
 
     {{-- ================= HEADER ================= --}}
@@ -63,37 +69,62 @@
                             </td>
 
                             <td class="text-center">
-                                @if ($item->status == 'draft')
-                                    <span class="badge bg-warning text-dark">Draft</span>
-                                @elseif ($item->status == 'ditetapkan')
-                                    <span class="badge bg-success">Ditetapkan</span>
-                                @else
-                                    <span class="badge bg-secondary">-</span>
-                                @endif
+                                @switch($item->status)
+                                    @case('draft')
+                                        <span class="badge bg-warning text-dark">Draft</span>
+                                        @break
+
+                                    @case('diajukan_ke_anri')
+                                        <span class="badge bg-primary">Diajukan ke ANRI</span>
+                                        @break
+
+                                    @case('revisi_anri')
+                                        <span class="badge bg-danger">Revisi ANRI</span>
+                                        @break
+
+                                    @case('disetujui_anri')
+                                        <span class="badge bg-success">Disetujui ANRI</span>
+                                        @break
+
+                                    @default
+                                        <span class="badge bg-secondary">-</span>
+                                @endswitch
                             </td>
 
                             <td class="text-center d-flex gap-1 justify-content-center">
+
+                                {{-- DETAIL --}}
                                 <a href="{{ route('pemusnahan.usulan.show', $item->id) }}"
-                                   class="btn btn-sm btn-info">
+                                class="btn btn-sm btn-info">
                                     🔍 Detail
                                 </a>
 
-                                <!-- <a href="{{ route('pemusnahan.usulan.nota_dinas', $item->id) }}"
-                                   class="btn btn-sm btn-outline-primary">
-                                    📄 Nota Dinas
-                                </a> -->
-
+                                {{-- SIDANG --}}
                                 @if ($item->status == 'draft')
-                                    <form action="{{ route('pemusnahan.finalisasi', $item->id) }}"
-                                          method="POST"
-                                          onsubmit="return confirm('Finalisasi pemusnahan ini?')">
-                                        @csrf
-                                        <button class="btn btn-sm btn-success">
-                                            ✔ Tetapkan
-                                        </button>
-                                    </form>
+                                    <a href="{{ route('pemusnahan.sidang', $item->id) }}"
+                                    class="btn btn-sm btn-warning">
+                                        🏛 Sidang
+                                    </a>
                                 @endif
+
+                                {{-- PROSES ANRI --}}
+                                @if (in_array($item->status, ['diajukan_ke_anri', 'revisi_anri']))
+                                    <a href="{{ route('pemusnahan.anri', $item->id) }}"
+                                    class="btn btn-sm btn-primary">
+                                        🏢 ANRI
+                                    </a>
+                                @endif
+
+                                {{-- SIAP DIMUSNAHKAN --}}
+                                @if ($item->status == 'disetujui_anri')
+                                    <a href="{{ route('pemusnahan.eksekusi', $item->id) }}"
+                                    class="btn btn-sm btn-success">
+                                        🔥 Musnahkan
+                                    </a>
+                                @endif
+
                             </td>
+
                         </tr>
                     @empty
                         <tr>

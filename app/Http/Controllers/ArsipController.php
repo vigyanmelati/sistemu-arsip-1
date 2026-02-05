@@ -347,10 +347,18 @@ class ArsipController extends Controller
         return null;
     }
 
-    public function show(Arsip $arsip)
+    // public function show(Arsip $arsip)
+    // {
+    //     $arsip->load(['kodeKlasifikasi', 'subBagian']);
+    //     return view('arsip.show', compact('arsip'));
+    // }
+
+    public function show(Request $request, Arsip $arsip)
     {
-        $arsip->load(['kodeKlasifikasi', 'subBagian']);
-        return view('arsip.show', compact('arsip'));
+        return view('arsip.show', [
+            'arsip' => $arsip,
+            'returnUrl' => $request->get('return')
+        ]);
     }
 
     public function edit(Arsip $arsip)

@@ -16,6 +16,11 @@ class Pemusnahan extends Model
         'keterangan',
     ];
 
+    protected $casts = [
+        'dokumen_pemusnahan' => 'array',
+    ];
+
+
     // 🔗 satu pemusnahan punya banyak arsip (detail)
     public function details()
     {

@@ -232,23 +232,30 @@
         </div>
         
         <div class="mt-4 pt-3 border-top">
-            <div class="d-flex gap-2">
-                <a href="{{ route('arsip.index') }}" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left"></i> Kembali ke Daftar
+            <div class="d-flex gap-2 align-items-center">
+
+                <a href="{{ $returnUrl ?? route('arsip.index') }}"
+                class="btn btn-secondary">
+                    ⬅ Kembali
                 </a>
 
-                <a href="{{ route('arsip.edit', $arsip->id) }}" class="btn btn-warning">
+                <a href="{{ route('arsip.edit', $arsip->id) }}"
+                class="btn btn-warning">
                     <i class="bi bi-pencil"></i> Edit Arsip
                 </a>
 
-                <form action="{{ route('arsip.destroy', $arsip->id) }}" method="POST">
+                <form action="{{ route('arsip.destroy', $arsip->id) }}"
+                    method="POST"
+                    class="d-inline">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="btn btn-danger"
-                        onclick="return confirm('Apakah Anda yakin ingin menghapus arsip ini?')">
+                    <button type="submit"
+                            class="btn btn-danger"
+                            onclick="return confirm('Apakah Anda yakin ingin menghapus arsip ini?')">
                         <i class="bi bi-trash"></i> Hapus Arsip
                     </button>
                 </form>
+
             </div>
         </div>
 

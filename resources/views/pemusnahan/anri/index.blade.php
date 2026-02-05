@@ -15,8 +15,11 @@
     {{-- ================= HEADER ================= --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="mb-1">Sidang Penilaian Pemusnahan Arsip</h4>
-            <small class="text-muted">Tahun {{ $pemusnahan->tahun }}</small>
+            <h4 class="mb-1">Sidang & Persetujuan ANRI Pemusnahan Arsip</h4>
+            <small class="text-muted">
+                Tahun {{ $pemusnahan->tahun }} · Revisi & Persetujuan Dilakukan di Halaman Ini
+            </small>
+
         </div>
 
         <div class="d-flex gap-2">
@@ -36,9 +39,12 @@
     {{-- ================= INFO ================= --}}
     <div class="alert alert-warning">
         <ul class="mb-0">
-            <li>Keputusan bersifat <b>final</b> setelah ditetapkan</li>
-            <li>Minimal <b>1 arsip</b> diputuskan <b>Musnah</b></li>
-            <li>Perubahan data langsung <b>tersimpan otomatis</b></li>
+            <li>Halaman ini digunakan untuk <b>sidang penilaian sekaligus tindak lanjut ANRI</b></li>
+            <li>Jika terdapat <b>revisi dari ANRI</b>, data arsip dapat <b>langsung diperbaiki di halaman ini</b></li>
+            <li>Perubahan data <b>tersimpan otomatis</b> saat diedit</li>
+            <li>Setelah <b>Surat Persetujuan Pemusnahan dari ANRI diterima</b>, silakan tekan tombol <b>“Disetujui ANRI”</b></li>
+            <li>Minimal <b>1 arsip</b> harus diputuskan <b>Musnah</b></li>
+
         </ul>
     </div>
 
@@ -228,12 +234,19 @@
     </div>
 
     {{-- ================= FINALISASI ================= --}}
-    <form action="{{ route('pemusnahan.finalisasi', $pemusnahan->id) }}" method="POST">
+    <form action="{{ route('pemusnahan.anri.setujui', $pemusnahan->id) }}" method="POST">
+
     @csrf
     <div class="text-end">
         <button class="btn btn-danger"
-                onclick="return confirm('Tetapkan hasil sidang? Data arsip tidak bisa diubah.')">
-            ✔ Tetapkan Hasil Sidang
+               onclick="return confirm(
+                'Tetapkan hasil sidang dan setujui pemusnahan arsip?\n\n' +
+                'Pastikan:\n' +
+                '- Revisi ANRI sudah dilakukan (jika ada)\n' +
+                '- Surat Persetujuan Pemusnahan dari ANRI sudah diterima'
+            )"
+            >
+            ✔ Tetapkan & Setujui Pemusnahan (ANRI)
         </button>
     </div>
     </form>
