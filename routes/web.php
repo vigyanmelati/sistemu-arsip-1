@@ -16,6 +16,8 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('arsip', ArsipController::class);
         Route::post('/arsip/import', [ArsipController::class, 'import'])
             ->name('arsip.import');
+        Route::post('/arsip/export', [ArsipController::class, 'export'])
+            ->name('arsip.export');
           
 
     /* =====================================

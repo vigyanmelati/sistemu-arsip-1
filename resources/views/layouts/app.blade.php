@@ -506,17 +506,17 @@
                 </div>
             </li>
             
-            <li class="nav-item">
+            <!-- <li class="nav-item">
                 <a class="nav-link" href="#">
                     <i class="bi bi-search"></i> <span>Temu Kembali</span>
                 </a>
-            </li>
+            </li> -->
             
-            <li class="nav-item">
+            <!-- <li class="nav-item">
                 <a class="nav-link" href="#">
                     <i class="bi bi-file-text"></i> <span>Laporan</span>
                 </a>
-            </li>
+            </li> -->
             @endif
             
             <!-- Menu khusus untuk Super Admin -->

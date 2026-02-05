@@ -534,4 +534,19 @@ class ArsipController extends Controller
             return back()->with('error', 'Gagal import: ' . $e->getMessage());
         }
     }
+
+    public function export(Request $request)
+    {
+        $columns = $request->input('columns', []);
+
+        if (count($columns) === 0) {
+            return back()->with('error', 'Pilih minimal satu kolom untuk export.');
+        }
+
+        return Excel::download(
+            new ArsipExport($request, $columns),
+            'data-arsip.xlsx'
+        );
+    }
+
 }

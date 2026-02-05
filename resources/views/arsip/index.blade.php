@@ -18,6 +18,10 @@
                 <button type="button" class="btn btn-success" id="openImportModal">
                     <i class="bi bi-upload"></i> Import Excel
                 </button>
+                <button class="btn btn-outline-success" id="openExportModal">
+                    <i class="bi bi-file-earmark-excel"></i> Export Excel
+                </button>
+
             </div>
         </div>
     </div>
@@ -410,6 +414,84 @@
         </div>
     </div>
 </div>
+<!-- 
+Export excel openModal -->
+<div class="modal-container" id="exportModalContainer" style="display:none;">
+    <div class="modal-content-wrapper" style="max-width:700px;">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-layout-text-sidebar-reverse me-2"></i>
+                    Pilih Kolom Export
+                </h5>
+                <button type="button" class="btn-close-modal" id="closeExportModal">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <form method="GET" action="{{ route('arsip.export') }}">
+                {{-- kirim SEMUA query filter yang aktif --}}
+                @foreach(request()->query() as $key => $value)
+                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                @endforeach
+
+                <div class="modal-body">
+                    <div class="row">
+                        @php
+                        $columns = [
+                            'kode_klasifikasi' => 'Kode Klasifikasi',
+                            'uraian_arsip' => 'Judul Arsip',
+                            'tahun_arsip' => 'Tahun',
+                            'nomor_rak' => 'Rak',
+                            'nomor_box' => 'Box',
+                            'no_sampul' => 'No Sampul',
+                            'aktif_sampai' => 'Aktif Sampai',
+                            'inaktif_sampai' => 'Inaktif Sampai',
+                            'status_arsip' => 'Status Arsip',
+                            'sub_bagian' => 'Sub Bagian',
+                            'keterangan' => 'Kondisi Fisik',
+                        ];
+                        @endphp
+
+                        @foreach($columns as $key => $label)
+                        <div class="col-md-6 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input column-check"
+                                       type="checkbox"
+                                       name="columns[]"
+                                       value="{{ $key }}"
+                                       checked>
+                                <label class="form-check-label fw-semibold">
+                                    {{ $label }}
+                                </label>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+
+                    <hr>
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="checkAllColumns" checked>
+                        <label class="form-check-label fw-bold">
+                            Pilih Semua Kolom
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" id="cancelExport">
+                        Batal
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-download me-1"></i> Export Excel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 
 <style>
     /* ===== STYLE UNTUK SORTING ===== */
@@ -724,6 +806,36 @@
         background: #555;
     }
 </style>
+
+<script>
+const openExportBtn = document.getElementById('openExportModal');
+const exportModal = document.getElementById('exportModalContainer');
+const closeExportBtn = document.getElementById('closeExportModal');
+const cancelExportBtn = document.getElementById('cancelExport');
+const checkAll = document.getElementById('checkAllColumns');
+const columnChecks = document.querySelectorAll('.column-check');
+
+openExportBtn.addEventListener('click', () => {
+    modalOverlay.style.display = 'block';
+    exportModal.style.display = 'flex';
+    exportModal.classList.add('active');
+});
+
+function closeExportModal() {
+    modalOverlay.style.display = 'none';
+    exportModal.style.display = 'none';
+    exportModal.classList.remove('active');
+}
+
+closeExportBtn.addEventListener('click', closeExportModal);
+cancelExportBtn.addEventListener('click', closeExportModal);
+modalOverlay.addEventListener('click', closeExportModal);
+
+checkAll.addEventListener('change', function () {
+    columnChecks.forEach(cb => cb.checked = this.checked);
+});
+</script>
+
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
