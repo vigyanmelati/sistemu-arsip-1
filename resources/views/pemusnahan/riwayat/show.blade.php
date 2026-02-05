@@ -97,8 +97,8 @@
                         </td>
 
                         <td class="text-center">
-                            Aktif {{ $detail->arsip->aktif_tahun }} th /
-                            Inaktif {{ $detail->arsip->inaktif_tahun }} th
+                            Aktif {{ $detail->arsip->aktif_tahun }} /
+                            Inaktif {{ $detail->arsip->inaktif_tahun }} 
                         </td>
 
                         <td class="text-center">
