@@ -18,10 +18,19 @@ class PemusnahanController extends Controller
      * DAFTAR USULAN PEMUSNAHAN
      * ===============================
      */
+    // public function index()
+    // {
+    //     $pemusnahans = Pemusnahan::withCount('details')
+    //         ->latest()
+    //         ->get();
+
+    //     return view('pemusnahan.usulan.index', compact('pemusnahans'));
+    // }
     public function index()
     {
         $pemusnahans = Pemusnahan::withCount('details')
-            ->latest()
+            ->where('status', '!=', 'dimusnahkan')
+            ->orderByDesc('created_at')
             ->get();
 
         return view('pemusnahan.usulan.index', compact('pemusnahans'));
@@ -233,77 +242,41 @@ class PemusnahanController extends Controller
      */
     public function riwayat()
     {
-        $pemusnahans = Pemusnahan::with([
-                'details' => function ($q) {
-                    $q->where('keputusan', 'musnah')
-                    ->with('arsip');
-                }
-            ])
+        $pemusnahans = Pemusnahan::with(['details.arsip'])
             ->where('status', 'dimusnahkan')
-            ->latest()
+            ->orderByDesc('tanggal_usulan')
             ->get();
 
         return view('pemusnahan.riwayat.index', compact('pemusnahans'));
     }
 
+
     public function eksekusi(Pemusnahan $pemusnahan)
     {
         if ($pemusnahan->status !== 'disetujui_anri') {
-            abort(403);
+            return back()->with('error', 'Pemusnahan belum disetujui ANRI.');
         }
 
         return view('pemusnahan.riwayat.eksekusi', compact('pemusnahan'));
     }
 
-    public function simpanEksekusi(Request $request, Pemusnahan $pemusnahan)
+
+    public function simpanEksekusi(Pemusnahan $pemusnahan)
     {
-        $request->validate([
-            'nota_dinas' => 'required|file|mimes:pdf',
-            'surat_undangan' => 'required|file|mimes:pdf',
-            'berita_acara_penilaian' => 'required|file|mimes:pdf',
-            'surat_pertimbangan' => 'required|file|mimes:pdf',
-            'notulen_rapat' => 'required|file|mimes:pdf',
-            'surat_permohonan_anri' => 'required|file|mimes:pdf',
-            'surat_persetujuan_anri' => 'required|file|mimes:pdf',
-            'surat_permohonan_kpu_ri' => 'required|file|mimes:pdf',
-            'surat_persetujuan_kpu_ri' => 'required|file|mimes:pdf',
-            'surat_undangan_pemusnahan' => 'required|file|mimes:pdf',
-            'notulen_pemusnahan' => 'required|file|mimes:pdf',
-            'berita_acara_pemusnahan' => 'required|file|mimes:pdf',
-        ]);
-
-        // 🔥 ubah status semua arsip
-        foreach ($pemusnahan->details as $detail) {
-            if ($detail->keputusan === 'musnah') {
-                $detail->arsip->update([
-                    'status_arsip' => 'MUSNAH'
-                ]);
-            }
-        }
-
-        // 📂 simpan dokumen
-        $dokumen = [];
-
-        if ($request->hasFile('nota_dinas')) {
-            $dokumen['nota_dinas'] = $request->file('nota_dinas')
-                ->store('dokumen-pemusnahan', 'public');
-        }
-
-        if ($request->hasFile('berita_acara')) {
-            $dokumen['berita_acara'] = $request->file('berita_acara')
-                ->store('dokumen-pemusnahan', 'public');
+        if ($pemusnahan->status !== 'disetujui_anri') {
+            return back()->with('error', 'Status tidak valid.');
         }
 
         $pemusnahan->update([
             'status' => 'dimusnahkan',
-            'dokumen_pemusnahan' => $dokumen,
+            'tanggal_pemusnahan' => now(),
         ]);
 
-
         return redirect()
-            ->route('pemusnahan.riwayat')
-            ->with('success', 'Pemusnahan arsip berhasil dicatat.');
+            ->route('pemusnahan.riwayat.index')
+            ->with('success', 'Arsip berhasil dimusnahkan.');
     }
+
 
 
 
