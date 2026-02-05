@@ -19,7 +19,8 @@ class DashboardController extends Controller
         
         // Di database Anda: status_arsip enum('AKTIF', 'UMSUL_MUSNAH', 'PERMANEN')
         // 'UMSUL_MUSNAH' bukan 'MUSNAH'
-        $arsipMusnah = Arsip::where('status_arsip', 'USUL_MUSNAH')->count();
+        $arsipUsulMusnah = Arsip::where('status_arsip', 'USUL_MUSNAH')->count();
+        $arsipMusnah = Arsip::where('status_arsip', 'MUSNAH')->count();
         $arsipPermanen = Arsip::where('status_arsip', 'PERMANEN')->count();
         
         // Arsip inaktif yang perlu ditindaklanjuti
@@ -59,6 +60,7 @@ class DashboardController extends Controller
             'arsipAktif',
             'arsipInaktif',
             'arsipMusnah',
+            'arsipUsulMusnah',
             'arsipPermanen',
             'arsipPerluTindak',
             'arsipPerTahun',
