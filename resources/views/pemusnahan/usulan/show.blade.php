@@ -38,7 +38,6 @@
     <form action="{{ route('pemusnahan.arsip.tambah', $pemusnahan) }}" method="POST">
         @csrf
 
-
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light d-flex justify-content-between">
                 <strong>Tambah Arsip ke Pemusnahan</strong>
@@ -49,33 +48,35 @@
             </div>
 
             <div class="card-body table-responsive">
-                <table class="table table-bordered">
-    <thead>
-        <tr>
-            <th width="40">
-                <input type="checkbox" id="selectAll">
-            </th>
-            <th>Nama Arsip</th>
-            <!-- <th>Kode</th> -->
-        </tr>
-    </thead>
-    <tbody>
-        @foreach ($arsipList as $arsip)
-        <tr>
-            <td>
-                <input type="checkbox"
-                       name="arsip_id[]"
-                       value="{{ $arsip->id }}"
-                       class="arsip-checkbox">
-            </td>
-            <td>{{ $arsip->uraian_arsip }}</td>
-            <!-- <td>{{ $arsip->kode }}</td> -->
-        </tr>
-        @endforeach
-    </tbody>
-</table>
-
-
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th width="40">
+                                <input type="checkbox" id="selectAll">
+                            </th>
+                            <th>Nama Arsip</th>
+                            <th>Tahun Arsip</th>
+                            <th>Aktif Tahun</th>
+                            <th>Inaktif Tahun</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($arsipList as $arsip)
+                        <tr>
+                            <td class="text-center">
+                                <input type="checkbox"
+                                       name="arsip_id[]"
+                                       value="{{ $arsip->id }}"
+                                       class="arsip-checkbox">
+                            </td>
+                            <td>{{ $arsip->uraian_arsip }}</td>
+                            <td class="text-center">{{ $arsip->tahun_arsip }}</td>
+                            <td class="text-center">{{ $arsip->aktif_tahun }}</td>
+                            <td class="text-center">{{ $arsip->inaktif_tahun }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
         </div>
     </form>
