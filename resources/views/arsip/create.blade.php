@@ -131,6 +131,15 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
+                <div class="col-md-6 mb-3">
+                    <label for="media_arsip" class="form-label">Media Arsip</label>
+                    <select name="media_arsip" id="media_arsip" class="form-control">
+                        <option value="">Pilih Media</option>
+                        <option value="TEKSTUAL" {{ old('media_arsip') == 'TEKSTUAL' ? 'selected' : '' }}>Tekstual</option>
+                        <option value="DIGITAL" {{ old('media_arsip') == 'DIGITAL' ? 'selected' : '' }}>Digital</option>
+                    </select>
+                </div>
+
                  <!-- Tingkat Perkembangan -->
                 <div class="col-md-6 mb-3">
                     <label for="tingkat_perkembangan" class="form-label">Tingkat Perkembangan</label>

@@ -177,6 +177,7 @@ class ArsipController extends Controller
         'nomor_sampul' => 'nullable|string|max:100',
         'tingkat_perkembangan' => 'nullable|in:ASLI,COPY,SALINAN',
         'keterangan' => 'nullable|in:BAIK,RUSAK,HILANG',
+        'media_arsip' => 'nullable|string|max:255',
         'file_dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
     ]);
     
@@ -409,6 +410,7 @@ class ArsipController extends Controller
         'tanggal_masuk' => 'nullable|date',
         'tingkat_perkembangan' => 'nullable|in:ASLI,COPY,SALINAN',
         'keterangan' => 'nullable|in:BAIK,RUSAK,HILANG',
+        'media_arsip' => 'nullable|string|max:255',
         'file_dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         'hapus_file' => 'nullable|boolean',
     ]);

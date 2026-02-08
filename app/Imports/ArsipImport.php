@@ -323,6 +323,55 @@ class ArsipImport implements ToModel, WithHeadingRow
         $tingkatPerkembangan = 'ASLI';
 
         // =======================
+        // PARSING KETERANGAN (MEDIA / KONDISI)
+        // Format: TEKSTUAL/BAIK
+        // =======================
+        $mediaArsip = null;
+        $kondisiFisik = 'BAIK'; // default
+
+        $keteranganRaw = strtoupper(trim($row['keterangan'] ?? ''));
+
+        if ($keteranganRaw) {
+            // Pisahkan berdasarkan /
+            $parts = array_map('trim', explode('/', $keteranganRaw));
+
+            if (count($parts) === 2) {
+                $mediaArsip = $parts[0];   // TEKSTUAL
+                $kondisiFisik = $parts[1]; // BAIK
+            } else {
+                // Jika hanya satu nilai, anggap sebagai kondisi fisik
+                $kondisiFisik = $parts[0];
+            }
+        }
+
+        // Mapping media arsip biar konsisten
+        $mediaMap = [
+            'TEKSTUAL' => 'TEKSTUAL',
+            'DIGITAL'  => 'DIGITAL',
+        ];
+
+        $mediaArsip = $mediaMap[$mediaArsip] ?? $mediaArsip;
+
+        // =======================
+        // PARSING JUMLAH BERKAS
+        // Contoh: "1 Bendel", "2 Lembar"
+        // =======================
+        $jumlahBerkas = 1;
+        $satuanArsip  = 'LEMBAR'; // default aman
+
+        $jumlahRaw = strtoupper(trim($row['jumlah_berkas'] ?? ''));
+
+        if ($jumlahRaw) {
+            // Ambil angka
+            preg_match('/\d+/', $jumlahRaw, $angka);
+            $jumlahBerkas = isset($angka[0]) ? (int) $angka[0] : 1;
+
+            // Ambil satuan (huruf)
+            preg_match('/[A-Z]+/', $jumlahRaw, $satuan);
+            $satuanArsip = isset($satuan[0]) ? $satuan[0] : 'LEMBAR';
+        }
+
+        // =======================
         // DATA UNTUK DISIMPAN
         // =======================
         $data = [
@@ -332,8 +381,8 @@ class ArsipImport implements ToModel, WithHeadingRow
             'sub_bagian_id'       => $subBagian->id,
             'tahun_arsip'         => (string) ($row['tahun_arsip'] ?? date('Y')),
             'tanggal_arsip'       => $tanggalArsip->format('Y-m-d'),
-            'jumlah_berkas'       => (int) ($row['jumlah_berkas'] ?? 1),
-            'satuan_arsip'        => strtoupper(trim(($row['satuan_arsip'] ?? 'BENDEL'))),
+            'jumlah_berkas' => $jumlahBerkas,
+            'satuan_arsip'  => $satuanArsip,
 
             // Masa Retensi (STRING LENGKAP)
             'aktif_tahun'         => $aktifTahun,
@@ -351,7 +400,9 @@ class ArsipImport implements ToModel, WithHeadingRow
             'nomor_box'           => (string) $nomorBox,
             'nomor_sampul'        => $row['nomor_sampul'] ?? '',
             'tingkat_perkembangan' => $tingkatPerkembangan,
-            'keterangan'          => strtoupper(trim(($row['keterangan'] ?? 'BAIK'))),
+            // 'keterangan'          => strtoupper(trim(($row['keterangan'] ?? 'BAIK'))),
+            'media_arsip' => $mediaArsip,
+            'keterangan'  => $kondisiFisik,
             'tanggal_masuk'       => now()->format('Y-m-d'),
             'created_by'          => Auth::id(),
         ];

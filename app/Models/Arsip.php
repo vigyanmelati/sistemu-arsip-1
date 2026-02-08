@@ -44,6 +44,7 @@ class Arsip extends Model
         'nomor_sampul',
         'tingkat_perkembangan',
         'keterangan',
+        'media_arsip',
         'file_dokumen',
         'created_by'
     ];
@@ -53,13 +54,14 @@ class Arsip extends Model
         'status_arsip' => 'AKTIF',
         'jumlah_berkas' => 1,
         'satuan_arsip' => 'LEMBAR',
-        'aktif_tahun' => '0 TAHUN',    // ← UBAH KE STRING!
-        'inaktif_tahun' => '0 TAHUN',  // ← UBAH KE STRING!
+        'aktif_tahun' => '',    
+        'inaktif_tahun' => '',  
         'nomor_rak' => '',
         'nomor_box' => '',
         'nomor_sampul' => '',
-        'keterangan_jra' => 'MUSNAH',  // ← PERBAIKI DEFAULT!
+        'keterangan_jra' => '',  
         'keterangan' => 'BAIK',
+         'media_arsip' => 'TEKSTUAL',
         'tingkat_perkembangan' => 'ASLI',
         'aktif_sampai' => null,
         'inaktif_sampai' => null,

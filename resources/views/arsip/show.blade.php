@@ -106,6 +106,27 @@
                         </td>
                     </tr>
                     <tr>
+                        <td><strong>Media Arsip</strong></td>
+                        <td>: 
+                            @php
+                                $mediaColors = [
+                                    'TEKSTUAL' => 'primary',
+                                    'DIGITAL' => 'info',
+                                ];
+                                $mediaColor = $mediaColors[$arsip->media_arsip] ?? 'secondary';
+                            @endphp
+
+                            @if($arsip->media_arsip)
+                                <span class="badge bg-{{ $mediaColor }}">
+                                    {{ $arsip->media_arsip }}
+                                </span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                    </tr>
+
+                    <tr>
                         <td><strong>File Dokumen</strong></td>
                         <td>: 
                             @if($arsip->file_dokumen)

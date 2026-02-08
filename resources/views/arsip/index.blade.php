@@ -8,20 +8,23 @@
     <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Daftar Arsip</h5>
-            <div class="action-buttons">
-                <a href="{{ route('arsip.create') }}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Tambah Arsip
+           <div class="action-buttons d-flex gap-2">
+                <button class="btn btn-gradient-purple d-flex align-items-center gap-2 shadow-sm" id="openExportModal">
+                    <i class="bi bi-file-earmark-excel-fill"></i>
+                    <span>Export</span>
+                </button>
+                <button type="button" class="btn btn-gradient-green d-flex align-items-center gap-2 shadow-sm" id="openImportModal">
+                    <i class="bi bi-cloud-upload-fill"></i>
+                    <span>Import</span>
+                </button>
+                <button class="btn btn-cyan d-flex align-items-center gap-2" id="openFilterModal">
+                    <i class="bi bi-funnel-fill"></i>
+                    <span>Filter</span>
+                </button>
+                <a href="{{ route('arsip.create') }}" class="btn btn-orange d-flex align-items-center gap-2 shadow-sm">
+                    <i class="bi bi-plus-circle-fill"></i>
+                    <span>Tambah Baru</span>
                 </a>
-                <button class="btn btn-outline-secondary" id="openFilterModal">
-                    <i class="bi bi-filter"></i> Filter
-                </button>
-                <button type="button" class="btn btn-success" id="openImportModal">
-                    <i class="bi bi-upload"></i> Import Excel
-                </button>
-                <button class="btn btn-outline-success" id="openExportModal">
-                    <i class="bi bi-file-earmark-excel"></i> Export Excel
-                </button>
-
             </div>
         </div>
     </div>
@@ -116,7 +119,7 @@
                                 @endif
                             </a>
                         </th>
-                        <th style="min-width: 100px;" class="sortable-header">
+                        {{-- <th style="min-width: 100px;" class="sortable-header">
                             <a href="{{ request()->fullUrlWithQuery(['sort' => 'no_sampul', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
                                 <span>Sampul</span>
                                 @if(request('sort') == 'no_sampul')
@@ -125,7 +128,7 @@
                                     <i class="bi bi-caret-up-down text-secondary"></i>
                                 @endif
                             </a>
-                        </th>
+                        </th> --}}
                         <th style="min-width: 120px;" class="sortable-header">
                             <a href="{{ request()->fullUrlWithQuery(['sort' => 'aktif_sampai', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
                                 <span>Aktif Sampai</span>
@@ -168,7 +171,7 @@
                         <td>{{ $arsip->tahun_arsip }}</td>
                         <td>{{ $arsip->nomor_rak }}</td>
                         <td>{{ $arsip->nomor_box }}</td>
-                        <td>{{ $arsip->no_sampul ?? '-' }}</td>
+                        {{-- <td>{{ $arsip->no_sampul ?? '-' }}</td> --}}
                         <td>
                             @if($arsip->aktif_sampai)
                                 {{ \Carbon\Carbon::parse($arsip->aktif_sampai)->format('d/m/Y') }}
@@ -813,6 +816,88 @@ Export excel openModal -->
     .modal-body::-webkit-scrollbar-thumb:hover {
         background: #555;
     }
+
+
+    /* Custom Button Colors */
+    .btn-purple {
+        background-color: #6f42c1;
+        border-color: #6f42c1;
+        color: white;
+    }
+    .btn-purple:hover {
+        background-color: #5a32a3;
+        border-color: #5a32a3;
+        color: white;
+    }
+
+    .btn-info {
+        background-color: #17a2b8;
+        border-color: #17a2b8;
+    }
+
+    .btn-warning {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #212529;
+    }
+    .btn-warning:hover {
+        background-color: #e0a800;
+        border-color: #e0a800;
+        color: #212529;
+    }
+
+    /* Gradient Buttons */
+    .btn-gradient-purple {
+        background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%);
+        border: none;
+        color: white;
+    }
+    .btn-gradient-purple:hover {
+        background: linear-gradient(135deg, #8e24aa 0%, #5e35b1 100%);
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(156, 39, 176, 0.3);
+    }
+
+    .btn-gradient-green {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        color: white;
+    }
+    .btn-gradient-green:hover {
+        background: linear-gradient(135deg, #218838 0%, #1ba87e 100%);
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+    }
+
+    .btn-cyan {
+        background-color: #0dcaf0;
+        border-color: #0dcaf0;
+        color: white;
+    }
+    .btn-cyan:hover {
+        background-color: #0bb5d4;
+        border-color: #0bb5d4;
+        color: white;
+    }
+
+    .btn-orange {
+        background-color: #fd7e14;
+        border-color: #fd7e14;
+        color: white;
+    }
+    .btn-orange:hover {
+        background-color: #e66a00;
+        border-color: #e66a00;
+        color: white;
+    }
+
+    /* Icon spacing */
+    .action-buttons .btn i {
+        font-size: 1.1em;
+    }
+
 </style>
 
 <script>
