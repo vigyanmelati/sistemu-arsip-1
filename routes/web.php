@@ -10,14 +10,17 @@ require __DIR__.'/auth.php';
 Route::middleware(['auth'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('arsip/export', [ArsipController::class, 'export'])
+            ->name('arsip.export');
     
     // Arsip (untuk Admin dan Super Admin)
     Route::middleware(['admin'])->group(function () {
         Route::resource('arsip', ArsipController::class);
         Route::post('/arsip/import', [ArsipController::class, 'import'])
             ->name('arsip.import');
-        Route::get('/arsip/export-excel', [ArsipController::class, 'export'])
-            ->name('arsip.export');
+        
+
           
 
     /* =====================================

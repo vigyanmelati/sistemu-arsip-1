@@ -536,17 +536,21 @@ class ArsipController extends Controller
         }
     }
 
-    public function export(Request $request)
+   public function export(Request $request)
     {
         $columns = $request->input('columns', []);
-
+        
         if (count($columns) === 0) {
             return back()->with('error', 'Pilih minimal satu kolom untuk export.');
         }
-
+        
+        // Debug: cek apa yang diterima
+        \Log::info('Export request:', $request->all());
+        \Log::info('Columns selected:', $columns);
+        
         return Excel::download(
             new ArsipExport($request, $columns),
-            'data-arsip.xlsx'
+            'data-arsip-' . date('Y-m-d-H-i-s') . '.xlsx'
         );
     }
 

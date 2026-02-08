@@ -431,10 +431,17 @@ Export excel openModal -->
 
           <form method="GET" action="{{ route('arsip.export') }}">
 
+
                 {{-- kirim SEMUA query filter yang aktif --}}
-                @foreach(request()->query() as $key => $value)
+               @foreach(request()->except('page') as $key => $value)
+                @if(is_array($value))
+                    @foreach($value as $val)
+                        <input type="hidden" name="{{ $key }}[]" value="{{ $val }}">
+                    @endforeach
+                @else
                     <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                @endforeach
+                @endif
+            @endforeach
 
                 <div class="modal-body">
                     <div class="row">
