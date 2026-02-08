@@ -376,75 +376,97 @@ class ArsipController extends Controller
         ));
     }
 
-  public function update(Request $request, Arsip $arsip)
+ public function update(Request $request, Arsip $arsip)
 {
-    // Debug data yang dikirim
+    // Debug data masuk
     \Log::info('Data update yang dikirim:', $request->all());
-    
-    // Validate data berdasarkan view
+
+    // =========================
+    // VALIDASI
+    // =========================
     $validated = $request->validate([
         // WAJIB - Data Dasar
         'kode_klasifikasi_id' => 'required|exists:kode_klasifikasis,id',
-        'uraian_arsip' => 'required|string|max:500',
-        'sub_bagian_id' => 'required|exists:sub_bagians,id',
-        'tahun_arsip' => 'required|integer|min:2000|max:' . (date('Y') + 1),
-        'tanggal_arsip' => 'required|date',
-        'jumlah_berkas' => 'required|integer|min:1',
-        'satuan_arsip' => 'required|in:BENDEL,LEMBAR',
-        
-        // Masa Retensi - BENTUK TEKS LENGKAP
-        'aktif_tahun' => 'required|string|max:100',
-        'inaktif_tahun' => 'required|string|max:100',
-        'tanggal_referensi' => 'nullable|date',
-        'keterangan_jra' => 'required|in:PERMANEN,MUSNAH',
-        
-        // HASIL PERHITUNGAN (opsional dari JS, akan dihitung ulang)
-        'aktif_sampai' => 'nullable|date',
-        'inaktif_sampai' => 'nullable|date',
-        'status_arsip' => 'nullable|in:AKTIF,INAKTIF,MUSNAH,PERMANEN',
-        
-        // OPTIONAL
-        'nomor_rak' => 'nullable|string|max:50',
-        'nomor_box' => 'nullable|string|max:50',
-        'nomor_sampul' => 'nullable|string|max:100',
-        'tanggal_masuk' => 'nullable|date',
-        'tingkat_perkembangan' => 'nullable|in:ASLI,COPY,SALINAN',
-        'keterangan' => 'nullable|in:BAIK,RUSAK,HILANG',
-        'media_arsip' => 'nullable|string|max:255',
-        'file_dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
-        'hapus_file' => 'nullable|boolean',
+        'uraian_arsip'        => 'required|string|max:500',
+        'sub_bagian_id'       => 'required|exists:sub_bagians,id',
+        'tahun_arsip'         => 'required|integer|min:2000|max:' . (date('Y') + 1),
+        'tanggal_arsip'       => 'required|date',
+        'jumlah_berkas'       => 'required|integer|min:1',
+        'satuan_arsip'        => 'required|in:BENDEL,LEMBAR',
+
+        // Masa Retensi
+        'aktif_tahun'         => 'required|string|max:100',
+        'inaktif_tahun'       => 'required|string|max:100',
+        'tanggal_referensi'   => 'nullable|date',
+        'keterangan_jra'      => 'required|in:PERMANEN,MUSNAH',
+
+        // Hasil hitung (akan dihitung ulang)
+        'aktif_sampai'        => 'nullable|date',
+        'inaktif_sampai'      => 'nullable|date',
+        'status_arsip'        => 'nullable|in:AKTIF,INAKTIF,USUL_MUSNAH,MUSNAH,PERMANEN',
+
+        // Optional
+        'nomor_rak'           => 'nullable|string|max:50',
+        'nomor_box'           => 'nullable|string|max:50',
+        'nomor_sampul'        => 'nullable|string|max:100',
+        'tingkat_perkembangan'=> 'nullable|in:ASLI,COPY,SALINAN',
+        'keterangan'          => 'nullable|in:BAIK,RUSAK,HILANG',
+        'media_arsip'         => 'nullable|string|max:255',
+
+        // File
+        'file_dokumen'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+        'hapus_file'          => 'nullable|in:0,1',
     ]);
-    
+
     try {
-        // Konversi tipe data
+
+        // =========================
+        // NORMALISASI DATA
+        // =========================
         $validated['tahun_arsip'] = (string) $validated['tahun_arsip'];
-        
-        // Handle file upload atau penghapusan
-        if ($request->has('hapus_file') && $request->hapus_file == '1') {
-            // Hapus file lama jika ada
-            if ($arsip->file_dokumen && Storage::disk('public')->exists('arsip/' . $arsip->file_dokumen)) {
-                Storage::disk('public')->delete('arsip/' . $arsip->file_dokumen);
+
+        // Default value jika kosong
+        $defaults = [
+            'nomor_rak' => '',
+            'nomor_box' => '',
+            'nomor_sampul' => '',
+            'keterangan' => 'BAIK',
+            'tingkat_perkembangan' => 'ASLI',
+        ];
+
+        foreach ($defaults as $field => $default) {
+            if (!isset($validated[$field]) || $validated[$field] === '') {
+                $validated[$field] = $default;
             }
+        }
+
+        // =========================
+        // HAPUS FILE LAMA (JIKA DIMINTA)
+        // =========================
+        if (($request->hapus_file ?? '0') == '1' && $arsip->file_dokumen) {
+            Storage::disk('public')->delete('arsip/' . $arsip->file_dokumen);
             $validated['file_dokumen'] = null;
-        } elseif ($request->hasFile('file_dokumen')) {
-            // Hapus file lama jika ada
-            if ($arsip->file_dokumen && Storage::disk('public')->exists('arsip/' . $arsip->file_dokumen)) {
+        }
+
+        // =========================
+        // UPLOAD FILE BARU
+        // =========================
+        if ($request->hasFile('file_dokumen')) {
+            // hapus file lama
+            if ($arsip->file_dokumen) {
                 Storage::disk('public')->delete('arsip/' . $arsip->file_dokumen);
             }
-            
+
             $file = $request->file('file_dokumen');
             $fileName = time() . '_' . $file->getClientOriginalName();
-            $filePath = $file->storeAs('arsip', $fileName, 'public');
+            $file->storeAs('arsip', $fileName, 'public');
+
             $validated['file_dokumen'] = $fileName;
-        } else {
-            // Pertahankan file yang ada
-            unset($validated['file_dokumen']);
         }
-        
-        // ============================================
-        // PERHITUNGAN RETENSI OTOMATIS (SELALU HITUNG ULANG)
-        // ============================================
-        // Jangan cek apakah ada perubahan, SELALU hitung ulang untuk konsistensi
+
+        // =========================
+        // HITUNG ULANG RETENSI (SERVER SIDE)
+        // =========================
         $perhitungan = $this->hitungRetensi(
             $validated['aktif_tahun'],
             $validated['inaktif_tahun'],
@@ -452,33 +474,33 @@ class ArsipController extends Controller
             $validated['tanggal_arsip'],
             $validated['tanggal_referensi'] ?? null
         );
-        
-        // Timpa nilai dari JS dengan hasil perhitungan di server
-        $validated['aktif_sampai'] = $perhitungan['aktif_sampai'];
-        $validated['inaktif_sampai'] = $perhitungan['inaktif_sampai'];
+
+        $validated['aktif_sampai']  = $perhitungan['aktif_sampai'];
+        $validated['inaktif_sampai']= $perhitungan['inaktif_sampai'];
         $validated['status_arsip'] = $perhitungan['status_arsip'];
-        
-        \Log::info('Hasil perhitungan retensi update:', $perhitungan);
-        
-        // Update data
+
+        \Log::info('Hasil hitung retensi update:', $perhitungan);
+
+        // =========================
+        // UPDATE DATA
+        // =========================
         $arsip->update($validated);
-        
-        \Log::info('Arsip berhasil diupdate dengan ID: ' . $arsip->id);
-        \Log::info('Status arsip: ' . $arsip->status_arsip);
-        \Log::info('Aktif sampai: ' . $arsip->aktif_sampai);
-        \Log::info('Inaktif sampai: ' . $arsip->inaktif_sampai);
-        
-        return redirect()->route('arsip.show', $arsip->id)
+
+        return redirect()
+            ->route('arsip.show', $arsip->id)
             ->with('success', 'Arsip berhasil diperbarui.');
-            
+
     } catch (\Exception $e) {
-        \Log::error('Gagal mengupdate arsip: ' . $e->getMessage());
-        \Log::error('Trace: ' . $e->getTraceAsString());
-        
-        return back()->withInput()
-            ->with('error', 'Gagal mengupdate arsip: ' . $e->getMessage());
+
+        \Log::error('Gagal update arsip: ' . $e->getMessage());
+        \Log::error($e->getTraceAsString());
+
+        return back()
+            ->withInput()
+            ->with('error', 'Gagal memperbarui arsip: ' . $e->getMessage());
     }
 }
+
 
     public function destroy(Arsip $arsip)
     {

@@ -231,7 +231,17 @@ class ArsipImport implements ToModel, WithHeadingRow
         // =======================
         // TANGGAL
         // =======================
-        $tanggalArsip = now();
+        // =======================
+        // DEFAULT TANGGAL ARSIP DARI TAHUN_ARSIP
+        // =======================
+        $tahunArsip = $row['tahun_arsip'] ?? null;
+
+        if ($tahunArsip && is_numeric($tahunArsip)) {
+            // jadi 01-01-2025 kalau tahun_arsip = 2025
+            $tanggalArsip = Carbon::createFromDate((int)$tahunArsip, 1, 1);
+        } else {
+            $tanggalArsip = now();
+        }
         if (!empty($row['tanggal_arsip'])) {
             try {
                 if (is_numeric($row['tanggal_arsip'])) {
