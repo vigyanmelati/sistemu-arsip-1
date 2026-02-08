@@ -407,6 +407,14 @@
         .sidebar {
             z-index: 1000;
         }
+        .modal {
+    z-index: 2000 !important;
+}
+
+.modal-backdrop {
+    z-index: 1999 !important;
+}
+
     </style>
     @push('styles')
     <style>
@@ -520,31 +528,28 @@
             @endif
             
             <!-- Menu khusus untuk Super Admin -->
-            @if(auth()->user()->role === 'super_admin')
+          @if(auth()->user()->role === 'super_admin')
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('master.kode-klasifikasi.*') ? 'active' : '' }}" href="{{ route('master.kode-klasifikasi.index') }}">
-                    <i class="bi bi-tags"></i> <span>Master Kode Klasifikasi</span>
+                <a href="{{ route('superadmin.sub-bagians.index') }}" class="nav-link">
+                    <i class="bi bi-layers"></i>
+                    <span>Kelola Sub Bagian</span>
                 </a>
             </li>
-            
+
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('master.sub-bagian.*') ? 'active' : '' }}" href="{{ route('master.sub-bagian.index') }}">
-                    <i class="bi bi-diagram-3"></i> <span>Master Sub Bagian</span>
+                <a href="{{ route('superadmin.kode-klasifikasis.index') }}" class="nav-link">
+                    <i class="bi bi-card-list"></i>
+                    <span>Kelola Kode Klasifikasi</span>
                 </a>
             </li>
-            
+
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">
-                    <i class="bi bi-people"></i> <span>Manajemen User</span>
+                <a href="{{ route('superadmin.users.index') }}" class="nav-link">
+                    <i class="bi bi-shield-check"></i>
+                    <span>Manajemen User</span>
                 </a>
             </li>
-            
-            <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="bi bi-gear"></i> <span>Pengaturan Sistem</span>
-                </a>
-            </li>
-            @endif
+        @endif
             
             <!-- Menu untuk User biasa (jika ada fitur khusus) -->
             @if(auth()->user()->role === 'user')
@@ -697,6 +702,12 @@
             }
         });
     });
+</script>
+
+<script>
+document.addEventListener('show.bs.modal', function (event) {
+    document.body.appendChild(event.target);
+});
 </script>
 
 @stack('scripts')

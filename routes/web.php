@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ArsipController;
 use App\Http\Controllers\PemusnahanController;
+use App\Http\Controllers\Superadmin\SubBagianController;
+use App\Http\Controllers\Superadmin\KodeKlasifikasiController;
+use App\Http\Controllers\UserController;
 
 require __DIR__.'/auth.php';
 
@@ -127,29 +130,21 @@ Route::middleware(['auth'])->group(function () {
     });
     
     // Master Data (hanya Super Admin)
-    Route::middleware(['super_admin'])->group(function () {
-        Route::prefix('master')->name('master.')->group(function () {
-            // Route::resource('kode-klasifikasi', KodeKlasifikasiController::class);
-            // Route::resource('sub-bagian', SubBagianController::class);
-        });
-        
-        // Route::resource('users', UserController::class);
+    Route::middleware(['auth', 'superadmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+
+        Route::resource('sub-bagians', SubBagianController::class)
+            ->except(['create', 'show', 'edit']);
+
+        Route::resource('kode-klasifikasis', KodeKlasifikasiController::class)
+            ->except(['create', 'show', 'edit']);
+        Route::resource('users', UserController::class);
     });
+
 });
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
 });
 
-// Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-// // Route untuk arsip
-// Route::resource('arsip', ArsipController::class);
-
-
-// Route untuk pengaturan
-// Route::get('/pengaturan', function () {
-//     return view('pengaturan.index');
-// })->name('pengaturan.index');
 
 
