@@ -7,6 +7,7 @@ use App\Http\Controllers\PemusnahanController;
 use App\Http\Controllers\Superadmin\SubBagianController;
 use App\Http\Controllers\Superadmin\KodeKlasifikasiController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProfileController;
 
 require __DIR__.'/auth.php';
 
@@ -144,6 +145,13 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
 });
 
 

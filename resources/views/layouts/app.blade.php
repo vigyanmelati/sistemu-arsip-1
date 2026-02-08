@@ -12,7 +12,6 @@
 
     <!-- Custom CSS -->
     <style>
-
         :root {
             --primary-color: #8B0000; /* Dark red/maroon */
             --secondary-color: #A52A2A;
@@ -26,20 +25,28 @@
             background-color: #f8fafc;
             color: #333;
             overflow-x: hidden;
+            /* Pastikan body tidak memiliki stacking context */
+            position: static !important;
         }
         
-        /* Sidebar Styling */
+        /* ===== FIX SEMUA Z-INDEX ===== */
+        /* Reset stacking context */
+        body > * {
+            position: relative;
+        }
+        
+        /* Sidebar harus di bawah dropdown dan modal */
         .sidebar {
             position: fixed;
             top: 0;
             left: 0;
             height: 100vh;
             width: var(--sidebar-width);
-            background: linear-gradient(180deg, #800000 0%, #8B0000 100%); /* Dark red gradient */
+            background: linear-gradient(180deg, #800000 0%, #8B0000 100%);
             color: white;
             padding-top: 20px;
             box-shadow: 3px 0 15px rgba(0,0,0,0.08);
-            z-index: 900;
+            z-index: 100; /* RENDAHKAN z-index */
             transition: all 0.3s ease;
             overflow-x: hidden;
         }
@@ -47,9 +54,8 @@
         .sidebar .nav {
             flex: 1;
             overflow-y: auto;
-            padding-bottom: 50px; /* aman dari logout */
+            padding-bottom: 50px;
         }
-
         
         .sidebar.collapsed {
             width: var(--sidebar-collapsed);
@@ -190,6 +196,8 @@
             padding: 25px;
             min-height: 100vh;
             transition: all 0.3s ease;
+            position: relative;
+            z-index: 1; /* Biarkan normal */
         }
         
         .main-content.expanded {
@@ -207,21 +215,23 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #eef2f7;
+            position: relative;
+            z-index: 10; /* Biarkan normal */
         }
         
         .page-title h3 {
             margin: 0;
             font-weight: 700;
-            color: #8B0000; /* Match sidebar color */
+            color: #8B0000;
             font-size: 1.4rem;
-            padding-left: 50px; /* Space for toggle button */
+            padding-left: 50px;
         }
         
         .page-title p {
             margin: 8px 0 0 0;
             color: #666;
             font-size: 0.9rem;
-            padding-left: 50px; /* Space for toggle button */
+            padding-left: 50px;
         }
         
         .user-info {
@@ -261,6 +271,20 @@
             margin: 3px 0 0 0;
         }
         
+        /* ===== FIX DROPDOWN ===== */
+        /* Pastikan dropdown paling atas */
+        .dropdown-menu {
+            z-index: 99999 !important; /* PALING TINGGI */
+            position: fixed !important; /* Force fixed positioning */
+            min-width: 200px;
+        }
+        
+        /* Button dropdown */
+        .dropdown {
+            position: relative;
+            z-index: 99998; /* Di bawah dropdown menu */
+        }
+        
         /* Card Styling */
         .card {
             border: none;
@@ -269,10 +293,12 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             margin-bottom: 25px;
             border: 1px solid #f0f0f0;
+            position: relative;
+            z-index: 1; /* Normal */
         }
         
         .card:hover {
-            transform: translateY(-3px);
+            transform: none !important; /* Hapus transform */
             box-shadow: 0 8px 25px rgba(0,0,0,0.1);
         }
         
@@ -290,7 +316,7 @@
             font-size: 1.1rem;
         }
         
-        /* Toggle Button - POSISI DI SAMPING SIDEBAR */
+        /* Toggle Button */
         .toggle-btn {
             background: linear-gradient(135deg, #8B0000 0%, #A52A2A 100%);
             border: none;
@@ -301,9 +327,9 @@
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
             position: fixed;
-            top: 100px; /* Adjust position */
+            top: 100px;
             left: calc(var(--sidebar-width) - 20px);
-            z-index: 901;
+            z-index: 101; /* Sedikit di atas sidebar */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -320,11 +346,22 @@
             left: calc(var(--sidebar-collapsed) - 20px);
         }
         
-        /* Mobile Responsive */
+        /* ===== FIX MODAL ===== */
+        /* Modal harus di bawah dropdown */
+        .modal {
+            z-index: 9999 !important; /* Di bawah dropdown */
+        }
+
+        .modal-backdrop {
+            z-index: 9998 !important; /* Di bawah modal */
+        }
+        
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 992px) {
             .sidebar {
                 transform: translateX(-100%);
                 width: 280px;
+                z-index: 99996; /* Di mobile, sidebar harus di bawah dropdown */
             }
             
             .sidebar.show {
@@ -341,7 +378,7 @@
             
             .page-title h3,
             .page-title p {
-                padding-left: 0; /* Reset padding on mobile */
+                padding-left: 0;
             }
             
             .top-header {
@@ -399,22 +436,15 @@
             padding: 4px 8px;
         }
         
-        /* Fix untuk toggle button yang ketimpa */
-        .toggle-btn {
-            z-index: 1001;
+        /* ===== OVERRIDE BOOTSTRAP ===== */
+        /* Force dropdown menu on top of everything */
+        .dropdown-menu.show {
+            position: fixed !important;
+            transform: translate3d(0, 0, 0) !important;
+            will-change: transform;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
         }
-        
-        .sidebar {
-            z-index: 1000;
-        }
-        .modal {
-    z-index: 2000 !important;
-}
-
-.modal-backdrop {
-    z-index: 1999 !important;
-}
-
     </style>
     @push('styles')
     <style>
@@ -430,6 +460,11 @@
     }
     #mode_isi_keterangan:checked ~ #mode_isi_keterangan_container {
         display: block !important;
+    }
+
+    /* Ensure dropdown appears above all */
+    .dropdown-menu {
+        z-index: 999999 !important;
     }
     </style>
     @endpush
@@ -448,7 +483,6 @@
         </div>
     </div>
     
-    
     <ul class="nav flex-column">
         <li class="nav-item">
             <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
@@ -456,29 +490,14 @@
             </a>
         </li>
         
-        <!-- Menu untuk semua user yang login -->
         @auth
-            <!-- Menu untuk Admin dan Super Admin (kelola arsip) -->
             @if(auth()->user()->role === 'admin' || auth()->user()->role === 'super_admin')
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('arsip.*') ? 'active' : '' }}" href="{{ route('arsip.index') }}">
                     <i class="bi bi-folder"></i> <span>Kelola Arsip</span>
-                    <!-- @php
-                        $totalArsip = App\Models\Arsip::count();
-                    @endphp
-                    @if($totalArsip > 0)
-                    <span class="badge bg-warning text-dark badge-notification">{{ $totalArsip }}</span>
-                    @endif -->
                 </a>
             </li>
             
-            <!-- <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('pemusnahan.*') ? 'active' : '' }}" href="#">
-                    <i class="bi bi-trash"></i> <span>Pemusnahan</span>
-                </a>
-            </li> -->
-
-            {{-- PEMUSNAHAN ARSIP --}}
             <li class="nav-item">
                 <a class="nav-link d-flex align-items-center {{ request()->routeIs('pemusnahan.*') ? 'active' : '' }}"
                 data-bs-toggle="collapse"
@@ -493,7 +512,6 @@
 
                 <div class="collapse {{ request()->routeIs('pemusnahan.*') ? 'show' : '' }}" id="menuPemusnahan">
                     <ul class="nav flex-column ms-3 mt-2">
-
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('pemusnahan.usulan.index') ? 'active' : '' }}"
                             href="{{ route('pemusnahan.usulan.index') }}">
@@ -509,49 +527,34 @@
                                 <span>Riwayat Pemusnahan</span>
                             </a>
                         </li>
-
                     </ul>
                 </div>
             </li>
-            
-            <!-- <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="bi bi-search"></i> <span>Temu Kembali</span>
-                </a>
-            </li> -->
-            
-            <!-- <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="bi bi-file-text"></i> <span>Laporan</span>
-                </a>
-            </li> -->
             @endif
             
-            <!-- Menu khusus untuk Super Admin -->
-          @if(auth()->user()->role === 'super_admin')
+            @if(auth()->user()->role === 'super_admin')
             <li class="nav-item">
-                <a href="{{ route('superadmin.sub-bagians.index') }}" class="nav-link">
+                <a href="{{ route('superadmin.sub-bagians.index') }}" class="nav-link {{ request()->routeIs('superadmin.sub-bagians.*') ? 'active' : '' }}">
                     <i class="bi bi-layers"></i>
                     <span>Kelola Sub Bagian</span>
                 </a>
             </li>
 
             <li class="nav-item">
-                <a href="{{ route('superadmin.kode-klasifikasis.index') }}" class="nav-link">
+                <a href="{{ route('superadmin.kode-klasifikasis.index') }}" class="nav-link {{ request()->routeIs('superadmin.kode-klasifikasis.*') ? 'active' : '' }}">
                     <i class="bi bi-card-list"></i>
                     <span>Kelola Kode Klasifikasi</span>
                 </a>
             </li>
 
             <li class="nav-item">
-                <a href="{{ route('superadmin.users.index') }}" class="nav-link">
+                <a href="{{ route('superadmin.users.index') }}" class="nav-link {{ request()->routeIs('superadmin.users.*') ? 'active' : '' }}">
                     <i class="bi bi-shield-check"></i>
                     <span>Manajemen User</span>
                 </a>
             </li>
-        @endif
+            @endif
             
-            <!-- Menu untuk User biasa (jika ada fitur khusus) -->
             @if(auth()->user()->role === 'user')
             <li class="nav-item">
                 <a class="nav-link" href="#">
@@ -568,14 +571,14 @@
         @endauth
     </ul>
     
-    <div class="logout-btn">
+    {{-- <div class="logout-btn">
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit" class="btn btn-light w-100 d-flex align-items-center justify-content-center">
                 <i class="bi bi-box-arrow-right"></i> <span class="ms-2">Logout</span>
             </button>
         </form>
-    </div>
+    </div> --}}
 </div>
 
 <!-- Sidebar Toggle Button -->
@@ -592,39 +595,62 @@
             <p>@yield('page-subtitle', 'Sistem Temu Arsip Digital KPU Provinsi Bali')</p>
         </div>
         
-        <div class="user-info">
-            <div class="user-avatar">
-                {{ auth()->check() ? strtoupper(substr(auth()->user()->name, 0, 1)) : 'A' }}
-            </div>
-            <div class="user-details">
-                @auth
-                <p class="user-name">{{ auth()->user()->name }}</p>
-                <p class="user-role">
-                    @php
-                        // Mapping role ke label yang lebih user-friendly
-                        $roleLabels = [
-                            'super_admin' => 'Super Administrator',
-                            'admin' => 'Administrator',
-                            'user' => 'Pengguna'
-                        ];
-                        $role = auth()->user()->role ?? 'user';
-                        $roleLabel = $roleLabels[$role] ?? 'Pengguna';
-                        
-                        // Tambahkan badge berdasarkan role
-                        $roleBadgeColors = [
-                            'super_admin' => 'danger',
-                            'admin' => 'warning',
-                            'user' => 'info'
-                        ];
-                        $badgeColor = $roleBadgeColors[$role] ?? 'secondary';
-                    @endphp
-                    <span class="badge bg-{{ $badgeColor }}">{{ $roleLabel }}</span>
-                </p>
-                @else
-                <p class="user-name">Guest</p>
-                <p class="user-role">Pengunjung</p>
-                @endauth
-            </div>
+        @php
+            $role = auth()->user()->role ?? 'user';
+            $roleLabel = match ($role) {
+                'super_admin' => 'Super Admin',
+                'admin' => 'Admin',
+                default => 'User',
+            };
+            $badgeColor = match ($role) {
+                'super_admin' => 'danger',
+                'admin' => 'primary',
+                default => 'secondary',
+            };
+        @endphp
+        
+        <!-- Dropdown User -->
+        <div class="dropdown user-info">
+            <button class="btn p-0 border-0 bg-transparent d-flex align-items-center gap-3"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                <div class="user-avatar">
+                    {{ auth()->check() ? strtoupper(substr(auth()->user()->name, 0, 1)) : 'A' }}
+                </div>
+                <div class="user-details d-none d-md-block">
+                    <p class="user-name">{{ auth()->user()->name }}</p>
+                    <p class="user-role">
+                        <span class="badge bg-{{ $badgeColor }}">{{ $roleLabel }}</span>
+                    </p>
+                </div>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow">
+                <li class="px-3 py-2">
+                    <strong>{{ auth()->user()->name }}</strong><br>
+                    <small class="text-muted">{{ auth()->user()->email }}</small>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" href="{{ route('profile.edit') }}">
+                        <i class="bi bi-person me-2"></i> Edit Profil
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ route('profile.password') }}">
+                        <i class="bi bi-key me-2"></i> Ubah Password
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button class="dropdown-item text-danger">
+                            <i class="bi bi-box-arrow-right me-2"></i> Logout
+                        </button>
+                    </form>
+                </li>
+            </ul>
         </div>
     </div>
 
@@ -643,70 +669,82 @@
     </div>
 </div>
 
-<!-- Bootstrap JS -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script> -->
-
-<!-- Custom Script -->
+<!-- Custom Script untuk fix dropdown -->
 <script>
+// Fix untuk dropdown positioning
+document.addEventListener('DOMContentLoaded', function() {
     // Sidebar Toggle Functionality
     const sidebar = document.getElementById('sidebar');
     const mainContent = document.getElementById('mainContent');
     const toggleBtn = document.getElementById('sidebarToggle');
     
     // Toggle sidebar collapse
-    toggleBtn.addEventListener('click', function() {
-        sidebar.classList.toggle('collapsed');
-        mainContent.classList.toggle('expanded');
-        toggleBtn.classList.toggle('collapsed');
-        
-        // Change icon
-        const icon = this.querySelector('i');
-        if (sidebar.classList.contains('collapsed')) {
-            icon.className = 'bi bi-chevron-right';
-        } else {
-            icon.className = 'bi bi-chevron-left';
-        }
-        
-        // Save state to localStorage
-        localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-    });
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+            toggleBtn.classList.toggle('collapsed');
+            
+            const icon = this.querySelector('i');
+            if (sidebar.classList.contains('collapsed')) {
+                icon.className = 'bi bi-chevron-right';
+            } else {
+                icon.className = 'bi bi-chevron-left';
+            }
+            
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        });
+    }
     
-    // Mobile sidebar toggle
-    document.addEventListener('DOMContentLoaded', function() {
-        // Load saved sidebar state
-        const savedState = localStorage.getItem('sidebarCollapsed');
-        if (savedState === 'true' && window.innerWidth > 992) {
-            sidebar.classList.add('collapsed');
-            mainContent.classList.add('expanded');
+    // Load saved sidebar state
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState === 'true' && window.innerWidth > 992) {
+        sidebar.classList.add('collapsed');
+        mainContent.classList.add('expanded');
+        if (toggleBtn) {
             toggleBtn.classList.add('collapsed');
             toggleBtn.querySelector('i').className = 'bi bi-chevron-right';
         }
-        
-        // Mobile menu toggle button
-        const mobileToggle = document.createElement('button');
-        mobileToggle.className = 'btn btn-primary d-lg-none';
-        mobileToggle.innerHTML = '<i class="bi bi-list"></i>';
-        mobileToggle.style.cssText = 'position: fixed; top: 15px; right: 15px; z-index: 1001; border-radius: 8px; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #8B0000 0%, #A52A2A 100%); border: none; color: white;';
-        mobileToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('show');
-        });
-        document.body.appendChild(mobileToggle);
-        
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', function(event) {
-            if (window.innerWidth <= 992 && 
-                sidebar.classList.contains('show') &&
-                !sidebar.contains(event.target) &&
-                !mobileToggle.contains(event.target)) {
-                sidebar.classList.remove('show');
-            }
-        });
+    }
+    
+    // Mobile menu toggle button
+    const mobileToggle = document.createElement('button');
+    mobileToggle.className = 'btn btn-primary d-lg-none';
+    mobileToggle.innerHTML = '<i class="bi bi-list"></i>';
+    mobileToggle.style.cssText = 'position: fixed; top: 15px; right: 15px; z-index: 99997; border-radius: 8px; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #8B0000 0%, #A52A2A 100%); border: none; color: white;';
+    mobileToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('show');
     });
-</script>
+    document.body.appendChild(mobileToggle);
+    
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(event) {
+        if (window.innerWidth <= 992 && 
+            sidebar.classList.contains('show') &&
+            !sidebar.contains(event.target) &&
+            !mobileToggle.contains(event.target)) {
+            sidebar.classList.remove('show');
+        }
+    });
+    
+    // Force dropdown menu to be on top
+    document.addEventListener('show.bs.dropdown', function(event) {
+        const dropdownMenu = event.target.nextElementSibling;
+        if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
+            // Set position fixed and calculate position
+            const rect = event.target.getBoundingClientRect();
+            dropdownMenu.style.position = 'fixed';
+            dropdownMenu.style.top = (rect.bottom + window.scrollY) + 'px';
+            dropdownMenu.style.left = (rect.left + window.scrollX) + 'px';
+            dropdownMenu.style.zIndex = '999999';
+        }
+    });
+});
 
-<script>
-document.addEventListener('show.bs.modal', function (event) {
+// Fix untuk modal
+document.addEventListener('show.bs.modal', function(event) {
     document.body.appendChild(event.target);
+    event.target.style.zIndex = '9999';
 });
 </script>
 

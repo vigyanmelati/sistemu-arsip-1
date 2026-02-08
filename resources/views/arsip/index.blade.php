@@ -398,9 +398,12 @@
                         <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
                         <div>
                             <strong>Perhatian!</strong> Pastikan format file sesuai dengan template sistem.
-                            <a href="#" class="alert-link d-block mt-1">
+                            <a href="{{ asset('template/Contoh Format Arsip.xlsx') }}" 
+                            class="alert-link d-block mt-1"
+                            download>
                                 <i class="bi bi-download me-1"></i> Download Template Excel
                             </a>
+
                         </div>
                     </div>
                 </div>
