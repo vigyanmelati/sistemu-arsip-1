@@ -484,14 +484,19 @@
     </div>
     
     <ul class="nav flex-column">
-        <li class="nav-item">
+        <!-- <li class="nav-item">
             <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
                 <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
             </a>
-        </li>
+        </li> -->
         
         @auth
             @if(auth()->user()->role === 'admin' || auth()->user()->role === 'super_admin')
+             <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                    <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+                </a>
+            </li>
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('arsip.*') ? 'active' : '' }}" href="{{ route('arsip.index') }}">
                     <i class="bi bi-folder"></i> <span>Kelola Arsip</span>
@@ -533,6 +538,11 @@
             @endif
             
             @if(auth()->user()->role === 'super_admin')
+             <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                    <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+                </a>
+            </li>
             <li class="nav-item">
                 <a href="{{ route('superadmin.sub-bagians.index') }}" class="nav-link {{ request()->routeIs('superadmin.sub-bagians.*') ? 'active' : '' }}">
                     <i class="bi bi-layers"></i>
@@ -556,15 +566,20 @@
             @endif
             
             @if(auth()->user()->role === 'user')
+             <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('subbagian.dashboard') ? 'active' : '' }}" href="{{ route('subbagian.dashboard') }}">
+                    <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+                </a>
+            </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="bi bi-search"></i> <span>Pencarian Arsip</span>
+                 <a class="nav-link {{ request()->routeIs('subbagian.arsip.index') ? 'active' : '' }}" href="{{ route('subbagian.arsip.index') }}">
+                    <i class="bi bi-search"></i> <span>Kelola Arsip</span>
                 </a>
             </li>
             
             <li class="nav-item">
                 <a class="nav-link" href="#">
-                    <i class="bi bi-download"></i> <span>Unduh Dokumen</span>
+                    <i class="bi bi-download"></i> <span>Riwayat Pemindahan</span>
                 </a>
             </li>
             @endif

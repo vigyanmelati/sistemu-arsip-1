@@ -261,7 +261,7 @@ class ArsipController extends Controller
     /**
      * Fungsi untuk menghitung retensi berdasarkan input dari view
      */
-   private function hitungRetensi($aktifTahunText, $inaktifTahunText, $keteranganJRA, $tanggalArsip, $tanggalReferensi = null)
+   public static function hitungRetensi($aktif_tahun, $inaktif_tahun, $keterangan_jra, $tanggal_arsip, $tanggal_referensi = null)
 {
     $result = [
         'aktif_sampai' => null,
@@ -577,5 +577,25 @@ class ArsipController extends Controller
             'data-arsip-' . date('Y-m-d-H-i-s') . '.xlsx'
         );
     }
+
+    public function ajukanPindah(Request $request, Arsip $arsip)
+    {
+        $request->validate([
+            'file_berita_acara' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+        ]);
+
+        if ($request->hasFile('file_berita_acara')) {
+            $file = $request->file('file_berita_acara');
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            $file->storeAs('arsip', $fileName, 'public');
+            $arsip->file_berita_acara = $fileName;
+        }
+
+        $arsip->status_pindah = 'DIAJUKAN';
+        $arsip->save();
+
+        return back()->with('success', 'Arsip berhasil diajukan pemindahannya.');
+    }
+
 
 }

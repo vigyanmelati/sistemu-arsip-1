@@ -8,6 +8,8 @@ use App\Http\Controllers\Superadmin\SubBagianController;
 use App\Http\Controllers\Superadmin\KodeKlasifikasiController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SubBagianDashboardController;
+use App\Http\Controllers\SubBagianArsipController;
 
 require __DIR__.'/auth.php';
 
@@ -152,6 +154,25 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+});
+
+Route::middleware(['auth', 'subbagian'])->prefix('subbagian')->name('subbagian.')->group(function () {
+    Route::get('/dashboard', [SubBagianDashboardController::class, 'index'])->name('dashboard');
+     // CRUD Arsip
+    Route::get('/arsip', [SubBagianArsipController::class, 'index'])->name('arsip.index');
+    Route::get('/arsip/create', [SubBagianArsipController::class, 'create'])->name('arsip.create');
+    Route::post('/arsip', [SubBagianArsipController::class, 'store'])->name('arsip.store');
+    Route::get('/arsip/{arsip}/edit', [SubBagianArsipController::class, 'edit'])->name('arsip.edit');
+    Route::put('/arsip/{arsip}', [SubBagianArsipController::class, 'update'])->name('arsip.update');
+    Route::delete('/arsip/{arsip}', [SubBagianArsipController::class, 'destroy'])->name('arsip.destroy');
+    Route::get('/arsip/{arsip}', [SubBagianArsipController::class, 'show'])->name('arsip.show');
+
+    // Import & Export
+    Route::post('/arsip/import', [SubBagianArsipController::class, 'import'])->name('arsip.import');
+    Route::post('/arsip/export', [SubBagianArsipController::class, 'export'])->name('arsip.export');
+
+    // Ajukan Pindah (upload BAP)
+    Route::post('/arsip/{arsip}/ajukan-pindah', [SubBagianArsipController::class, 'ajukanPindah'])->name('arsip.ajukanPindah');
 });
 
 

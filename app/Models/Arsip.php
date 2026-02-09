@@ -46,7 +46,9 @@ class Arsip extends Model
         'keterangan',
         'media_arsip',
         'file_dokumen',
-        'created_by'
+        'created_by',
+        'file_berita_acara',
+        'status_pindah',
     ];
     
     protected $attributes = [
@@ -59,7 +61,7 @@ class Arsip extends Model
         'nomor_rak' => '',
         'nomor_box' => '',
         'nomor_sampul' => '',
-        'keterangan_jra' => '',  
+        'keterangan_jra' => 'BELUM DITENTUKAN',  
         'keterangan' => 'BAIK',
          'media_arsip' => 'TEKSTUAL',
         'tingkat_perkembangan' => 'ASLI',
@@ -344,4 +346,11 @@ class Arsip extends Model
     {
         return $this->tanggal_masuk ? $this->tanggal_masuk->format('Y-m-d') : null;
     }
+
+    // Arsip.php
+    public function bapDetails()
+    {
+        return $this->hasMany(BeritaAcaraDetail::class, 'arsip_id');
+    }
+
 }

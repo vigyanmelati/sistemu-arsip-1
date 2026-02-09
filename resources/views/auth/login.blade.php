@@ -20,6 +20,21 @@
 
         <!-- Card Login -->
         <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md p-8 z-10">
+            @if(session('error'))
+                <div class="mb-4 p-3 bg-red-100 text-red-700 rounded">
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div class="mb-4 p-3 bg-red-100 text-red-700 rounded">
+                    <ul class="list-disc pl-5">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             <div class="text-center mb-6">
                 <!-- Logo KPU -->
                 <img src="{{ asset('logo_sitemu_arsip.png') }}" alt="Logo KPU Bali" class="mx-auto w-40 h-20">
