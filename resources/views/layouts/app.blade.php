@@ -502,6 +502,15 @@
                     <i class="bi bi-folder"></i> <span>Kelola Arsip</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('arsip-masuk.*') ? 'active' : '' }}" href="{{ route('arsip-masuk.index') }}">
+                    <i class="bi bi-inbox-fill"></i> 
+                    <span>Daftar Arsip Masuk</span>
+                    @if($arsipMasukCount ?? 0 > 0)
+                        <span class="badge bg-danger">{{ $arsipMasukCount }}</span>
+                    @endif
+                </a>
+            </li>
             
             <li class="nav-item">
                 <a class="nav-link d-flex align-items-center {{ request()->routeIs('pemusnahan.*') ? 'active' : '' }}"

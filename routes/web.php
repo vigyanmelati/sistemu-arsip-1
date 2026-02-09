@@ -10,6 +10,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SubBagianDashboardController;
 use App\Http\Controllers\SubBagianArsipController;
+use App\Http\Controllers\AdminArsipMasukController;
 
 require __DIR__.'/auth.php';
 
@@ -29,107 +30,110 @@ Route::middleware(['auth'])->group(function () {
 
           
 
-    /* =====================================
-    |  P E M U S N A H A N  A R S I P
-    ===================================== */
-    Route::prefix('pemusnahan')
-    ->name('pemusnahan.')
-    ->group(function () {
+        /* =====================================
+        |  P E M U S N A H A N  A R S I P
+        ===================================== */
+        Route::prefix('pemusnahan')
+        ->name('pemusnahan.')
+        ->group(function () {
 
-        // ===============================
-        // USULAN PEMUSNAHAN
-        // ===============================
-        Route::get('/usulan', [PemusnahanController::class, 'index'])
-            ->name('usulan.index');
+            // ===============================
+            // USULAN PEMUSNAHAN
+            // ===============================
+            Route::get('/usulan', [PemusnahanController::class, 'index'])
+                ->name('usulan.index');
 
-        Route::get('/usulan/create', [PemusnahanController::class, 'create'])
-            ->name('usulan.create');
+            Route::get('/usulan/create', [PemusnahanController::class, 'create'])
+                ->name('usulan.create');
 
-        Route::post('/usulan', [PemusnahanController::class, 'store'])
-            ->name('usulan.store');
+            Route::post('/usulan', [PemusnahanController::class, 'store'])
+                ->name('usulan.store');
 
-        Route::get('/usulan/{pemusnahan}', [PemusnahanController::class, 'show'])
-            ->name('usulan.show');
+            Route::get('/usulan/{pemusnahan}', [PemusnahanController::class, 'show'])
+                ->name('usulan.show');
 
-        // ===============================
-        // SIDANG
-        // ===============================
-        Route::get('/usulan/{pemusnahan}/sidang',
-            [PemusnahanController::class, 'sidang'])
-            ->name('sidang');
+            // ===============================
+            // SIDANG
+            // ===============================
+            Route::get('/usulan/{pemusnahan}/sidang',
+                [PemusnahanController::class, 'sidang'])
+                ->name('sidang');
 
-        Route::post('/sidang/inline-update',
-            [PemusnahanController::class, 'inlineUpdate'])
-            ->name('sidang.inline.update');
+            Route::post('/sidang/inline-update',
+                [PemusnahanController::class, 'inlineUpdate'])
+                ->name('sidang.inline.update');
 
-        Route::post('/usulan/{pemusnahan}/finalisasi',
-            [PemusnahanController::class, 'finalisasi'])
-            ->name('finalisasi');
+            Route::post('/usulan/{pemusnahan}/finalisasi',
+                [PemusnahanController::class, 'finalisasi'])
+                ->name('finalisasi');
 
-        // ===============================
-        // PROSES ANRI
-        // ===============================
-        Route::get('/usulan/{pemusnahan}/anri',
-            [PemusnahanController::class, 'anri'])
-            ->name('anri');
+            // ===============================
+            // PROSES ANRI
+            // ===============================
+            Route::get('/usulan/{pemusnahan}/anri',
+                [PemusnahanController::class, 'anri'])
+                ->name('anri');
 
-        Route::post('/usulan/{pemusnahan}/anri',
-            [PemusnahanController::class, 'simpanAnri'])
-            ->name('anri.simpan');
+            Route::post('/usulan/{pemusnahan}/anri',
+                [PemusnahanController::class, 'simpanAnri'])
+                ->name('anri.simpan');
 
-        // ===============================
-        // TAMBAH / HAPUS ARSIP
-        // ===============================
-        Route::post('/usulan/{pemusnahan}/arsip',
-            [PemusnahanController::class, 'tambahArsip'])
-            ->name('arsip.tambah');
+            // ===============================
+            // TAMBAH / HAPUS ARSIP
+            // ===============================
+            Route::post('/usulan/{pemusnahan}/arsip',
+                [PemusnahanController::class, 'tambahArsip'])
+                ->name('arsip.tambah');
 
-        Route::delete('/usulan/{pemusnahan}/arsip/{arsip}',
-            [PemusnahanController::class, 'hapusArsip'])
-            ->name('arsip.hapus');
+            Route::delete('/usulan/{pemusnahan}/arsip/{arsip}',
+                [PemusnahanController::class, 'hapusArsip'])
+                ->name('arsip.hapus');
 
-        // ===============================
-        // EXPORT & DOKUMEN
-        // ===============================
-        Route::get('/export/arsip-usul',
-            [PemusnahanController::class, 'daftarArsipExcel'])
-            ->name('export.usul');
+            // ===============================
+            // EXPORT & DOKUMEN
+            // ===============================
+            Route::get('/export/arsip-usul',
+                [PemusnahanController::class, 'daftarArsipExcel'])
+                ->name('export.usul');
 
-        Route::get('/usulan/nota-dinas',
-            [PemusnahanController::class, 'notaDinasWord'])
-            ->name('usulan.nota_dinas');
+            Route::get('/usulan/nota-dinas',
+                [PemusnahanController::class, 'notaDinasWord'])
+                ->name('usulan.nota_dinas');
 
-        // ===============================
-        // RIWAYAT
-        // ===============================
-        Route::get('/riwayat',
-            [PemusnahanController::class, 'riwayat'])
-            ->name('riwayat');
-            Route::post(
-            '/pemusnahan/{pemusnahan}/setujui-anri',
-            [PemusnahanController::class, 'setujuiAnri']
-        )->name('anri.setujui');
+            // ===============================
+            // RIWAYAT
+            // ===============================
+            Route::get('/riwayat',
+                [PemusnahanController::class, 'riwayat'])
+                ->name('riwayat');
+                Route::post(
+                '/pemusnahan/{pemusnahan}/setujui-anri',
+                [PemusnahanController::class, 'setujuiAnri']
+            )->name('anri.setujui');
 
-        Route::get('/{pemusnahan}/eksekusi', [PemusnahanController::class, 'eksekusi'])
-        ->name('eksekusi');
+            Route::get('/{pemusnahan}/eksekusi', [PemusnahanController::class, 'eksekusi'])
+            ->name('eksekusi');
 
-        Route::post('/{pemusnahan}/eksekusi', [PemusnahanController::class, 'simpanEksekusi'])
-            ->name('eksekusi.simpan');
+            Route::post('/{pemusnahan}/eksekusi', [PemusnahanController::class, 'simpanEksekusi'])
+                ->name('eksekusi.simpan');
 
-        Route::get(
-            '/riwayat/{pemusnahan}',
-            [PemusnahanController::class, 'riwayatShow']
-        )->name('riwayat.show');
+            Route::get(
+                '/riwayat/{pemusnahan}',
+                [PemusnahanController::class, 'riwayatShow']
+            )->name('riwayat.show');
 
-    });
-
-
-
-        // Route untuk laporan
-        Route::get('/laporan', function () {
-            return view('laporan.index');
-        })->name('laporan.index');
-
+        });
+          // Arsip Masuk (pengajuan dari subbagian)
+         // Arsip Masuk
+    Route::get('/arsip-masuk', [AdminArsipMasukController::class, 'index'])->name('arsip-masuk.index');
+    Route::get('/arsip-masuk/{arsip}', [AdminArsipMasukController::class, 'show'])->name('arsip-masuk.show');
+    Route::post('/arsip-masuk/{arsip}/terima', [AdminArsipMasukController::class, 'terima'])->name('admin.arsip-masuk.terima');
+    Route::post('/arsip-masuk/{arsip}/tolak', [AdminArsipMasukController::class, 'tolak'])->name('admin.arsip-masuk.tolak');
+    Route::post('/arsip-masuk/{arsip}/pindahkan', [AdminArsipMasukController::class, 'pindahkan'])->name('admin.arsip-masuk.pindahkan');
+    Route::post('/arsip-masuk/proses-multiple', [AdminArsipMasukController::class, 'prosesMultiple'])->name('admin.arsip-masuk.proses-multiple');
+    Route::get('/arsip-masuk/{arsip}/download-berita-acara', [AdminArsipMasukController::class, 'downloadBeritaAcara'])->name('admin.arsip-masuk.download-berita-acara');
+    Route::get('/arsip-masuk-dashboard', [AdminArsipMasukController::class, 'dashboard'])->name('arsip-masuk.dashboard');
+       
     });
     
     // Master Data (hanya Super Admin)

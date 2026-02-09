@@ -67,6 +67,7 @@ class Arsip extends Model
         'tingkat_perkembangan' => 'ASLI',
         'aktif_sampai' => null,
         'inaktif_sampai' => null,
+        'status_pindah' => 'LANGSUNG'
     ];
     
     protected $casts = [
@@ -351,6 +352,17 @@ class Arsip extends Model
     public function bapDetails()
     {
         return $this->hasMany(BeritaAcaraDetail::class, 'arsip_id');
+    }
+
+    // app/Models/Arsip.php
+    public function historyPindah()
+    {
+        return $this->hasMany(HistoryPindah::class)->orderBy('tanggal_pindah', 'desc');
+    }
+
+    public function lokasiTerakhir()
+    {
+        return $this->historyPindah()->latest()->first();
     }
 
 }

@@ -17,7 +17,12 @@ class ArsipController extends Controller
     public function index(Request $request)
     {
         // Mulai query dengan eager loading
-        $query = Arsip::with(['kodeKlasifikasi', 'subBagian']);
+        // $query = Arsip::with(['kodeKlasifikasi', 'subBagian']);
+      $query = Arsip::with(['kodeKlasifikasi', 'subBagian'])
+        ->whereIn('status_pindah', [
+            'DIPINDAHKAN',
+            'LANGSUNG'
+        ]);
         
         // Filter berdasarkan status arsip
         if ($request->has('status_arsip') && $request->status_arsip != '') {
@@ -202,6 +207,7 @@ class ArsipController extends Controller
             'nomor_sampul' => '',
             'keterangan' => 'BAIK',
             'tingkat_perkembangan' => 'ASLI',
+            'status_pindah' => 'LANGSUNG'
         ];
         
         foreach ($defaults as $field => $defaultValue) {
@@ -261,7 +267,7 @@ class ArsipController extends Controller
     /**
      * Fungsi untuk menghitung retensi berdasarkan input dari view
      */
-   public static function hitungRetensi($aktif_tahun, $inaktif_tahun, $keterangan_jra, $tanggal_arsip, $tanggal_referensi = null)
+  public function hitungRetensi($aktif_tahun, $inaktif_tahun, $keterangan_jra, $tanggal_arsip, $tanggal_referensi = null)
 {
     $result = [
         'aktif_sampai' => null,
@@ -270,18 +276,18 @@ class ArsipController extends Controller
     ];
     
     // Cek apakah mengandung kata SETELAH
-    $aktifMengandungSetelah = stripos($aktifTahunText, 'SETELAH') !== false;
-    $inaktifMengandungSetelah = stripos($inaktifTahunText, 'SETELAH') !== false;
+    $aktifMengandungSetelah = stripos($aktif_tahun, 'SETELAH') !== false;
+    $inaktifMengandungSetelah = stripos($inaktif_tahun, 'SETELAH') !== false;
     
     // Jika mengandung SETELAH tapi tanggal referensi kosong, kembalikan status AKTIF saja
-    if (($aktifMengandungSetelah || $inaktifMengandungSetelah) && empty($tanggalReferensi)) {
+    if (($aktifMengandungSetelah || $inaktifMengandungSetelah) && empty($tanggal_referensi)) {
         $result['status_arsip'] = 'AKTIF';
         return $result;
     }
     
     // Ekstrak angka dari teks
-    $aktifTahun = $this->extractNumberFromText($aktifTahunText);
-    $inaktifTahun = $this->extractNumberFromText($inaktifTahunText);
+    $aktifTahun = $this->extractNumberFromText($aktif_tahun);
+    $inaktifTahun = $this->extractNumberFromText($inaktif_tahun);
     
     if (!$aktifTahun || !$inaktifTahun) {
         $result['status_arsip'] = 'AKTIF';
@@ -290,9 +296,9 @@ class ArsipController extends Controller
     
     // Tentukan tanggal dasar perhitungan
     if ($aktifMengandungSetelah || $inaktifMengandungSetelah) {
-        $tanggalDasar = Carbon::parse($tanggalReferensi);
+        $tanggalDasar = Carbon::parse($tanggal_referensi);
     } else {
-        $tanggalDasar = Carbon::parse($tanggalArsip);
+        $tanggalDasar = Carbon::parse($tanggal_arsip);
     }
     
     // Hitung tanggal aktif sampai
@@ -307,18 +313,16 @@ class ArsipController extends Controller
     // Tentukan status arsip berdasarkan tanggal hari ini
     $sekarang = Carbon::now();
     
-    if ($keteranganJRA === 'PERMANEN') {
+    if ($keterangan_jra === 'PERMANEN') {
         $result['status_arsip'] = 'PERMANEN';
-    } elseif ($keteranganJRA === 'MUSNAH') {
+    } elseif ($keterangan_jra === 'MUSNAH') {
         if ($sekarang <= $aktifSampai) {
             $result['status_arsip'] = 'AKTIF';
         } elseif ($sekarang <= $inaktifSampai) {
             $result['status_arsip'] = 'INAKTIF';
         } elseif ($sekarang <= $musnahSampai) {
-            // $result['status_arsip'] = 'MUSNAH';
-             $result['status_arsip'] = 'USUL_MUSNAH';
+            $result['status_arsip'] = 'USUL_MUSNAH';
         } else {
-            // $result['status_arsip'] = 'MUSNAH';
             $result['status_arsip'] = 'USUL_MUSNAH';
         }
     } else {
@@ -337,17 +341,17 @@ class ArsipController extends Controller
     
     return $result;
 }
-    
-    /**
-     * Ekstrak angka dari teks (contoh: "2 TAHUN" atau "2 TAHUN SETELAH KEGIATAN")
-     */
-    private function extractNumberFromText($text)
-    {
-        if (preg_match('/\d+/', $text, $matches)) {
-            return (int) $matches[0];
-        }
-        return null;
+
+/**
+ * Ekstrak angka dari teks (contoh: "2 TAHUN" atau "2 TAHUN SETELAH KEGIATAN")
+ */
+private function extractNumberFromText($text)
+{
+    if (preg_match('/\d+/', $text, $matches)) {
+        return (int) $matches[0];
     }
+    return null;
+}
 
     // public function show(Arsip $arsip)
     // {
@@ -578,24 +582,7 @@ class ArsipController extends Controller
         );
     }
 
-    public function ajukanPindah(Request $request, Arsip $arsip)
-    {
-        $request->validate([
-            'file_berita_acara' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-        ]);
 
-        if ($request->hasFile('file_berita_acara')) {
-            $file = $request->file('file_berita_acara');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $file->storeAs('arsip', $fileName, 'public');
-            $arsip->file_berita_acara = $fileName;
-        }
-
-        $arsip->status_pindah = 'DIAJUKAN';
-        $arsip->save();
-
-        return back()->with('success', 'Arsip berhasil diajukan pemindahannya.');
-    }
 
 
 }
