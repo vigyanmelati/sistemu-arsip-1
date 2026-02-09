@@ -173,6 +173,7 @@ Route::middleware(['auth', 'subbagian'])->prefix('subbagian')->name('subbagian.'
 
     // Ajukan Pindah (upload BAP)
     Route::post('/arsip/{arsip}/ajukan-pindah', [SubBagianArsipController::class, 'ajukanPindah'])->name('arsip.ajukanPindah');
+    Route::post('/arsip/ajukan-pindah-multiple', [SubBagianArsipController::class, 'ajukanPindahMultiple'])->name('arsip.ajukanPindahMultiple');
 });
 
 

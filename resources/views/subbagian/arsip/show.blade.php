@@ -58,6 +58,28 @@
                             <span class="badge bg-{{ $color }}">{{ $arsip->status_arsip }}</span>
                         </td>
                     </tr>
+                    <tr>
+                        <td><strong>Status Pindah</strong></td>
+                        <td>:
+                            @php
+                                $pindahColors = [
+                                    'BELUM PINDAH' => 'secondary',
+                                    'DIAJUKAN'  => 'info',
+                                    'DIPINDAHKAN'     => 'success',
+                                ];
+                                $pindahColor = $pindahColors[$arsip->status_pindah] ?? 'secondary';
+                            @endphp
+
+                            @if($arsip->status_pindah)
+                                <span class="badge bg-{{ $pindahColor }}">
+                                    {{ $arsip->status_pindah }}
+                                </span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                    </tr>
+
                 </table>
             </div>
             

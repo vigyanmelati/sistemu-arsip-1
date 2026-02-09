@@ -257,4 +257,39 @@ class SubBagianArsipController extends Controller
 
         return back()->with('success','Arsip berhasil diajukan pemindahannya.');
     }
+
+    // Tambahkan method ini di ArsipController
+    public function ajukanPindahMultiple(Request $request)
+    {
+        $user = Auth::user();
+        
+        $request->validate([
+            'arsip_ids' => 'required|array',
+            'arsip_ids.*' => 'exists:arsips,id',
+            'file_berita_acara' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048'
+        ]);
+
+        // Pastikan semua arsip milik sub bagian user
+        $arsips = Arsip::whereIn('id', $request->arsip_ids)
+                        ->where('sub_bagian_id', $user->sub_bagian_id)
+                        ->get();
+
+        if ($arsips->count() != count($request->arsip_ids)) {
+            return back()->with('error', 'Beberapa arsip tidak ditemukan atau tidak memiliki akses.');
+        }
+
+        // Simpan file berita acara
+        $file = $request->file('file_berita_acara');
+        $fileName = time().'_'.$file->getClientOriginalName();
+        $file->storeAs('arsip', $fileName, 'public');
+
+        // Update setiap arsip
+        foreach ($arsips as $arsip) {
+            $arsip->file_berita_acara = $fileName;
+            $arsip->status_pindah = 'DIAJUKAN';
+            $arsip->save();
+        }
+
+        return back()->with('success', count($request->arsip_ids) . ' arsip berhasil diajukan pemindahannya.');
+    }
 }
