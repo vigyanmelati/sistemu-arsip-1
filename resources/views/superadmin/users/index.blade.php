@@ -98,7 +98,21 @@
                                                 <label class="form-label">Role</label>
                                                 <select name="role" class="form-select" required>
                                                     <option value="admin" {{ $user->role == 'admin' ? 'selected' : '' }}>Admin</option>
-                                                    <option value="superadmin" {{ $user->role == 'superadmin' ? 'selected' : '' }}>Superadmin</option>
+                                                    <!-- <option value="superadmin" {{ $user->role == 'superadmin' ? 'selected' : '' }}>Superadmin</option> -->
+                                                      <option value="user" {{ $user->role == 'user' ? 'selected' : '' }}>User</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="mb-3 d-none subBagianWrapper">
+                                                <label class="form-label">Sub Bagian</label>
+                                                <select name="sub_bagian_id" class="form-select">
+                                                    <option value="">-- Pilih Sub Bagian --</option>
+                                                    @foreach($subBagians as $sb)
+                                                        <option value="{{ $sb->id }}"
+                                                            {{ $user->sub_bagian_id == $sb->id ? 'selected' : '' }}>
+                                                            {{ $sb->nama_sub_bagian }}
+                                                        </option>
+                                                    @endforeach
                                                 </select>
                                             </div>
 
@@ -164,7 +178,18 @@
                         <select name="role" class="form-select" required>
                             <option value="">-- Pilih Role --</option>
                             <option value="admin">Admin</option>
-                            <option value="superadmin">Superadmin</option>
+                            <!-- <option value="superadmin">Superadmin</option> -->
+                            <option value="user">User</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3 d-none" id="subBagianWrapper">
+                        <label class="form-label">Sub Bagian</label>
+                        <select name="sub_bagian_id" class="form-select">
+                            <option value="">-- Pilih Sub Bagian --</option>
+                            @foreach($subBagians as $sb)
+                                <option value="{{ $sb->id }}">{{ $sb->nama_sub_bagian }}</option>
+                            @endforeach
                         </select>
                     </div>
 
@@ -183,4 +208,39 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    function toggleSubBagian(roleSelect, wrapper) {
+        if (roleSelect.value === 'user') {
+            wrapper.classList.remove('d-none');
+        } else {
+            wrapper.classList.add('d-none');
+            wrapper.querySelector('select').value = '';
+        }
+    }
+
+    // Modal Tambah
+    const roleTambah = document.querySelector('#modalTambah select[name="role"]');
+    const wrapperTambah = document.getElementById('subBagianWrapper');
+
+    roleTambah.addEventListener('change', () => {
+        toggleSubBagian(roleTambah, wrapperTambah);
+    });
+
+    // Modal Edit (multiple)
+    document.querySelectorAll('[id^="editModal"]').forEach(modal => {
+        const roleEdit = modal.querySelector('select[name="role"]');
+        const wrapperEdit = modal.querySelector('.subBagianWrapper');
+
+        toggleSubBagian(roleEdit, wrapperEdit);
+
+        roleEdit.addEventListener('change', () => {
+            toggleSubBagian(roleEdit, wrapperEdit);
+        });
+    });
+});
+</script>
+
 @endsection

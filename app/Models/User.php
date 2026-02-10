@@ -58,4 +58,9 @@ class User extends Authenticatable
     {
         return $this->role === 'user';
     }
+    public function subBagian()
+    {
+        return $this->belongsTo(SubBagian::class);
+    }
+
 }
