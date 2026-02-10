@@ -359,11 +359,34 @@ private function extractNumberFromText($text)
     //     return view('arsip.show', compact('arsip'));
     // }
 
+    // public function show(Request $request, Arsip $arsip)
+    // {
+    //     return view('arsip.show', [
+    //         'arsip' => $arsip,
+    //         'returnUrl' => $request->get('return')
+    //     ]);
+    // }
+
     public function show(Request $request, Arsip $arsip)
     {
+        // Load data riwayat perpindahan
+        $riwayatPindah = \App\Models\HistoryPindah::with('user')
+            ->where('arsip_id', $arsip->id)
+            ->orderBy('tanggal_pindah', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Ambil data berita acara yang terkait dengan arsip ini
+        $beritaAcaraDetail = \App\Models\BeritaAcaraDetail::with(['beritaAcara', 'beritaAcara.subBagian'])
+            ->where('arsip_id', $arsip->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return view('arsip.show', [
             'arsip' => $arsip,
-            'returnUrl' => $request->get('return')
+            'returnUrl' => $request->get('return'),
+            'riwayatPindah' => $riwayatPindah,
+            'beritaAcaraDetail' => $beritaAcaraDetail
         ]);
     }
 

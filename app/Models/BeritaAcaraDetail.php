@@ -28,4 +28,12 @@ class BeritaAcaraDetail extends Model
     {
         return $this->belongsTo(BeritaAcaraPindah::class, 'bap_id');
     }
+
+    public function beritaAcara()
+    {
+        return $this->belongsTo(BeritaAcaraPindah::class, 'bap_id');
+    }
+    
+
+    
 }
