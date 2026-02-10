@@ -582,7 +582,7 @@
             </li>
             
             <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {{ request()->routeIs('subbagian.riwayat-pemindahan.*') ? 'active' : '' }}" href="{{ route('subbagian.riwayat-pemindahan.index') }}">
                     <i class="bi bi-download"></i> <span>Riwayat Pemindahan</span>
                 </a>
             </li>

@@ -11,7 +11,7 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Carbon\Carbon;
 
-class ArsipImport implements ToModel, WithHeadingRow
+class ArsipImportSubBagian implements ToModel, WithHeadingRow
 {
     /**
      * Parse nilai retensi dari Excel - handle multiline text
@@ -548,7 +548,7 @@ class ArsipImport implements ToModel, WithHeadingRow
         'aktif_sampai'        => $perhitungan['aktif_sampai'],
         'inaktif_sampai'      => $perhitungan['inaktif_sampai'],
         'status_arsip'        => $perhitungan['status_arsip'],
-        'status_pindah'       => 'LANGSUNG',
+        'status_pindah'       => 'BELUM',
         'nomor_box'           => (string) $nomorBox,
         'tingkat_perkembangan' => $tingkatPerkembangan,
         'media_arsip'         => $mediaArsip,

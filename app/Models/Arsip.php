@@ -49,6 +49,11 @@ class Arsip extends Model
         'created_by',
         'file_berita_acara',
         'status_pindah',
+        'catatan_verifikasi',
+        'diverifikasi_oleh',
+    'tanggal_diverifikasi',
+
+    'catatan_perbaikan',
     ];
     
     protected $attributes = [
@@ -67,7 +72,6 @@ class Arsip extends Model
         'tingkat_perkembangan' => 'ASLI',
         'aktif_sampai' => null,
         'inaktif_sampai' => null,
-        'status_pindah' => 'LANGSUNG'
     ];
     
     protected $casts = [

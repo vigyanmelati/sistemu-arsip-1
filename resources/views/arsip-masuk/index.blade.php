@@ -38,7 +38,7 @@
         </div>
         
         <!-- Stats Cards -->
-        <div class="row mb-4">
+        <!-- <div class="row mb-4">
             <div class="col-md-3">
                 <div class="card bg-warning bg-opacity-10 border-warning">
                     <div class="card-body">
@@ -51,7 +51,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
             <!-- <div class="col-md-3">
                 <div class="card bg-success bg-opacity-10 border-success">
                     <div class="card-body">
@@ -65,7 +65,7 @@
                     </div>
                 </div>
             </div> -->
-            <div class="col-md-3">
+            <!-- <div class="col-md-3">
                 <div class="card bg-danger bg-opacity-10 border-danger">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
@@ -77,8 +77,8 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-3">
+            </div> -->
+            <!-- <div class="col-md-3">
                 <div class="card bg-info bg-opacity-10 border-info">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
@@ -90,7 +90,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
         </div>
         
         <!-- Search Bar -->
@@ -202,11 +202,22 @@
         </div>
         
         <!-- Pagination -->
-        <div class="d-flex justify-content-between align-items-center mt-3">
+        <!-- <div class="d-flex justify-content-between align-items-center mt-3">
             <div class="text-muted">
                 Menampilkan {{ $arsips->firstItem() }} - {{ $arsips->lastItem() }} dari {{ $arsips->total() }} arsip
             </div>
             {{ $arsips->withQueryString()->links() }}
+        </div> -->
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div class="text-muted">
+                Menampilkan {{ $arsips->firstItem() }} - {{ $arsips->lastItem() }} dari {{ $arsips->total() }} arsip
+            </div>
+            
+            <!-- Tambah class pagination-sm -->
+            <nav aria-label="Page navigation">
+                {{ $arsips->withQueryString()->links('pagination::bootstrap-5')->with('class', 'pagination pagination-sm mb-0') }}
+            </nav>
         </div>
     </div>
 </div>

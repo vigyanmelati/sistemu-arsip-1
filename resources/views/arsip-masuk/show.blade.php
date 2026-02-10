@@ -261,8 +261,8 @@
                 
                 <hr>
                 
-                <form action="{{ route('admin.arsip-masuk.tolak', $arsip->id) }}" method="POST" 
-                    onsubmit="return confirmTolak()" id="formTolak">
+               
+                <form action="{{ route('admin.arsip-masuk.tolak', $arsip->id) }}" method="POST" id="formTolak">
                     @csrf
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Alasan Penolakan <span class="text-danger">*</span></label>
@@ -274,7 +274,7 @@
                     </div>
                     
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-danger btn-lg">
+                        <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('Yakin menolak pengajuan ini?')">
                             <i class="bi bi-x-circle me-2"></i> Tolak Pengajuan
                         </button>
                     </div>
@@ -492,61 +492,89 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Handle konfirmasi modal
-    confirmAction.addEventListener('click', function() {
-        console.log('Confirm button clicked'); // Debugging
+    // confirmAction.addEventListener('click', function() {
+    //     console.log('Confirm button clicked'); // Debugging
         
-        if (currentForm) {
-            // Tutup modal
-            confirmModal.hide();
+    //     if (currentForm) {
+    //         // Tutup modal
+    //         confirmModal.hide();
             
-            // Tampilkan loading
-            const submitButton = currentForm.querySelector('button[type="submit"]');
-            const originalText = submitButton.innerHTML;
-            submitButton.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Memproses...';
-            submitButton.disabled = true;
+    //         // Tampilkan loading
+    //         const submitButton = currentForm.querySelector('button[type="submit"]');
+    //         const originalText = submitButton.innerHTML;
+    //         submitButton.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Memproses...';
+    //         submitButton.disabled = true;
             
-            // Kirim form menggunakan AJAX untuk debugging
-            const formUrl = currentForm.action;
-            console.log('Submitting to:', formUrl); // Debugging
-            console.log('Form data:', formData); // Debugging
+    //         // Kirim form menggunakan AJAX untuk debugging
+    //         const formUrl = currentForm.action;
+    //         console.log('Submitting to:', formUrl); // Debugging
+    //         console.log('Form data:', formData); // Debugging
             
-            fetch(formUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': formData._token,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(response => {
-                console.log('Response status:', response.status); // Debugging
-                return response.json();
-            })
-            .then(data => {
-                console.log('Response data:', data); // Debugging
+    //         fetch(formUrl, {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //                 'X-CSRF-TOKEN': formData._token,
+    //                 'Accept': 'application/json'
+    //             },
+    //             body: JSON.stringify(formData)
+    //         })
+    //         .then(response => {
+    //             console.log('Response status:', response.status); // Debugging
+    //             return response.json();
+    //         })
+    //         .then(data => {
+    //             console.log('Response data:', data); // Debugging
                 
-                if (data.success) {
-                    // Redirect ke halaman index dengan pesan sukses
-                    window.location.href = "{{ route('arsip-masuk.index') }}";
-                } else {
-                    // Tampilkan error
-                    alert('Terjadi kesalahan: ' + (data.message || 'Tidak diketahui'));
-                    submitButton.innerHTML = originalText;
-                    submitButton.disabled = false;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Terjadi kesalahan: ' + error.message);
-                submitButton.innerHTML = originalText;
-                submitButton.disabled = false;
-            });
+    //             if (data.success) {
+    //                 // Redirect ke halaman index dengan pesan sukses
+    //                 window.location.href = "{{ route('arsip-masuk.index') }}";
+    //             } else {
+    //                 // Tampilkan error
+    //                 alert('Terjadi kesalahan: ' + (data.message || 'Tidak diketahui'));
+    //                 submitButton.innerHTML = originalText;
+    //                 submitButton.disabled = false;
+    //             }
+    //         })
+    //         .catch(error => {
+    //             console.error('Error:', error);
+    //             alert('Terjadi kesalahan: ' + error.message);
+    //             submitButton.innerHTML = originalText;
+    //             submitButton.disabled = false;
+    //         });
             
-            // Atau langsung submit form (non-AJAX)
-            // currentForm.submit();
+    //         // Atau langsung submit form (non-AJAX)
+    //         // currentForm.submit();
+    //     }
+    // });
+
+    // Ganti bagian JavaScript yang mengirim data
+confirmAction.addEventListener('click', function() {
+    console.log('Confirm button clicked');
+    
+    if (currentForm) {
+        // Tutup modal
+        confirmModal.hide();
+        
+        // Tampilkan loading
+        const submitButton = currentForm.querySelector('button[type="submit"]');
+        const originalText = submitButton.innerHTML;
+        submitButton.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Memproses...';
+        submitButton.disabled = true;
+        
+        // Buat FormData
+        const formData = new FormData(currentForm);
+        
+        console.log('FormData entries:');
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
         }
-    });
+        
+        // Kirim form secara tradisional (non-AJAX)
+        // Ini lebih reliable untuk form dengan file upload
+        currentForm.submit();
+    }
+});
     
     // Tambahkan event listener untuk bootstrap modal hidden
     document.getElementById('confirmModal').addEventListener('hidden.bs.modal', function () {

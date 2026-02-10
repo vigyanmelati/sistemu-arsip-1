@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Imports\ArsipImport;
+use App\Imports\ArsipImportSubBagian;
 use App\Exports\ArsipExport;
 use Carbon\Carbon;
 
@@ -20,7 +20,9 @@ class SubBagianArsipController extends Controller
     {
         $user = Auth::user();
         $query = Arsip::with(['kodeKlasifikasi', 'subBagian'])
-            ->where('sub_bagian_id', $user->sub_bagian_id); // scope sub bagian
+            ->where('sub_bagian_id', $user->sub_bagian_id) // scope sub bagian
+            ->where('status_pindah', 'BELUM');
+            
 
         $tahunOptions = Arsip::select('tahun_arsip')
             ->distinct()
@@ -112,6 +114,7 @@ class SubBagianArsipController extends Controller
         $validated['sub_bagian_id'] = $user->sub_bagian_id;
         $validated['created_by'] = $user->id;
         $validated['tanggal_masuk'] = now()->format('Y-m-d');
+        $validated['status_pindah'] = 'BELUM';
 
         if($request->hasFile('file_dokumen')){
             $file=$request->file('file_dokumen');
@@ -204,6 +207,8 @@ class SubBagianArsipController extends Controller
         // $validated['aktif_sampai']=$perhitungan['aktif_sampai'];
         // $validated['inaktif_sampai']=$perhitungan['inaktif_sampai'];
         // $validated['status_arsip']=$perhitungan['status_arsip'];
+        unset($validated['status_pindah']);
+
 
         $arsip->update($validated);
 
@@ -220,14 +225,21 @@ class SubBagianArsipController extends Controller
         return redirect()->route('subbagian.arsip.index')->with('success','Arsip berhasil dihapus.');
     }
 
-    public function import(Request $request)
+     public function import(Request $request)
     {
-        $request->validate(['file_excel'=>'required|file|mimes:xlsx,xls']);
-        $user = Auth::user();
-        Excel::import(new ArsipImport($user->sub_bagian_id, $user->id), $request->file('file_excel'));
-        return redirect()->route('subbagian.arsip.index')->with('success','Data arsip berhasil diimport.');
-    }
+        $request->validate([
+            'file_excel' => 'required|file|mimes:xlsx,xls'
+        ]);
 
+        try {
+            Excel::import(new ArsipImportSubBagian, $request->file('file_excel'));
+
+            return redirect()->route('subbagian.arsip.index')
+                ->with('success', 'Data arsip berhasil diimport.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal import: ' . $e->getMessage());
+        }
+    }
     public function export(Request $request)
     {
         $columns = $request->input('columns',[]);

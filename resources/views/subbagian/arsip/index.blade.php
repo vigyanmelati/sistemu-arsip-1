@@ -220,7 +220,11 @@
             <div class="text-muted">
                 Menampilkan {{ $arsips->firstItem() }} - {{ $arsips->lastItem() }} dari {{ $arsips->total() }} arsip
             </div>
-            {{ $arsips->withQueryString()->links() }}
+            
+            <!-- Tambah class pagination-sm -->
+            <nav aria-label="Page navigation">
+                {{ $arsips->withQueryString()->links('pagination::bootstrap-5')->with('class', 'pagination pagination-sm mb-0') }}
+            </nav>
         </div>
     </div>
 </div>
@@ -916,6 +920,7 @@
     .action-buttons .btn i {
         font-size: 1.1em;
     }
+
 
 </style>
 

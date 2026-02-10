@@ -506,6 +506,9 @@ private function extractNumberFromText($text)
         $validated['inaktif_sampai']= $perhitungan['inaktif_sampai'];
         $validated['status_arsip'] = $perhitungan['status_arsip'];
 
+        unset($validated['status_pindah']);
+
+
         \Log::info('Hasil hitung retensi update:', $perhitungan);
 
         // =========================

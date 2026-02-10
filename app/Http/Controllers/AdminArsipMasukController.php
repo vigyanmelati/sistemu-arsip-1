@@ -175,10 +175,18 @@ public function terima(Request $request, Arsip $arsip)
     /**
      * Tolak pengajuan pemindahan arsip.
      */
+    // App/Http/Controllers/AdminArsipMasukController.php
     public function tolak(Request $request, Arsip $arsip)
     {
         $request->validate([
             'alasan' => 'required|string|max:500'
+        ]);
+
+        // Debug: lihat data yang masuk
+        \Log::info('Data penolakan diterima:', [
+            'arsip_id' => $arsip->id,
+            'alasan' => $request->alasan,
+            'user_id' => auth()->id()
         ]);
 
         // Pastikan arsip masih dalam status DIAJUKAN
@@ -194,15 +202,26 @@ public function terima(Request $request, Arsip $arsip)
 
         DB::beginTransaction();
         try {
-            // Update status arsip
-            $arsip->update([
+            // Update status arsip - gunakan update langsung
+            $updateData = [
                 'status_pindah' => 'DITOLAK',
                 'tanggal_diverifikasi' => now(),
                 'diverifikasi_oleh' => auth()->id(),
-                'catatan_verifikasi' => $request->alasan
-            ]);
+                'catatan_verifikasi' => $request->alasan // Pastikan ini ada
+            ];
+            
+            \Log::info('Data yang akan diupdate:', $updateData);
+            
+            // Coba dengan cara berbeda
+            $arsip->catatan_verifikasi = $request->alasan;
+            $arsip->status_pindah = 'DITOLAK';
+            $arsip->tanggal_diverifikasi = now();
+            $arsip->diverifikasi_oleh = auth()->id();
+            $arsip->save();
 
             DB::commit();
+
+            \Log::info('Arsip berhasil ditolak:', ['arsip_id' => $arsip->id]);
 
             if ($request->expectsJson()) {
                 return response()->json([
@@ -216,6 +235,10 @@ public function terima(Request $request, Arsip $arsip)
 
         } catch (\Exception $e) {
             DB::rollback();
+            \Log::error('Error menolak arsip:', [
+                'arsip_id' => $arsip->id,
+                'error' => $e->getMessage()
+            ]);
             
             if ($request->expectsJson()) {
                 return response()->json([

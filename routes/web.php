@@ -10,6 +10,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SubBagianDashboardController;
 use App\Http\Controllers\SubBagianArsipController;
+use App\Http\Controllers\SubBagianRiwayatPemindahanController;
 use App\Http\Controllers\AdminArsipMasukController;
 
 require __DIR__.'/auth.php';
@@ -178,6 +179,26 @@ Route::middleware(['auth', 'subbagian'])->prefix('subbagian')->name('subbagian.'
     // Ajukan Pindah (upload BAP)
     Route::post('/arsip/{arsip}/ajukan-pindah', [SubBagianArsipController::class, 'ajukanPindah'])->name('arsip.ajukanPindah');
     Route::post('/arsip/ajukan-pindah-multiple', [SubBagianArsipController::class, 'ajukanPindahMultiple'])->name('arsip.ajukanPindahMultiple');
+
+     Route::prefix('riwayat-pemindahan')->name('riwayat-pemindahan.')->group(function () {
+        Route::get('/', [SubBagianRiwayatPemindahanController::class, 'index'])->name('index');
+        Route::get('/{arsip}', [SubBagianRiwayatPemindahanController::class, 'show'])->name('show');
+        Route::post('/{arsip}/perbaiki', [SubBagianRiwayatPemindahanController::class, 'perbaikiArsip'])->name('perbaiki');
+        // Route::post('/{arsip}/ajukan-kembali', [SubBagianRiwayatPemindahanController::class, 'ajukanKembali'])->name('ajukan-kembali');
+        Route::get('/riwayat-pemindahan/{arsip}/edit-perbaikan', 
+        [SubBagianRiwayatPemindahanController::class, 'editPerbaikan'])
+        ->name('edit-perbaikan');
+        
+        Route::put('/riwayat-pemindahan/{arsip}/update-perbaikan', 
+            [SubBagianRiwayatPemindahanController::class, 'updatePerbaikan'])
+            ->name('update-perbaikan');
+            
+        Route::post('/riwayat-pemindahan/{arsip}/ajukan-kembali', 
+            [SubBagianRiwayatPemindahanController::class, 'ajukanKembali'])
+            ->name('ajukan-kembali');
+        });
+
+    
 });
 
 
