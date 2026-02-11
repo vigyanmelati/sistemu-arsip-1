@@ -590,7 +590,7 @@ private function extractNumberFromText($text)
         }
     }
 
-   public function export(Request $request)
+    public function export(Request $request)
     {
         $columns = $request->input('columns', []);
         

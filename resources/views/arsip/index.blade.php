@@ -430,8 +430,10 @@
         </div>
     </div>
 </div>
-<!-- 
-Export excel openModal -->
+
+
+<!-- Export Excel Modal - CUSTOM MODAL -->
+<!-- Export Excel Modal - CUSTOM MODAL -->
 <div class="modal-container" id="exportModalContainer" style="display:none;">
     <div class="modal-content-wrapper" style="max-width:700px;">
         <div class="modal-content">
@@ -445,19 +447,17 @@ Export excel openModal -->
                 </button>
             </div>
 
-          <form method="GET" action="{{ route('arsip.export') }}">
-
-
+            <form method="GET" action="{{ route('arsip.export') }}">
                 {{-- kirim SEMUA query filter yang aktif --}}
-               @foreach(request()->except('page') as $key => $value)
-                @if(is_array($value))
-                    @foreach($value as $val)
-                        <input type="hidden" name="{{ $key }}[]" value="{{ $val }}">
-                    @endforeach
-                @else
-                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                @endif
-            @endforeach
+                @foreach(request()->except('page') as $key => $value)
+                    @if(is_array($value))
+                        @foreach($value as $val)
+                            <input type="hidden" name="{{ $key }}[]" value="{{ $val }}">
+                        @endforeach
+                    @else
+                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                    @endif
+                @endforeach
 
                 <div class="modal-body">
                     <div class="row">
@@ -465,6 +465,7 @@ Export excel openModal -->
                         $columns = [
                             'kode_klasifikasi' => 'Kode Klasifikasi',
                             'uraian_arsip' => 'Judul Arsip',
+                            'jumlah' => 'Jumlah (Berkas+Satuan)',
                             'tahun_arsip' => 'Tahun',
                             'nomor_rak' => 'Rak',
                             'nomor_box' => 'Box',
@@ -473,7 +474,9 @@ Export excel openModal -->
                             'inaktif_sampai' => 'Inaktif Sampai',
                             'status_arsip' => 'Status Arsip',
                             'sub_bagian' => 'Sub Bagian',
-                            'keterangan' => 'Kondisi Fisik',
+                            'keterangan' => 'Keterangan', 
+                            'tingkat_perkembangan' => 'Tingkat Perkembangan',
+                            'keterangan_jra' => 'Keterangan JRA',
                         ];
                         @endphp
 
