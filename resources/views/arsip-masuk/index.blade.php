@@ -122,15 +122,15 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th style="width: 40px;">
-                            <input type="checkbox" id="selectAll">
-                        </th>
+                        <th style="width: 40px;"><input type="checkbox" id="selectAll"></th>
                         <th>#</th>
                         <th>Kode Klasifikasi</th>
                         <th>Judul Arsip</th>
                         <th>Sub Bagian</th>
                         <th>Tahun</th>
                         <th>Jumlah</th>
+                        <th>No Rak</th>
+                        <th>No Box</th>
                         <th>Tanggal Diajukan</th>
                         <th>File Berita Acara</th>
                         <th>Status Pemindahan</th>
@@ -140,58 +140,43 @@
                 <tbody>
                     @forelse($arsips as $arsip)
                     <tr>
-                        <td>
-                            <input type="checkbox" class="arsip-checkbox" value="{{ $arsip->id }}">
-                        </td>
+                        <td><input type="checkbox" class="arsip-checkbox" value="{{ $arsip->id }}"></td>
                         <td>{{ $loop->iteration + ($arsips->currentPage() - 1) * $arsips->perPage() }}</td>
                         <td><strong>{{ $arsip->kodeKlasifikasi->kode ?? 'N/A' }}</strong></td>
                         <td>{{ Str::limit($arsip->uraian_arsip, 150) }}</td>
                         <td>{{ $arsip->subBagian->nama_sub_bagian ?? 'N/A' }}</td>
                         <td>{{ $arsip->tahun_arsip }}</td>
                         <td>{{ $arsip->jumlah_berkas }} {{ $arsip->satuan_arsip }}</td>
+                        <td>{{ $arsip->nomor_rak ?? '-' }}</td>
+                        <td>{{ $arsip->nomor_box ?? '-' }}</td>
                         <td>{{ $arsip->created_at->format('d/m/Y H:i') }}</td>
                         <td>
                             @if($arsip->file_berita_acara)
-                                <a href="{{ route('arsip-masuk.download-berita-acara', $arsip->id) }}" 
-                                   class="btn btn-sm btn-success" 
-                                   title="Download Berita Acara">
-                                    <i class="bi bi-download"></i> Download
-                                </a>
+                                <a href="{{ route('arsip-masuk.download-berita-acara', $arsip->id) }}" class="btn btn-sm btn-success"><i class="bi bi-download"></i> Download</a>
                             @else
                                 <span class="badge bg-warning">Tidak ada</span>
                             @endif
                         </td>
-                         <td>
+                        <td>
                             @if($arsip->status_pindah)
                                 @php
-                                    $statusPindahColors = [
-                                        'DIAJUKAN' => 'warning',
-                                        'DITERIMA' => 'success',
-                                        'DITOLAK' => 'danger',
-                                        'SELESAI' => 'info'
-                                    ];
+                                    $statusPindahColors = ['DIAJUKAN' => 'warning','DITERIMA' => 'success','DITOLAK' => 'danger','SELESAI' => 'info'];
                                     $color = $statusPindahColors[$arsip->status_pindah] ?? 'secondary';
                                 @endphp
-                                <span class="badge bg-{{ $color }}">
-                                    {{ $arsip->status_pindah }}
-                                </span>
+                                <span class="badge bg-{{ $color }}">{{ $arsip->status_pindah }}</span>
                             @else
                                 <span class="badge bg-secondary">Belum Diajukan</span>
                             @endif
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <a href="{{ route('arsip-masuk.show', $arsip->id) }}" 
-                                   class="btn btn-info" 
-                                   title="Detail">
-                                    <i class="bi bi-eye"></i>
-                                </a>
+                                <a href="{{ route('arsip-masuk.show', $arsip->id) }}" class="btn btn-info" title="Detail"><i class="bi bi-eye"></i></a>
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="11" class="text-center py-4">
+                        <td colspan="13" class="text-center py-4">
                             <i class="bi bi-inbox fs-1 text-muted mb-2"></i>
                             <p class="text-muted">Tidak ada arsip masuk yang perlu diverifikasi</p>
                         </td>

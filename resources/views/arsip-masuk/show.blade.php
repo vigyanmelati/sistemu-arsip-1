@@ -249,7 +249,7 @@
                     
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-success btn-lg">
-                            <i class="bi bi-check-circle me-2"></i> Terima & Verifikasi
+                            <i class="bi bi-check-circle me-2"></i>Verifikasi
                         </button>
                     </div>
                 </form>
@@ -257,7 +257,7 @@
                 <hr>
                 
                
-                <form action="{{ route('admin.arsip-masuk.tolak', $arsip->id) }}" method="POST" id="formTolak">
+                <!-- <form action="{{ route('admin.arsip-masuk.tolak', $arsip->id) }}" method="POST" id="formTolak">
                     @csrf
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Alasan Penolakan <span class="text-danger">*</span></label>
@@ -273,7 +273,7 @@
                             <i class="bi bi-x-circle me-2"></i> Tolak Pengajuan
                         </button>
                     </div>
-                </form>
+                </form> -->
             </div>
         </div>
         
