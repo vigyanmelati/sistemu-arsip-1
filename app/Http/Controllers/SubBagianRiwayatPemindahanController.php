@@ -173,11 +173,11 @@ class SubBagianRiwayatPemindahanController extends Controller
             'jumlah_berkas' => 'required|integer|min:1',
             'satuan_arsip' => 'required|string|max:20',
             
-            // Data retensi
-            'aktif_tahun' => 'required',
-            'inaktif_tahun' => 'required',
-            'tanggal_referensi' => 'nullable|date',
-            'keterangan_jra' => 'required|in:MUSNAH,PERMANEN,BELUM DITENTUKAN',
+            // Data retensi (jika diperlukan, uncomment)
+            // 'aktif_tahun' => 'required',
+            // 'inaktif_tahun' => 'required',
+            // 'tanggal_referensi' => 'nullable|date',
+            // 'keterangan_jra' => 'required|in:MUSNAH,PERMANEN,BELUM DITENTUKAN',
             
             // Lokasi
             'nomor_rak' => 'nullable|string|max:50',
@@ -189,25 +189,25 @@ class SubBagianRiwayatPemindahanController extends Controller
             'keterangan' => 'required|string|max:100',
             'media_arsip' => 'required|string|max:50',
             
-            // Berita acara
-            'file_berita_acara_baru' => 'nullabel|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            // Berita acara baru (opsional)
+            'file_berita_acara_baru' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048', // ← perbaikan typo
             
-            // Catatan perbaikan
+            // Catatan perbaikan (jika diperlukan)
             // 'catatan_perbaikan' => 'required|string|max:1000',
         ]);
 
         DB::beginTransaction();
         try {
-            // Upload file berita acara baru
+            // Upload file berita acara baru (jika ada)
             if ($request->hasFile('file_berita_acara_baru')) {
                 // Hapus file lama jika ada
                 if ($arsip->file_berita_acara) {
-                    Storage::delete('public/arsip/' . $arsip->file_berita_acara);
+                    Storage::disk('public')->delete('arsip/' . $arsip->file_berita_acara);
                 }
                 
                 $file = $request->file('file_berita_acara_baru');
                 $fileName = time() . '_' . $file->getClientOriginalName();
-                $file->storeAs('public/arsip', $fileName);
+                $file->storeAs('arsip', $fileName, 'public');
                 $validated['file_berita_acara'] = $fileName;
             }
 
@@ -215,7 +215,7 @@ class SubBagianRiwayatPemindahanController extends Controller
             $validated['status_pindah'] = 'DIPERBAIKI';
             $validated['updated_at'] = now();
 
-            // Hapus field yang tidak perlu di database
+            // Hapus field yang tidak ada di database
             unset($validated['file_berita_acara_baru']);
 
             // Update arsip

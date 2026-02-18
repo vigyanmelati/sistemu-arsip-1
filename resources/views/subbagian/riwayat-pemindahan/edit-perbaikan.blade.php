@@ -186,7 +186,7 @@
                         </div>
 
                         <!-- Informasi Retensi -->
-                        <div class="card mb-4">
+                        <!-- <div class="card mb-4">
                             <div class="card-header bg-light">
                                 <h5 class="mb-0">Informasi Retensi</h5>
                             </div>
@@ -230,7 +230,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
 
                         <!-- Berita Acara dan Catatan -->
                         <div class="card mb-4">
