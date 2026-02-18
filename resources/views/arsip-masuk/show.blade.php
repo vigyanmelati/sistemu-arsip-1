@@ -162,29 +162,24 @@
                 </h5>
             </div>
             <div class="card-body">
-                @if($arsip->file_berita_acara)
-                <div class="text-center">
-                    <i class="bi bi-file-earmark-pdf text-success" style="font-size: 4rem;"></i>
-                    <h5 class="mt-3">Berita Acara Pemindahan</h5>
-                    <p class="text-muted">File berita acara yang diupload oleh Sub Bagian</p>
-                    
-                    <div class="mt-4">
-                        <a href="{{ route('admin.arsip-masuk.download-berita-acara', $arsip->id) }}" 
-                           class="btn btn-success btn-lg" 
-                           target="_blank">
-                            <i class="bi bi-download me-2"></i> Download Berita Acara
-                        </a>
-                    </div>
-                    
-                    <div class="alert alert-info mt-4">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <strong>Periksa kelengkapan berita acara:</strong>
-                        <ul class="mt-2 mb-0">
-                            <li>Nomor berita acara harus jelas</li>
-                            <li>Tanggal berita acara valid</li>
-                            <li>Tanda tangan lengkap</li>
-                            <li>Daftar arsip yang dipindahkan sesuai</li>
-                        </ul>
+                @if($arsip->beritaAcaraPindah->isNotEmpty())
+                 @php $bap = $arsip->beritaAcaraPindah->first(); @endphp
+                <div class="card mt-3">
+                    <!-- <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Berita Acara Pengajuan</h5>
+                    </div> -->
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Nomor BAP:</strong> {{ $bap->nomor_bap }}</p>
+                                <p><strong>Tanggal BAP:</strong> {{ \Carbon\Carbon::parse($bap->tanggal_bap)->format('d-m-Y') }}</p>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <a href="{{ route('arsip-masuk.download-berita-acara', $arsip->id) }}" class="btn btn-primary" target="_blank">
+                                    <i class="bi bi-file-earmark-pdf"></i> Download Berita Acara
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 @else

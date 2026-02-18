@@ -106,13 +106,13 @@ class Arsip extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-     // 🔗 satu arsip bisa ikut banyak proses pemusnahan (lintas tahun)
+     // satu arsip bisa ikut banyak proses pemusnahan (lintas tahun)
     public function pemusnahanDetails()
     {
         return $this->hasMany(PemusnahanDetail::class, 'arsip_id');
     }
 
-    // 🔍 helper: cek apakah arsip disetujui dimusnahkan di pemusnahan tertentu
+    // helper: cek apakah arsip disetujui dimusnahkan di pemusnahan tertentu
     public function disetujuiDiPemusnahan($pemusnahanId)
     {
         return $this->pemusnahanDetails()
@@ -367,6 +367,24 @@ class Arsip extends Model
     public function lokasiTerakhir()
     {
         return $this->historyPindah()->latest()->first();
+    }
+
+    public function beritaAcaraDetails()
+    {
+        return $this->hasMany(BeritaAcaraDetail::class, 'arsip_id');
+    }
+
+    public function beritaAcaraPindah()
+    {
+        return $this->belongsToMany(BeritaAcaraPindah::class, 'berita_acara_detail', 'arsip_id', 'bap_id')
+                    ->withPivot('status')
+                    ->withTimestamps();
+    }
+
+    // Ambil BAP terakhir (karena satu arsip bisa beberapa kali diajukan? biasanya sekali)
+    public function getLatestBeritaAcaraAttribute()
+    {
+        return $this->beritaAcaraPindah()->latest()->first();
     }
 
 }

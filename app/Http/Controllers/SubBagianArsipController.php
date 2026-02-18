@@ -13,6 +13,9 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ArsipImportSubBagian;
 use App\Exports\ArsipExport;
 use Carbon\Carbon;
+use App\Models\BeritaAcaraPindah;
+use App\Models\BeritaAcaraDetail;
+use Illuminate\Support\Facades\DB;
 
 class SubBagianArsipController extends Controller
 {
@@ -271,14 +274,50 @@ class SubBagianArsipController extends Controller
     }
 
     // Tambahkan method ini di ArsipController
+    // public function ajukanPindahMultiple(Request $request)
+    // {
+    //     $user = Auth::user();
+        
+    //     $request->validate([
+    //         'arsip_ids' => 'required|array',
+    //         'arsip_ids.*' => 'exists:arsips,id',
+    //         'file_berita_acara' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048'
+    //     ]);
+
+    //     // Pastikan semua arsip milik sub bagian user
+    //     $arsips = Arsip::whereIn('id', $request->arsip_ids)
+    //                     ->where('sub_bagian_id', $user->sub_bagian_id)
+    //                     ->get();
+
+    //     if ($arsips->count() != count($request->arsip_ids)) {
+    //         return back()->with('error', 'Beberapa arsip tidak ditemukan atau tidak memiliki akses.');
+    //     }
+
+    //     // Simpan file berita acara
+    //     $file = $request->file('file_berita_acara');
+    //     $fileName = time().'_'.$file->getClientOriginalName();
+    //     $file->storeAs('arsip', $fileName, 'public');
+
+    //     // Update setiap arsip
+    //     foreach ($arsips as $arsip) {
+    //         $arsip->file_berita_acara = $fileName;
+    //         $arsip->status_pindah = 'DIAJUKAN';
+    //         $arsip->save();
+    //     }
+
+    //     return back()->with('success', count($request->arsip_ids) . ' arsip berhasil diajukan pemindahannya.');
+    // }
+
     public function ajukanPindahMultiple(Request $request)
     {
         $user = Auth::user();
         
         $request->validate([
-            'arsip_ids' => 'required|array',
-            'arsip_ids.*' => 'exists:arsips,id',
-            'file_berita_acara' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048'
+            'arsip_ids'          => 'required|array',
+            'arsip_ids.*'        => 'exists:arsips,id',
+            'nomor_bap'          => 'required|string|max:100|unique:berita_acara_pindah,nomor_bap',
+            'tanggal_bap'        => 'required|date',
+            'file_berita_acara'  => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048'
         ]);
 
         // Pastikan semua arsip milik sub bagian user
@@ -292,16 +331,43 @@ class SubBagianArsipController extends Controller
 
         // Simpan file berita acara
         $file = $request->file('file_berita_acara');
-        $fileName = time().'_'.$file->getClientOriginalName();
-        $file->storeAs('arsip', $fileName, 'public');
+        $fileName = time() . '_' . $file->getClientOriginalName();
+        $file->storeAs('berita_acara', $fileName, 'public');
 
-        // Update setiap arsip
-        foreach ($arsips as $arsip) {
-            $arsip->file_berita_acara = $fileName;
-            $arsip->status_pindah = 'DIAJUKAN';
-            $arsip->save();
+        DB::beginTransaction();
+        try {
+            // Buat header BAP
+            $bap = BeritaAcaraPindah::create([
+                'nomor_bap'      => $request->nomor_bap,
+                'tanggal_bap'    => $request->tanggal_bap,
+                'sub_bagian_id'  => $user->sub_bagian_id,
+                'created_by'     => $user->id,
+                'file_bap'       => $fileName,
+                'status'         => 'DIAJUKAN',
+            ]);
+
+            // Simpan detail dan update arsip
+            foreach ($arsips as $arsip) {
+                BeritaAcaraDetail::create([
+                    'bap_id'   => $bap->id,
+                    'arsip_id' => $arsip->id,
+                    'status'   => 'DIAJUKAN',
+                ]);
+
+                // Update arsip
+                $arsip->status_pindah = 'DIAJUKAN';
+                $arsip->file_berita_acara = $fileName; // boleh diisi untuk referensi cepat
+                $arsip->save();
+            }
+
+            DB::commit();
+
+            return redirect()->route('subbagian.arsip.index')
+                ->with('success', count($request->arsip_ids) . ' arsip berhasil diajukan dengan Nomor BAP: ' . $request->nomor_bap);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Storage::disk('public')->delete('berita_acara/' . $fileName);
+            return back()->with('error', 'Gagal mengajukan pemindahan: ' . $e->getMessage());
         }
-
-        return back()->with('success', count($request->arsip_ids) . ' arsip berhasil diajukan pemindahannya.');
     }
 }

@@ -290,7 +290,7 @@
                                         <th width="20%">Lokasi Asal</th>
                                         <th width="20%">Lokasi Tujuan</th>
                                         <th width="25%">Alasan/Keterangan</th>
-                                        <th width="20%">Oleh</th>
+                                        <!-- <th width="20%">Oleh</th> -->
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -328,13 +328,13 @@
                                                 </small>
                                             @endif
                                         </td>
-                                        <td>
+                                        <!-- <td>
                                             {{ $rp->user->name ?? 'System' }}
                                             <br>
                                             <small class="text-muted">
                                                 {{ $rp->user->role ?? '' }}
                                             </small>
-                                        </td>
+                                        </td> -->
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -359,7 +359,7 @@
                                         <th width="20%">Sub Bagian Pengaju</th>
                                         <th width="15%">Status BAP</th>
                                         <th width="20%">Status Arsip</th>
-                                        <th width="15%">Dibuat Oleh</th>
+                                        <!-- <th width="15%">Dibuat Oleh</th> -->
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -405,9 +405,9 @@
                                                 </small>
                                             @endif
                                         </td>
-                                        <td>
+                                        <!-- <td>
                                             {{ $bad->beritaAcara->createdBy->name ?? '-' }}
-                                        </td>
+                                        </td> -->
                                     </tr>
                                     @endforeach
                                 </tbody>

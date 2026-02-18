@@ -152,7 +152,7 @@
                         <td>{{ $arsip->created_at->format('d/m/Y H:i') }}</td>
                         <td>
                             @if($arsip->file_berita_acara)
-                                <a href="{{ route('admin.arsip-masuk.download-berita-acara', $arsip->id) }}" 
+                                <a href="{{ route('arsip-masuk.download-berita-acara', $arsip->id) }}" 
                                    class="btn btn-sm btn-success" 
                                    title="Download Berita Acara">
                                     <i class="bi bi-download"></i> Download

@@ -233,6 +233,7 @@
 <div class="modal-overlay" id="modalOverlay" style="display: none;"></div>
 
 <!-- Modal Ajukan Pindah Multiple -->
+<!-- Modal Ajukan Pindah -->
 <div class="modal-container" id="ajukanPindahModalContainer" style="display: none;">
     <div class="modal-content-wrapper">
         <div class="modal-content">
@@ -248,27 +249,42 @@
             <form method="POST" action="{{ route('subbagian.arsip.ajukanPindahMultiple') }}" enctype="multipart/form-data" id="ajukanPindahForm">
                 @csrf
                 <div class="modal-body p-4">
+                    <!-- Nomor Berita Acara -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">File Berita Acara <span class="text-danger">*</span></label>
-                        <input type="file" name="file_berita_acara" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                        <small class="text-muted">Format: PDF, JPG, JPEG, PNG (Maksimal 2MB)</small>
+                        <label class="form-label fw-semibold">Nomor Berita Acara <span class="text-danger">*</span></label>
+                        <input type="text" name="nomor_bap" class="form-control" placeholder="Contoh: BAP/001/III/2025" required>
+                        <small class="text-muted">Isi nomor berita acara sesuai dokumen fisik.</small>
                     </div>
+
+                    <!-- Tanggal Berita Acara -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tanggal Berita Acara <span class="text-danger">*</span></label>
+                        <input type="date" name="tanggal_bap" class="form-control" value="{{ date('Y-m-d') }}" required>
+                    </div>
+
+                    <!-- File Berita Acara -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">File Berita Acara (PDF/JPG/PNG) <span class="text-danger">*</span></label>
+                        <input type="file" name="file_berita_acara" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <small class="text-muted">Maksimal 2MB</small>
+                    </div>
+
+                    <!-- Daftar arsip yang dipilih -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Arsip yang akan diajukan (<span id="selectedCountModal">0</span> arsip)</label>
                         <div id="selectedArsipList" class="border rounded p-3 bg-light" style="max-height: 200px; overflow-y: auto;">
-                            <!-- Daftar arsip yang dipilih akan muncul di sini -->
+                            <!-- akan diisi JavaScript -->
                         </div>
                     </div>
-                    <div class="alert alert-warning">
+
+                    <!-- <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        <strong>Perhatian:</strong> Setelah diajukan, arsip akan menunggu persetujuan dari Unit Kearsipan.
-                    </div>
+                        <strong>Perhatian:</strong> Arsip yang diajukan akan menunggu persetujuan Unit Kearsipan.
+                    </div> -->
                 </div>
                 <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-outline-secondary" id="cancelAjukanPindah">
-                        Batal
-                    </button>
-                    <button type="submit" class="btn btn-warning">
+                    <button type="button" class="btn btn-outline-secondary" id="cancelAjukanPindah">Batal</button>
+                    <button type="submit" class="btn btn-warning" style="margin-left:5px">
                         <i class="bi bi-send me-1"></i> Ajukan Pemindahan
                     </button>
                 </div>

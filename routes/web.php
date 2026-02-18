@@ -136,6 +136,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/arsip-masuk-dashboard', [AdminArsipMasukController::class, 'dashboard'])->name('arsip-masuk.dashboard');
        
     });
+
+    Route::get('arsip-masuk/{arsip}/download-berita-acara', [AdminArsipMasukController::class, 'downloadBeritaAcara'])
+    ->name('arsip-masuk.download-berita-acara');
     
     // Master Data (hanya Super Admin)
     Route::middleware(['auth', 'superadmin'])->prefix('superadmin')->name('superadmin.')->group(function () {

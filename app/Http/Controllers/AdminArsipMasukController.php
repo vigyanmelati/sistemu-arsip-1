@@ -79,7 +79,7 @@ class AdminArsipMasukController extends Controller
     /**
      * Display the specified arsip.
      */
- public function show(Arsip $arsip)
+    public function show(Arsip $arsip)
     {
         // Pastikan arsip sudah diajukan pemindahan
         if ($arsip->status_pindah !== 'DIAJUKAN') {
@@ -87,10 +87,15 @@ class AdminArsipMasukController extends Controller
                 ->with('error', 'Arsip belum diajukan pemindahan atau sudah diproses.');
         }
 
-        // Load history pindah jika ada
-        $arsip->load(['historyPindah' => function($query) {
-            $query->orderBy('tanggal_pindah', 'desc');
-        }]);
+        // Load history pindah dan berita acara
+        $arsip->load([
+            'historyPindah' => function($query) {
+                $query->orderBy('tanggal_pindah', 'desc');
+            },
+            'beritaAcaraPindah' => function($query) {
+                $query->latest();
+            }
+        ]);
 
         return view('arsip-masuk.show', compact('arsip'));
     }
@@ -98,7 +103,7 @@ class AdminArsipMasukController extends Controller
     /**
      * Terima pengajuan pemindahan arsip.
      */
-public function terima(Request $request, Arsip $arsip)
+    public function terima(Request $request, Arsip $arsip)
     {
         $request->validate([
             'catatan' => 'nullable|string|max:500',
@@ -440,5 +445,26 @@ public function terima(Request $request, Arsip $arsip)
         $history = $arsip->historyPindah()->orderBy('tanggal_pindah', 'desc')->get();
         
         return view('arsip-masuk.history', compact('arsip', 'history'));
+    }
+
+    public function downloadBeritaAcara(Arsip $arsip)
+    {
+        // Cari BAP terakhir yang terkait dengan arsip ini
+        $bap = $arsip->beritaAcaraPindah()->latest()->first();
+        
+        if (!$bap || !$bap->file_bap) {
+            return back()->with('error', 'File berita acara tidak ditemukan.');
+        }
+
+        $path = storage_path('app/public/berita_acara/' . $bap->file_bap);
+        
+        if (!file_exists($path)) {
+            return back()->with('error', 'File fisik tidak ditemukan di server.');
+        }
+
+        // Format nama file untuk download
+        $filename = 'BAP_' . str_replace('/', '_', $bap->nomor_bap) . '.pdf';
+        
+        return response()->download($path, $filename);
     }
 }
