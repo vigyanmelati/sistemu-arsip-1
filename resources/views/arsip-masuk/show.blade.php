@@ -92,7 +92,7 @@
                 <!-- History Perpindahan (jika ada) -->
                 @if($arsip->historyPindah && $arsip->historyPindah->count() > 0)
                 <div class="mt-4">
-                    <label class="form-label fw-semibold">History Perpindahan Sebelumnya</label>
+                    <label class="form-label fw-semibold">Riwayat Perubahan Lokasi Arsip</label>
                     <div class="table-responsive">
                         <table class="table table-sm">
                             <thead>
@@ -204,17 +204,19 @@
             <div class="card-header bg-warning text-white">
                 <h5 class="mb-0">
                     <i class="bi bi-clipboard-check me-2"></i>
-                    Verifikasi Arsip
+                    Verifikasi Lokasi Arsip
                 </h5>
             </div>
             <div class="card-body">
-                <form action="{{ route('admin.arsip-masuk.terima', $arsip->id) }}" method="POST" 
-                    onsubmit="return confirmTerima()" id="formTerima">
+              <form action="{{ route('admin.arsip-masuk.terima', $arsip->id) }}" 
+                method="POST"
+                id="formTerima">
                     @csrf
                     
                     <div class="alert alert-info mb-3">
                         <i class="bi bi-info-circle me-2"></i>
-                        <strong>Info:</strong> Arsip akan dipindahkan dari lokasi Sub Bagian ke Unit Kearsipan
+                        <strong>Info:</strong> Verifikasi ini hanya menyimpan usulan lokasi rak dan box.
+                        Pemindahan arsip dilakukan pada tahap selanjutnya.
                     </div>
                     
                     <div class="row">
@@ -249,7 +251,7 @@
                     
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-success btn-lg">
-                            <i class="bi bi-check-circle me-2"></i>Verifikasi
+                            <i class="bi bi-check-circle me-2"></i>Simpan Verifikasi Lokasi
                         </button>
                     </div>
                 </form>
@@ -296,11 +298,11 @@
                         </div>
                     </div>
                     
-                    @if($arsip->status_pindah == 'DITERIMA' || $arsip->status_pindah == 'DITOLAK')
+                    @if($arsip->tanggal_diverifikasi)
                     <div class="timeline-item">
                         <div class="timeline-marker bg-success"></div>
                         <div class="timeline-content">
-                            <h6 class="mb-1">Diverifikasi oleh Admin</h6>
+                            <h6 class="mb-1">Lokasi Arsip Diverifikasi Admin</h6>
                             <p class="text-muted small mb-0">
                                 {{ $arsip->tanggal_diverifikasi ? \Carbon\Carbon::parse($arsip->tanggal_diverifikasi)->format('d/m/Y H:i') : '-' }}
                             </p>
@@ -329,7 +331,7 @@
                 
                 @if($arsip->catatan_verifikasi)
                 <div class="alert alert-light mt-3">
-                    <h6><i class="bi bi-chat-text me-2"></i> Catatan Verifikasi</h6>
+                    <h6><i class="bi bi-chat-text me-2"></i> Catatan Verifikasi Lokasi</h6>
                     <p class="mb-0">{{ $arsip->catatan_verifikasi }}</p>
                 </div>
                 @endif
@@ -390,10 +392,12 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const formTerima = document.getElementById('formTerima');
-    const formTolak = document.getElementById('formTolak');
+    // const formTolak = document.getElementById('formTolak');
     const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
     const confirmMessage = document.getElementById('confirmMessage');
     const confirmAction = document.getElementById('confirmAction');
+
+
     
     let currentForm = null;
     let formData = {};
@@ -435,7 +439,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Tampilkan konfirmasi
         confirmMessage.innerHTML = `
-            <p><strong>Anda akan menerima pengajuan arsip ini:</strong></p>
+            <p><strong>Anda akan menerima perpindahan lokasi arsip ini:</strong></p>
             <div class="alert alert-info">
                 <strong>Detail Perpindahan:</strong><br>
                 • Dari Lokasi: Rak <strong>${'{{ $arsip->nomor_rak ?? "-" }}'}</strong>, Box <strong>${'{{ $arsip->nomor_box ?? "-" }}'}</strong><br>
@@ -454,37 +458,37 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Tolak arsip
-    formTolak.addEventListener('submit', function(e) {
-        e.preventDefault();
-        console.log('Form tolak submitted'); // Debugging
+    // formTolak.addEventListener('submit', function(e) {
+    //     e.preventDefault();
+    //     console.log('Form tolak submitted'); // Debugging
         
-        const alasan = this.querySelector('[name="alasan"]').value;
+    //     const alasan = this.querySelector('[name="alasan"]').value;
         
-        if (!alasan) {
-            alert('Harap isi alasan penolakan.');
-            return;
-        }
+    //     if (!alasan) {
+    //         alert('Harap isi alasan penolakan.');
+    //         return;
+    //     }
         
-        // Simpan data form
-        formData = {
-            _token: this.querySelector('[name="_token"]').value,
-            alasan: alasan
-        };
+    //     // Simpan data form
+    //     formData = {
+    //         _token: this.querySelector('[name="_token"]').value,
+    //         alasan: alasan
+    //     };
         
-        confirmMessage.innerHTML = `
-            <p><strong>Anda akan menolak pengajuan arsip ini:</strong></p>
-            <div class="alert alert-warning">
-                <strong>Alasan Penolakan:</strong><br>
-                ${alasan}
-            </div>
-            <p><strong>Apakah Anda yakin?</strong></p>
-            <small class="text-muted">Arsip akan dikembalikan ke Sub Bagian dengan status DITOLAK.</small>
-        `;
+    //     confirmMessage.innerHTML = `
+    //         <p><strong>Anda akan menolak pengajuan arsip ini:</strong></p>
+    //         <div class="alert alert-warning">
+    //             <strong>Alasan Penolakan:</strong><br>
+    //             ${alasan}
+    //         </div>
+    //         <p><strong>Apakah Anda yakin?</strong></p>
+    //         <small class="text-muted">Arsip akan dikembalikan ke Sub Bagian dengan status DITOLAK.</small>
+    //     `;
         
-        currentForm = this;
-        confirmAction.textContent = 'Ya, Tolak';
-        confirmModal.show();
-    });
+    //     currentForm = this;
+    //     confirmAction.textContent = 'Ya, Tolak';
+    //     confirmModal.show();
+    // });
     
     // Handle konfirmasi modal
     // confirmAction.addEventListener('click', function() {

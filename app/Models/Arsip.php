@@ -55,7 +55,9 @@ class Arsip extends Model
 
     'catatan_perbaikan',
     ];
-    
+     protected $guarded = ['skipHistory'];
+
+    public bool $skipHistory = false;
     protected $attributes = [
         'is_isi_keterangan' => 0,
         'status_arsip' => 'AKTIF',

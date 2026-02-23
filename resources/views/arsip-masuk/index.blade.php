@@ -294,58 +294,52 @@
                         <label class="form-label fw-semibold">Aksi</label>
                         <select name="action" class="form-select" id="multipleActionSelect" required>
                             <option value="">Pilih Aksi</option>
-                            <option value="terima">Terima</option>
-                            <option value="tolak">Tolak</option>
+                            <option value="set_lokasi">Set Lokasi Rak & Box</option>
                             <option value="pindahkan">Pindahkan ke Master</option>
                         </select>
                     </div>
 
                     <!-- Fields for Terima -->
-                    <div id="terimaFields" style="display: none;">
-                        <!-- <div class="mb-3">
-                            <label class="form-label fw-semibold">Nomor Berita Acara Penerimaan <span class="text-danger">*</span></label>
-                            <input type="text" name="nomor_berita_acara_penerimaan" class="form-control" placeholder="Contoh: 001/BA-PA/III/2024">
-                        </div> -->
+                    <!-- Fields for Set Lokasi -->
+                    <div id="setLokasiFields" style="display: none;">
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Lokasi Baru di Unit Kearsipan <span class="text-danger">*</span></label>
-                            <input type="text" name="lokasi_baru" class="form-control" placeholder="Contoh: Rak A-01, Box B-01">
+                            <label class="form-label fw-semibold">
+                                Nomor Rak <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="nomor_rak" class="form-control"
+                                placeholder="Contoh: Rak A-01">
                         </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                Nomor Box <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="nomor_box" class="form-control"
+                                placeholder="Contoh: Box B-01">
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Catatan (Opsional)</label>
-                            <textarea name="catatan" class="form-control" rows="2" placeholder="Tambahkan catatan jika diperlukan..."></textarea>
+                            <textarea name="catatan" class="form-control" rows="2"
+                                    placeholder="Catatan verifikasi lokasi..."></textarea>
                         </div>
                     </div>
 
-                    <!-- Fields for Tolak -->
-                    <div id="tolakFields" style="display: none;">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Alasan Penolakan <span class="text-danger">*</span></label>
-                            <textarea name="catatan" class="form-control" rows="3" placeholder="Sebutkan alasan penolakan..." required></textarea>
-                        </div>
-                    </div>
+                    
 
                     <!-- Fields for Pindahkan -->
                     <div id="pindahkanFields" style="display: none;">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Status Arsip setelah Dipindahkan <span class="text-danger">*</span></label>
-                            <select name="status_arsip_setelah_pindah" class="form-select" required>
-                                <option value="AKTIF">Aktif</option>
-                                <option value="INAKTIF">Inaktif</option>
-                                <option value="PERMANEN">Permanen</option>
-                                <option value="MUSNAH">Musnah</option>
-                            </select>
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>Perhatian:</strong>
+                            Lokasi rak dan box <u>tidak dapat diubah</u>.
+                            Arsip akan dipindahkan sesuai lokasi yang sudah diverifikasi.
                         </div>
-                        <!-- <div class="mb-3">
-                            <label class="form-label fw-semibold">Nomor Berita Acara Penerimaan <span class="text-danger">*</span></label>
-                            <input type="text" name="nomor_berita_acara_penerimaan" class="form-control" placeholder="Contoh: 001/BA-PA/III/2024" required>
-                        </div> -->
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Lokasi Baru di Unit Kearsipan <span class="text-danger">*</span></label>
-                            <input type="text" name="lokasi_baru" class="form-control" placeholder="Contoh: Rak A-01, Box B-01" required>
-                        </div>
+
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Catatan (Opsional)</label>
-                            <textarea name="catatan" class="form-control" rows="2" placeholder="Tambahkan catatan jika diperlukan..."></textarea>
+                            <textarea name="catatan" class="form-control" rows="2"
+                                    placeholder="Catatan pemindahan arsip..."></textarea>
                         </div>
                     </div>
 
@@ -365,7 +359,7 @@
                     <button type="button" class="btn btn-outline-secondary" id="cancelProsesMultiple">
                         Batal
                     </button>
-                    <button type="submit" class="btn btn-warning">
+                    <button type="submit" class="btn btn-warning" style="margin-left:10px">
                         <i class="bi bi-gear-fill me-1"></i> Proses Sekarang
                     </button>
                 </div>
@@ -480,6 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const terimaFields = document.getElementById('terimaFields');
     const tolakFields = document.getElementById('tolakFields');
     const pindahkanFields = document.getElementById('pindahkanFields');
+    const setLokasiFields = document.getElementById('setLokasiFields');
     
     const prosesMultipleForm = document.getElementById('prosesMultipleForm');
     
@@ -644,16 +639,26 @@ document.addEventListener('DOMContentLoaded', function() {
     if (multipleActionSelect) {
         multipleActionSelect.addEventListener('change', function() {
             // Sembunyikan semua fields terlebih dahulu
-            terimaFields.style.display = 'none';
-            tolakFields.style.display = 'none';
-            pindahkanFields.style.display = 'none';
+            // terimaFields.style.display = 'none';
+            // tolakFields.style.display = 'none';
+            // pindahkanFields.style.display = 'none';
             
-            // Tampilkan fields yang sesuai
-            if (this.value === 'terima') {
-                terimaFields.style.display = 'block';
-            } else if (this.value === 'tolak') {
-                tolakFields.style.display = 'block';
-            } else if (this.value === 'pindahkan') {
+            // // Tampilkan fields yang sesuai
+            // if (this.value === 'terima') {
+            //     terimaFields.style.display = 'block';
+            // } else if (this.value === 'tolak') {
+            //     tolakFields.style.display = 'block';
+            // } else if (this.value === 'pindahkan') {
+            //     pindahkanFields.style.display = 'block';
+            // }
+            setLokasiFields.style.display = 'none';
+            pindahkanFields.style.display = 'none';
+
+            if (this.value === 'set_lokasi') {
+                setLokasiFields.style.display = 'block';
+            }
+
+            if (this.value === 'pindahkan') {
                 pindahkanFields.style.display = 'block';
             }
         });
