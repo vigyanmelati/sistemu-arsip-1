@@ -285,9 +285,11 @@
                 {{-- Tanggal --}}
                 <div class="col-md-4 mb-2">
                     <strong>Tanggal Dipindahkan:</strong><br>
-                    {{ $arsip->tanggal_dipindahkan
-                        ? \Carbon\Carbon::parse($arsip->tanggal_dipindahkan)->format('d/m/Y H:i')
-                        : '-' }}
+                 {{ $tanggalDipindahkan
+                    ? \Carbon\Carbon::parse($tanggalDipindahkan)
+                        ->locale('id')
+                        ->translatedFormat('d F Y')
+                    : '-' }}
                 </div>
 
                 {{-- Download BAP --}}
@@ -298,7 +300,7 @@
                         <a href="{{ Storage::url('berita_acara/' . $beritaAcara->file_bap) }}"
                            target="_blank"
                            class="btn btn-sm btn-outline-primary mt-1">
-                            <i class="bi bi-download"></i> Download BAP
+                            <i class="bi bi-download"></i> Download BA
                         </a>
                     @else
                         <span class="text-muted d-block mt-1">

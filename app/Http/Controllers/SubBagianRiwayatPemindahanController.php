@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use App\Models\BeritaAcaraDetail;
+use App\Models\HistoryPindah;
 
 
 class SubBagianRiwayatPemindahanController extends Controller
@@ -64,26 +66,36 @@ class SubBagianRiwayatPemindahanController extends Controller
         ));
     }
 
+
     public function show(Arsip $arsip)
     {
         $user = Auth::user();
-        
-        // Pastikan arsip milik sub bagian user
+
         if ($arsip->sub_bagian_id != $user->sub_bagian_id) {
             abort(403);
         }
 
-        // Pastikan arsip memiliki status DIPINDAHKAN atau DITOLAK
-        if (!in_array($arsip->status_pindah, ['DIPINDAHKAN', 'DITOLAK', 'DIAJUKAN','DIPERBAIKI'])) {
+        if (!in_array($arsip->status_pindah, ['DIPINDAHKAN', 'DITOLAK', 'DIAJUKAN', 'DIPERBAIKI'])) {
             abort(404);
         }
 
-        // Load verifikator jika ada
-        // $arsip->load(['verifikator' => function($query) {
-        //     $query->select('id', 'name');
-        // }]);
+        // Berita acara terakhir
+        $beritaAcara = optional(
+            $arsip->beritaAcaraDetailS()
+                ->latest()
+                ->first()
+        )->beritaAcara;
 
-        return view('subbagian.riwayat-pemindahan.show', compact('arsip'));
+        // ✅ Ambil tanggal pindah dari riwayat_pindah
+        $tanggalDipindahkan = HistoryPindah::where('arsip_id', $arsip->id)
+            ->where('alasan_pindah', 'Arsip dipindahkan ke Unit Kearsipan')
+            ->orderBy('tanggal_pindah', 'desc')
+            ->value('tanggal_pindah'); // langsung ambil tanggal saja
+
+        return view(
+            'subbagian.riwayat-pemindahan.show',
+            compact('arsip', 'beritaAcara', 'tanggalDipindahkan')
+        );
     }
 
     public function perbaikiArsip(Request $request, Arsip $arsip)

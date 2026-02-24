@@ -63,9 +63,9 @@
                                 <tr>
                                     <th width="5%" class="text-center">No</th>
                                     <th width="10%">Kode</th>
-                                    <th width="15%">Klasifikasi</th>
-                                    <th width="30%">Judul Arsip</th>
-                                    <th width="15%">Tanggal Pemindahan</th>
+                                    <!-- <th width="15%">Klasifikasi</th> -->
+                                    <th width="45%">Judul Arsip</th>
+                                    <th width="15%">Tanggal Pengajuan</th>
                                     <th width="15%">Status Pindah</th>
                                     <th width="10%" class="text-center">Aksi</th>
                                 </tr>
@@ -77,13 +77,13 @@
                                     <td>
                                         <strong class="text-primary">{{ $arsip->kodeKlasifikasi->kode ?? '-' }}</strong>
                                     </td>
-                                    <td>
+                                    <!-- <td>
                                         @if($arsip->kodeKlasifikasi)
                                             <small class="text-muted">{{ Str::limit($arsip->kodeKlasifikasi->uraian ?? '-', 50) }}</small>
                                         @else
                                             -
                                         @endif
-                                    </td>
+                                    </td> -->
                                     <td>
                                         <div class="font-weight-bold" style="font-size: 0.9rem;">
                                             {{ Str::limit($arsip->uraian_arsip, 80) }}
