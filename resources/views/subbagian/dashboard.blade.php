@@ -5,15 +5,7 @@
 
 @section('content')
 
-@if($arsipDitolak > 0)
-<!-- Notifikasi Arsip Ditolak -->
-<div class="alert alert-danger alert-dismissible fade show" role="alert">
-    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-    <strong>Perhatian!</strong> Ada {{ $arsipDitolak }} arsip yang ditolak dan memerlukan perhatian Anda.
-     <a href="{{ route('subbagian.riwayat-pemindahan.index') }}?status_pindah=ditolak" class="alert-link">Lihat detail</a>
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
-@endif
+
 
 <div class="row">
     <!-- Total Arsip -->
@@ -54,16 +46,16 @@
         </div>
     </div>
     
-    <!-- Arsip Ditolak -->
+    <!-- Arsip Diajukan -->
     <div class="col-xl-3 col-lg-6 mb-4">
         <div class="card h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="text-muted mb-2">Arsip Ditolak</h6>
-                        <h2 class="fw-bold text-danger mb-0">{{ $arsipDitolak }}</h2>
+                        <h6 class="text-muted mb-2">Arsip Diajukan</h6>
+                        <h2 class="fw-bold text-danger mb-0">{{ $arsipDiajukan }}</h2>
                         <small class="text-danger">
-                            {{ $totalArsip > 0 ? number_format(($arsipDitolak/$totalArsip)*100, 1) : 0 }}% dari total
+                            {{ $totalArsip > 0 ? number_format(($arsipDiajukan/$totalArsip)*100, 1) : 0 }}% dari total
                         </small>
                     </div>
                     <div class="icon-shape bg-danger bg-opacity-10 rounded-circle p-3">

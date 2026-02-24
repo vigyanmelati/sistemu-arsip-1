@@ -26,6 +26,7 @@ class SubBagianDashboardController extends Controller
          ->whereIn('status_pindah', [
             'DIPINDAHKAN',
             'DITOLAK',
+             'DIAJUKAN',
             'BELUM'
         ]);
         
@@ -36,6 +37,10 @@ class SubBagianDashboardController extends Controller
         // Jumlah berdasarkan status_pindah
         $arsipDipindahkan = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
             ->where('status_pindah', 'dipindahkan')
+            ->count();
+
+        $arsipDiajukan = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
+            ->where('status_pindah', 'DIAJUKAN')
             ->count();
 
         $arsipDitolak = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
@@ -71,7 +76,7 @@ class SubBagianDashboardController extends Controller
         return view('subbagian.dashboard', [
             'totalArsip' => $totalArsip,
             'arsipDipindahkan' => $arsipDipindahkan,
-            'arsipDitolak' => $arsipDitolak,
+            'arsipDiajukan' => $arsipDiajukan,
             'arsipBelumDipindahkan' => $arsipBelumDipindahkan,
             'arsipPerStatus' => $arsipPerStatus,
             'arsipPerTahun' => $arsipPerTahun,
