@@ -90,7 +90,7 @@
                 </div>
                 
                 <!-- History Perpindahan (jika ada) -->
-                @if($arsip->historyPindah && $arsip->historyPindah->count() > 0)
+                <!-- @if($arsip->historyPindah && $arsip->historyPindah->count() > 0)
                 <div class="mt-4">
                     <label class="form-label fw-semibold">Riwayat Perubahan Lokasi Arsip</label>
                     <div class="table-responsive">
@@ -135,7 +135,7 @@
                         @endif
                     </div>
                 </div>
-                @endif
+                @endif -->
                 
                 <!-- File Dokumen Arsip -->
                 @if($arsip->file_dokumen)

@@ -134,6 +134,7 @@
                         <th>Tanggal Diajukan</th>
                         <th>File Berita Acara</th>
                         <th>Status Pemindahan</th>
+                        <th>Status Lokasi</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -166,6 +167,17 @@
                                 <span class="badge bg-{{ $color }}">{{ $arsip->status_pindah }}</span>
                             @else
                                 <span class="badge bg-secondary">Belum Diajukan</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($arsip->tanggal_diverifikasi)
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> Sudah Diverifikasi
+                                </span>
+                            @else
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-exclamation-circle"></i> Belum Diverifikasi
+                                </span>
                             @endif
                         </td>
                         <td>
@@ -259,13 +271,21 @@
                                 <option value="MUSNAH" {{ request('status_arsip') == 'MUSNAH' ? 'selected' : '' }}>Musnah</option>
                             </select>
                         </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Status Lokasi</label>
+                            <select name="status_lokasi" class="form-select">
+                                <option value="">Semua</option>
+                                <option value="belum">Belum Diverifikasi</option>
+                                <option value="sudah">Sudah Diverifikasi</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-outline-secondary" id="resetFilter">
                         <i class="bi bi-arrow-clockwise me-1"></i> Reset Filter
                     </button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" style="margin-left:10px">
                         <i class="bi bi-check-circle me-1"></i> Terapkan Filter
                     </button>
                 </div>

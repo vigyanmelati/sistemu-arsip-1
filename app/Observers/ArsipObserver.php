@@ -30,11 +30,16 @@ class ArsipObserver
 
 public function updating(Arsip $arsip)
 {
-    if ($arsip->skipHistory === true) {
+    // 1. Hormati skipHistory
+    if (!empty($arsip->skipHistory)) {
         return;
     }
 
-    if ($arsip->isDirty(['nomor_rak', 'nomor_box'])) {
+    // 2. HANYA catat kalau rak / box benar-benar berubah
+    if (
+        $arsip->isDirty('nomor_rak') ||
+        $arsip->isDirty('nomor_box')
+    ) {
         HistoryPindah::create([
             'arsip_id' => $arsip->id,
             'dari_rak' => $arsip->getOriginal('nomor_rak'),
@@ -42,6 +47,7 @@ public function updating(Arsip $arsip)
             'ke_rak'   => $arsip->nomor_rak,
             'ke_box'   => $arsip->nomor_box,
             'tanggal_pindah' => now(),
+            'alasan_pindah'  => 'Perubahan lokasi arsip',
             'user_id' => auth()->id(),
         ]);
     }

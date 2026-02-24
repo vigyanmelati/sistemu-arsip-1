@@ -42,6 +42,14 @@ class AdminArsipMasukController extends Controller
             $query->where('status_arsip', $request->status_arsip);
         }
 
+        if ($request->status_lokasi == 'belum') {
+            $query->whereNull('tanggal_diverifikasi');
+        }
+
+        if ($request->status_lokasi == 'sudah') {
+            $query->whereNotNull('tanggal_diverifikasi');
+        }
+
         // Search
         if ($request->has('search') && $request->search != '') {
             $query->where(function($q) use ($request) {
@@ -148,7 +156,7 @@ class AdminArsipMasukController extends Controller
                 'ke_rak' => $request->nomor_rak_baru,
                 'ke_box' => $request->nomor_box_baru,
                 'tanggal_pindah' => now(),
-                'alasan_pindah' => 'Verifikasi lokasi arsip (belum dipindahkan)',
+                'alasan_pindah' => 'Verifikasi lokasi arsip dengan penggantian nomor rak dan box dari subbagian sebelumnya ke nomor rak dan box Unit Kearsipan',
                 'user_id' => auth()->id()
             ]);
 
@@ -362,7 +370,7 @@ class AdminArsipMasukController extends Controller
                         'ke_rak'   => $request->nomor_rak,
                         'ke_box'   => $request->nomor_box,
                         'tanggal_pindah' => now(),
-                        'catatan'  => $request->catatan ?? 'Verifikasi lokasi arsip',
+                        'alasan_pindah'  => $request->catatan ?? 'Verifikasi lokasi arsip',
                         'user_id'  => auth()->id(),
                     ]);
                 }
@@ -372,12 +380,10 @@ class AdminArsipMasukController extends Controller
                  | ============================ */
                 if ($request->action === 'pindahkan') {
 
-                    // WAJIB SUDAH ADA LOKASI
                     if (!$arsip->nomor_rak || !$arsip->nomor_box) {
-                        throw new \Exception(
-                            'Arsip belum memiliki nomor rak dan box.'
-                        );
+                        throw new \Exception('Arsip belum memiliki nomor rak dan box.');
                     }
+
                     $arsip->skipHistory = true;
                     $arsip->update([
                         'status_pindah'       => 'DIPINDAHKAN',
@@ -392,7 +398,7 @@ class AdminArsipMasukController extends Controller
                         'ke_rak'   => $arsip->nomor_rak,
                         'ke_box'   => $arsip->nomor_box,
                         'tanggal_pindah' => now(),
-                        'catatan'  => $request->catatan ?? 'Arsip dipindahkan ke Unit Kearsipan',
+                        'alasan_pindah'  => $request->catatan ?? 'Arsip dipindahkan ke Unit Kearsipan',
                         'user_id'  => auth()->id(),
                     ]);
                 }
