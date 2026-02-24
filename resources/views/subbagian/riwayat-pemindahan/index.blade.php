@@ -50,11 +50,11 @@
                     </div>
 
                     <!-- Info Box -->
-                    <div class="alert alert-info mb-3">
+                    <!-- <div class="alert alert-info mb-3">
                         <i class="fas fa-info-circle mr-2"></i>
                         Halaman ini menampilkan riwayat pemindahan arsip.
                         Untuk arsip dengan status <strong>DITOLAK</strong>, tersedia opsi untuk melakukan perbaikan dan pengajuan kembali.
-                    </div>
+                    </div> -->
 
                     <!-- Tabel Riwayat -->
                     <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
