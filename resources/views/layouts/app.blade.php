@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SITEMU ARSIP - KPU Provinsi Bali</title>
+    <title>SINAR KPU BALI V2</title>
 
     <!-- Bootstrap CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -507,7 +507,7 @@
 <div class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <div class="logo-container">
-            <img src="{{ asset('LOGO.png') }}" alt="SITEMU ARSIP" class="sidebar-logo">
+            <img src="{{ asset('LOGO.png') }}" alt="SINAR KPU BALI" class="sidebar-logo">
         </div>
         <div class="brand-text">
             <h4>SINAR KPU BALI</h4>
@@ -713,7 +713,7 @@
     <!-- Footer -->
     <div class="footer">
         <p class="mb-0">
-            &copy; {{ date('Y') }} SITEMU ARSIP - KPU Provinsi Bali
+            &copy; {{ date('Y') }} SINAR - KPU Provinsi Bali
             <br>
             <small>v1.0.0</small>
         </p>

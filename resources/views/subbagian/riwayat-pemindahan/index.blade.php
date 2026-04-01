@@ -248,7 +248,7 @@
                         </div>
                         <div class="col-md-6 text-right">
                             <small class="text-muted">
-                                © {{ date('Y') }} SITEMU ARSIP - KPU Provinsi Bali v1.0.0
+                                © {{ date('Y') }} SINAR - KPU Provinsi Bali v1.0.0
                             </small>
                         </div>
                     </div>

@@ -51,10 +51,23 @@
                         class="w-full mt-2 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-kpu-red focus:border-kpu-red">
                 </div>
 
-                <div>
+                <!-- <div>
                     <label for="password" class="block text-gray-700 font-medium">Password</label>
                     <input id="password" name="password" type="password" required
                         class="w-full mt-2 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-kpu-red focus:border-kpu-red">
+                </div> -->
+
+                <div class="relative">
+                    <label for="password" class="block text-gray-700 font-medium">Password</label>
+                    
+                    <input id="password" name="password" type="password" required
+                        class="w-full mt-2 p-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-kpu-red focus:border-kpu-red">
+
+                    <!-- Icon show/hide -->
+                    <button type="button" onclick="togglePassword()" 
+                        class="absolute right-3 top-10 text-gray-500">
+                        👁️
+                    </button>
                 </div>
 
                 <div class="flex items-center justify-between">
@@ -72,6 +85,11 @@
             </form>
         </div>
     </div>
-
+<script>
+    function togglePassword() {
+        const password = document.getElementById("password");
+        password.type = password.type === "password" ? "text" : "password";
+    }
+</script>
 </body>
 </html>
