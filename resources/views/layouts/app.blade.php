@@ -103,7 +103,7 @@
             transition: all 0.3s ease;
         }
         
-        .logo-container {
+        /* .logo-container {
             width: 100px;
             height: 100px;
             margin: 0 auto 5px;
@@ -112,14 +112,46 @@
             justify-content: center;
             overflow: hidden;
             border-radius: 8px;
+        } */
+
+        .logo-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 5px;  /* lebih kecil */
+            transition: all 0.3s ease;
         }
         
-        .sidebar-logo {
+        /* .sidebar-logo {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
         }
-        
+         */
+
+       .sidebar.collapsed .logo-container {
+    width: 55px;
+    height: 55px;
+    padding: 4px;
+}
+
+        .sidebar.collapsed .sidebar-brand {
+            padding: 20px 10px;
+        }
+
+        .sidebar-logo {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+        }
         .sidebar-brand h4 {
             margin: 0;
             font-weight: 700;
@@ -475,7 +507,7 @@
 <div class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <div class="logo-container">
-            <img src="{{ asset('logo_sitemu_arsip.png') }}" alt="SITEMU ARSIP" class="sidebar-logo">
+            <img src="{{ asset('LOGO.png') }}" alt="SITEMU ARSIP" class="sidebar-logo">
         </div>
         <div class="brand-text">
             <h4>SITEMU ARSIP</h4>
@@ -611,7 +643,7 @@
     <div class="top-header fade-in">
         <div class="page-title">
             <h3>@yield('page-title', 'Dashboard')</h3>
-            <p>@yield('page-subtitle', 'Sistem Temu Arsip Digital KPU Provinsi Bali')</p>
+            <p>@yield('page-subtitle', 'Sistem Informasi Arsip KPU Provinsi Bali')</p>
         </div>
         
         @php

@@ -37,8 +37,8 @@
             @endif
             <div class="text-center mb-6">
                 <!-- Logo KPU -->
-                <img src="{{ asset('logo_sitemu_arsip.png') }}" alt="Logo KPU Bali" class="mx-auto w-40 h-20">
-                <h1 class="text-2xl font-bold mt-4 text-gray-800">Sistem Informasi Temu Arsip <br> KPU Provinsi Bali</h1>
+                <img src="{{ asset('LOGO.png') }}" alt="Logo KPU Bali" class="mx-auto w-60 h-40">
+                <h1 class="text-2xl font-bold mt-4 text-gray-800">Sistem Informasi Arsip <br> KPU Provinsi Bali</h1>
                 <p class="text-gray-500 mt-1">Masukkan akun Anda untuk masuk</p>
             </div>
 
