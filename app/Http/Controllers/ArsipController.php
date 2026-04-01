@@ -11,6 +11,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ArsipImport;
 use Carbon\Carbon;
 use App\Exports\ArsipExport;
+use Illuminate\Support\Facades\DB;
 
 class ArsipController extends Controller
 {
@@ -23,7 +24,26 @@ class ArsipController extends Controller
             'DIPINDAHKAN',
             'LANGSUNG'
         ]);
-        
+          // Filter duplikat
+    if ($request->has('show_duplicates') && $request->show_duplicates == 1) {
+        // Ambil semua ID yang memiliki duplikat (minimal 2 record dengan judul & tahun sama)
+        $duplicateIds = DB::table('arsips')
+            ->select('uraian_arsip', 'tahun_arsip', DB::raw('GROUP_CONCAT(id) as ids'))
+            ->groupBy('uraian_arsip', 'tahun_arsip')
+            ->havingRaw('COUNT(*) > 1')
+            ->get()
+            ->flatMap(function ($group) {
+                return explode(',', $group->ids);
+            })
+            ->unique()
+            ->toArray();
+
+        if (empty($duplicateIds)) {
+            $query->whereRaw('1 = 0'); // tidak ada duplikat, hasil kosong
+        } else {
+            $query->whereIn('id', $duplicateIds);
+        }
+    }
         // Filter berdasarkan status arsip
         if ($request->has('status_arsip') && $request->status_arsip != '') {
             $query->where('status_arsip', $request->status_arsip);
@@ -608,6 +628,54 @@ private function extractNumberFromText($text)
         );
     }
 
+public function checkDuplicates()
+{
+    try {
+        $duplicates = DB::table('arsips')
+            ->select(
+                'uraian_arsip',
+                'tahun_arsip',
+                DB::raw('COUNT(*) as total'),
+                DB::raw('GROUP_CONCAT(id) as ids')
+            )
+            ->groupBy('uraian_arsip', 'tahun_arsip')
+            ->having('total', '>', 1)
+            ->get();
+
+        $result = [];
+
+        foreach ($duplicates as $group) {
+            $ids = $group->ids ? explode(',', $group->ids) : [];
+
+            $records = [];
+            foreach ($ids as $id) {
+                $records[] = [
+                    'id' => $id,
+                    'link' => route('arsip.show', $id),
+                ];
+            }
+
+            $result[] = [
+                'ids' => $ids,
+                'uraian_arsip' => $group->uraian_arsip,
+                'tahun_arsip' => $group->tahun_arsip,
+                'records' => $records,
+            ];
+        }
+
+        return response()->json([
+            'duplicates' => $result,
+            'total' => count($result),
+            'total_records' => $duplicates->sum('total'),
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => true,
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
 
 
 

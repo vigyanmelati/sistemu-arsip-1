@@ -21,14 +21,17 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('arsip/export', [ArsipController::class, 'export'])
             ->name('arsip.export');
+
+             Route::get('/arsip/check-duplicates', [ArsipController::class, 'checkDuplicates'])->name('arsip.check-duplicates');
     
     // Arsip (untuk Admin dan Super Admin)
     Route::middleware(['admin'])->group(function () {
         Route::resource('arsip', ArsipController::class);
         Route::post('/arsip/import', [ArsipController::class, 'import'])
             ->name('arsip.import');
-        
 
+           
+        
           
 
         /* =====================================

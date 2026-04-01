@@ -510,8 +510,8 @@
             <img src="{{ asset('LOGO.png') }}" alt="SITEMU ARSIP" class="sidebar-logo">
         </div>
         <div class="brand-text">
-            <h4>SITEMU ARSIP</h4>
-            <small>KPU Provinsi Bali</small>
+            <h4>SINAR KPU BALI</h4>
+            <small>Versi 2</small>
         </div>
     </div>
     

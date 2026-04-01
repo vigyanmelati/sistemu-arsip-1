@@ -21,6 +21,10 @@
                     <i class="bi bi-funnel-fill"></i>
                     <span>Filter</span>
                 </button>
+               <a href="{{ route('arsip.index', ['show_duplicates' => 1]) }}" class="btn btn-danger d-flex align-items-center gap-2" id="checkDuplicatesBtn">
+                    <i class="bi bi-files"></i>
+                    <span>Cek Duplikasi</span>
+                </a>
                 <a href="{{ route('arsip.create') }}" class="btn btn-orange d-flex align-items-center gap-2 shadow-sm">
                     <i class="bi bi-plus-circle-fill"></i>
                     <span>Tambah Baru</span>
@@ -53,7 +57,15 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         @endif
-        
+        @if(request('show_duplicates'))
+<div class="alert alert-info mb-3 d-flex align-items-center">
+    <i class="bi bi-info-circle-fill me-2"></i>
+    Menampilkan arsip yang memiliki duplikat (berdasarkan judul dan tahun).
+    <a href="{{ route('arsip.index', request()->except('show_duplicates')) }}" class="ms-auto btn btn-sm btn-outline-secondary">
+        <i class="bi bi-x-lg"></i> Hapus filter
+    </a>
+</div>
+@endif
         <!-- Table dengan horizontal scroll -->
         <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
             <table class="table table-hover" style="min-width: 1200px;">
@@ -433,7 +445,6 @@
 
 
 <!-- Export Excel Modal - CUSTOM MODAL -->
-<!-- Export Excel Modal - CUSTOM MODAL -->
 <div class="modal-container" id="exportModalContainer" style="display:none;">
     <div class="modal-content-wrapper" style="max-width:700px;">
         <div class="modal-content">
@@ -519,6 +530,35 @@
     </div>
 </div>
 
+<!-- Duplikasi Modal - CUSTOM MODAL -->
+<div class="modal-container" id="duplicateModalContainer" style="display: none;">
+    <div class="modal-content-wrapper" style="max-width:800px;">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-files me-2"></i>
+                    Cek Duplikasi Data Arsip
+                </h5>
+                <button type="button" class="btn-close-modal" id="closeDuplicateModal">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="duplicateResults">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Memeriksa duplikasi...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" id="closeDuplicateModalFooter">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <style>
     /* ===== STYLE UNTUK SORTING ===== */
@@ -948,117 +988,92 @@ checkAll.addEventListener('change', function () {
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Elements
+        // ==================== GLOBAL VARIABLES ====================
         const modalOverlay = document.getElementById('modalOverlay');
         const filterModalContainer = document.getElementById('filterModalContainer');
         const importModalContainer = document.getElementById('importModalContainer');
-        const openFilterBtn = document.getElementById('openFilterModal');
-        const openImportBtn = document.getElementById('openImportModal');
-        const closeFilterBtn = document.getElementById('closeFilterModal');
-        const closeImportBtn = document.getElementById('closeImportModal');
-        const cancelImportBtn = document.getElementById('cancelImport');
-        const resetFilterBtn = document.getElementById('resetFilter');
-        const filterForm = document.getElementById('filterForm');
-        const importForm = document.getElementById('importForm');
-        const excelFileInput = document.getElementById('excelFile');
-        const fileInfo = document.getElementById('fileInfo');
-        const submitImportBtn = document.getElementById('submitImport');
-        
-        // Fungsi untuk membuka modal
+        const exportModalContainer = document.getElementById('exportModalContainer');
+        // const duplicateModalContainer = document.getElementById('duplicateModalContainer');
+
+        // ==================== UTILITY FUNCTIONS ====================
         function openModal(modalContainer) {
-            // Sembunyikan semua modal terlebih dahulu
+            // Hide all modals first
             filterModalContainer.style.display = 'none';
             importModalContainer.style.display = 'none';
-            
-            // Tampilkan overlay
+            exportModalContainer.style.display = 'none';
+            duplicateModalContainer.style.display = 'none';
+
             modalOverlay.style.display = 'block';
-            
-            // Tampilkan modal yang dipilih
             modalContainer.style.display = 'flex';
             modalContainer.classList.add('active');
-            
-            // Tambahkan class untuk mencegah scroll body
             document.body.classList.add('modal-open');
-            
-            // Focus ke elemen pertama dalam modal
-            setTimeout(() => {
-                const firstInput = modalContainer.querySelector('input, select, textarea');
-                if (firstInput) firstInput.focus();
-            }, 100);
         }
-        
-        // Fungsi untuk menutup modal
-        function closeModal() {
+
+        function closeAllModals() {
             modalOverlay.style.display = 'none';
             filterModalContainer.style.display = 'none';
             importModalContainer.style.display = 'none';
-            filterModalContainer.classList.remove('active');
-            importModalContainer.classList.remove('active');
+            exportModalContainer.style.display = 'none';
+            duplicateModalContainer.style.display = 'none';
             document.body.classList.remove('modal-open');
-            
-            // Reset form import
-            if (fileInfo) fileInfo.innerHTML = '';
-            if (excelFileInput) excelFileInput.value = '';
-            if (submitImportBtn) {
-                submitImportBtn.disabled = false;
-                submitImportBtn.innerHTML = '<i class="bi bi-upload me-1"></i> Import Sekarang';
-            }
         }
-        
-        // Event listeners untuk tombol buka modal
+
+        // ==================== EXPORT MODAL ====================
+        const openExportBtn = document.getElementById('openExportModal');
+        const closeExportBtn = document.getElementById('closeExportModal');
+        const cancelExportBtn = document.getElementById('cancelExport');
+        const checkAll = document.getElementById('checkAllColumns');
+        const columnChecks = document.querySelectorAll('.column-check');
+
+        if (openExportBtn) {
+            openExportBtn.addEventListener('click', () => openModal(exportModalContainer));
+        }
+        if (closeExportBtn) closeExportBtn.addEventListener('click', closeAllModals);
+        if (cancelExportBtn) cancelExportBtn.addEventListener('click', closeAllModals);
+        if (checkAll) {
+            checkAll.addEventListener('change', function () {
+                columnChecks.forEach(cb => cb.checked = this.checked);
+            });
+        }
+
+        // ==================== FILTER MODAL ====================
+        const openFilterBtn = document.getElementById('openFilterModal');
+        const closeFilterBtn = document.getElementById('closeFilterModal');
+        const resetFilterBtn = document.getElementById('resetFilter');
+        const filterForm = document.getElementById('filterForm');
+
         if (openFilterBtn) {
-            openFilterBtn.addEventListener('click', function(e) {
+            openFilterBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 openModal(filterModalContainer);
             });
         }
-        
+        if (closeFilterBtn) closeFilterBtn.addEventListener('click', closeAllModals);
+        if (resetFilterBtn) {
+            resetFilterBtn.addEventListener('click', () => {
+                window.location.href = "{{ route('arsip.index') }}";
+            });
+        }
+
+        // ==================== IMPORT MODAL ====================
+        const openImportBtn = document.getElementById('openImportModal');
+        const closeImportBtn = document.getElementById('closeImportModal');
+        const cancelImportBtn = document.getElementById('cancelImport');
+        const importForm = document.getElementById('importForm');
+        const excelFileInput = document.getElementById('excelFile');
+        const fileInfo = document.getElementById('fileInfo');
+        const submitImportBtn = document.getElementById('submitImport');
+
         if (openImportBtn) {
-            openImportBtn.addEventListener('click', function(e) {
+            openImportBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 openModal(importModalContainer);
             });
         }
-        
-        // Event listeners untuk tombol tutup modal
-        if (closeFilterBtn) {
-            closeFilterBtn.addEventListener('click', closeModal);
-        }
-        
-        if (closeImportBtn) {
-            closeImportBtn.addEventListener('click', closeModal);
-        }
-        
-        if (cancelImportBtn) {
-            cancelImportBtn.addEventListener('click', closeModal);
-        }
-        
-        // Tutup modal saat klik overlay
-        if (modalOverlay) {
-            modalOverlay.addEventListener('click', closeModal);
-        }
-        
-        // Mencegah modal tertutup saat klik di dalam modal
-        if (filterModalContainer) {
-            filterModalContainer.addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
-        }
-        
-        if (importModalContainer) {
-            importModalContainer.addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
-        }
-        
-        // Reset filter
-        if (resetFilterBtn) {
-            resetFilterBtn.addEventListener('click', function() {
-                window.location.href = "{{ route('arsip.index') }}";
-            });
-        }
-        
-        // File upload preview untuk import
+        if (closeImportBtn) closeImportBtn.addEventListener('click', closeAllModals);
+        if (cancelImportBtn) cancelImportBtn.addEventListener('click', closeAllModals);
+
+        // File upload preview
         if (excelFileInput) {
             excelFileInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
@@ -1066,51 +1081,29 @@ checkAll.addEventListener('change', function () {
                     const fileSize = (file.size / (1024 * 1024)).toFixed(2);
                     const fileName = file.name;
                     const fileExtension = fileName.split('.').pop().toLowerCase();
-                    
-                    // Validasi ekstensi
+
                     const allowedExtensions = ['xlsx', 'xls'];
                     if (!allowedExtensions.includes(fileExtension)) {
-                        fileInfo.innerHTML = `
-                            <div class="alert alert-danger alert-dismissible fade show py-2" role="alert">
-                                <i class="bi bi-exclamation-circle me-2"></i>
-                                Format file tidak didukung. Hanya file Excel (.xlsx, .xls) yang diperbolehkan.
-                                <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
-                            </div>
-                        `;
+                        fileInfo.innerHTML = `<div class="alert alert-danger">Format file tidak didukung.</div>`;
                         excelFileInput.value = '';
                         if (submitImportBtn) submitImportBtn.disabled = true;
                         return;
                     }
-                    
-                    // Validasi ukuran file
+
                     const maxSize = 5;
                     if (fileSize > maxSize) {
-                        fileInfo.innerHTML = `
-                            <div class="alert alert-danger alert-dismissible fade show py-2" role="alert">
-                                <i class="bi bi-exclamation-circle me-2"></i>
-                                Ukuran file terlalu besar (${fileSize} MB). Maksimal ${maxSize}MB.
-                                <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
-                            </div>
-                        `;
+                        fileInfo.innerHTML = `<div class="alert alert-danger">Ukuran file terlalu besar (${fileSize} MB).</div>`;
                         excelFileInput.value = '';
                         if (submitImportBtn) submitImportBtn.disabled = true;
                         return;
                     }
-                    
-                    // Tampilkan info file valid
-                    fileInfo.innerHTML = `
-                        <div class="alert alert-success alert-dismissible fade show py-2" role="alert">
-                            <i class="bi bi-check-circle me-2"></i>
-                            File <strong>${fileName}</strong> (${fileSize} MB) siap diimport.
-                            <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
-                        </div>
-                    `;
+
+                    fileInfo.innerHTML = `<div class="alert alert-success">File <strong>${fileName}</strong> (${fileSize} MB) siap diimport.</div>`;
                     if (submitImportBtn) submitImportBtn.disabled = false;
                 }
             });
         }
-        
-        // Validasi form import
+
         if (importForm) {
             importForm.addEventListener('submit', function(e) {
                 const fileInput = this.querySelector('input[type="file"]');
@@ -1119,51 +1112,148 @@ checkAll.addEventListener('change', function () {
                     alert('Silakan pilih file Excel terlebih dahulu.');
                     return;
                 }
-                
-                // Tampilkan loading
                 if (submitImportBtn) {
-                    submitImportBtn.innerHTML = `
-                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        Mengimport...
-                    `;
+                    submitImportBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Mengimport...';
                     submitImportBtn.disabled = true;
                 }
             });
         }
-        
-        // Tutup modal dengan tombol ESC
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && modalOverlay.style.display === 'block') {
-                closeModal();
+
+        // ==================== CEK DUPLIKASI ====================
+        // const checkDuplicatesBtn = document.getElementById('checkDuplicatesBtn');
+        // const closeDuplicateModalBtns = document.querySelectorAll('#closeDuplicateModal, #closeDuplicateModalFooter');
+
+        // if (checkDuplicatesBtn) {
+        //     checkDuplicatesBtn.addEventListener('click', function() {
+        //         openModal(duplicateModalContainer);
+
+        //         const resultsDiv = document.getElementById('duplicateResults');
+        //         if (!resultsDiv) {
+        //             console.error('Elemen #duplicateResults tidak ditemukan!');
+        //             return;
+        //         }
+
+        //         // Show loading
+        //         resultsDiv.innerHTML = `
+        //             <div class="text-center py-4">
+        //                 <div class="spinner-border text-primary" role="status">
+        //                     <span class="visually-hidden">Loading...</span>
+        //                 </div>
+        //                 <p class="mt-2">Memeriksa duplikasi...</p>
+        //             </div>
+        //         `;
+
+        //         fetch('{{ route("arsip.check-duplicates") }}')
+        //             .then(response => {
+        //                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        //                 return response.json();
+        //             })
+        //             .then(data => {
+        //                 console.log('Data duplikasi:', data); // DEBUG
+        //                 if (data.duplicates.length === 0) {
+        //                     resultsDiv.innerHTML = `
+        //                         <div class="alert alert-success">
+        //                             <i class="bi bi-check-circle-fill me-2"></i>
+        //                             Tidak ditemukan data duplikat.
+        //                         </div>
+        //                     `;
+        //                 } else {
+        //                     let html = `<div class="alert alert-warning">
+        //                                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        //                                     Ditemukan ${data.total} kelompok data duplikat (${data.total_records} arsip).
+        //                                 </div>`;
+        //                     data.duplicates.forEach(group => {
+        //                         html += `<div class="card mb-3 border-danger">
+        //                                     <div class="card-header bg-danger text-white">
+        //                                         <strong>Duplikat ID: ${group.ids.join(', ')}</strong>
+        //                                     </div>
+        //                                     <div class="card-body">
+        //                                         <p><strong>Judul Arsip:</strong> ${escapeHtml(group.uraian_arsip)}</p>
+        //                                         <p><strong>Tahun:</strong> ${group.tahun_arsip}</p>
+        //                                         <hr>
+        //                                         <strong>Detail:</strong>
+        //                                         <ul class="mt-2">
+        //                                             ${group.records.map(record => `
+        //                                                 <li>
+        //                                                     ID: ${record.id} - 
+        //                                                     <a href="${record.link}" target="_blank">Lihat Detail</a>
+        //                                                 </li>
+        //                                             `).join('')}
+        //                                         </ul>
+        //                                     </div>
+        //                                 </div>`;
+        //                     });
+        //                     resultsDiv.innerHTML = html;
+        //                 }
+        //             })
+        //             .catch(error => {
+        //                 console.error('Error:', error);
+        //                 resultsDiv.innerHTML = `
+        //                     <div class="alert alert-danger">
+        //                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        //                         Terjadi kesalahan saat memeriksa duplikasi.<br>
+        //                         <small class="text-muted">${error.message}</small>
+        //                     </div>
+        //                 `;
+        //             });
+        //     });
+        // }
+
+        // if (closeDuplicateModalBtns.length) {
+        //     closeDuplicateModalBtns.forEach(btn => {
+        //         btn.addEventListener('click', closeAllModals);
+        //     });
+        // }
+
+        // ==================== MODAL OVERLAY CLOSE ====================
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', closeAllModals);
+        }
+
+        // ==================== OTHER INITIALIZATIONS ====================
+        // Prevent modal closing when clicking inside modal content
+        const modalContainers = [filterModalContainer, importModalContainer, exportModalContainer, duplicateModalContainer];
+        modalContainers.forEach(container => {
+            if (container) {
+                container.addEventListener('click', e => e.stopPropagation());
             }
         });
-        
-        // Handle delete confirmation
-        const deleteForms = document.querySelectorAll('form[data-confirm="delete"]');
-        deleteForms.forEach(form => {
+
+        // ESC key to close modals
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && modalOverlay.style.display === 'block') {
+                closeAllModals();
+            }
+        });
+
+        // Delete confirmation
+        document.querySelectorAll('form[data-confirm="delete"]').forEach(form => {
             form.addEventListener('submit', function(e) {
                 if (!confirm('Apakah Anda yakin ingin menghapus arsip ini?')) {
                     e.preventDefault();
                 }
             });
         });
-                
+
         // Sortable headers hover effect
-        const sortableHeaders = document.querySelectorAll('.sortable-header');
-        sortableHeaders.forEach(header => {
-            header.addEventListener('mouseenter', function() {
-                this.style.backgroundColor = '#e9ecef';
-            });
-            
-            header.addEventListener('mouseleave', function() {
-                this.style.backgroundColor = '#f8f9fa';
-            });
+        document.querySelectorAll('.sortable-header').forEach(header => {
+            header.addEventListener('mouseenter', () => header.style.backgroundColor = '#e9ecef');
+            header.addEventListener('mouseleave', () => header.style.backgroundColor = '#f8f9fa');
         });
-        
-        // Auto-focus pada input pencarian
+
+        // Auto-focus search
         const searchInput = document.querySelector('input[name="search"]');
-        if (searchInput) {
-            searchInput.focus();
+        if (searchInput) searchInput.focus();
+
+        // Helper function to escape HTML (optional, but safe)
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
         }
     });
 </script>
