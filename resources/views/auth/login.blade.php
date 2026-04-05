@@ -64,10 +64,10 @@
                         class="w-full mt-2 p-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-kpu-red focus:border-kpu-red">
 
                     <!-- Icon show/hide -->
-                    <button type="button" onclick="togglePassword()" 
+                    {{-- <button type="button" onclick="togglePassword()" 
                         class="absolute right-3 top-10 text-gray-500">
                         👁️
-                    </button>
+                    </button> --}}
                 </div>
 
                 <div class="flex items-center justify-between">

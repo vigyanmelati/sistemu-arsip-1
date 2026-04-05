@@ -203,18 +203,32 @@
                                 $statusColors = [
                                     'AKTIF' => 'success',
                                     'INAKTIF' => 'warning',
-                                    'UMSUL_MUSNAH' => 'danger',
-                                    'PERMANEN' => 'info'
+                                    'USUL_MUSNAH' => 'danger',
+                                    'PERMANEN' => 'info',
+                                    'NON_ARSIP' => 'secondary'
                                 ];
                                 $color = $statusColors[$arsip->status_arsip] ?? 'secondary';
                             @endphp
-                            <span class="badge bg-{{ $color }}">
-                                @if($arsip->status_arsip == 'UMSUL_MUSNAH')
-                                    Usul Musnah
-                                @else
-                                    {{ $arsip->status_arsip }}
+
+                            <div class="d-flex flex-wrap gap-1">
+
+                                <!-- Status utama -->
+                                <span class="badge bg-{{ $color }}">
+                                    @if($arsip->status_arsip == 'USUL_MUSNAH')
+                                        USUL MUSNAH
+                                    @elseif($arsip->status_arsip == 'NON_ARSIP')
+                                        NON ARSIP
+                                    @else
+                                        {{ $arsip->status_arsip }}
+                                    @endif
+                                </span>
+
+                                <!-- Label DUPLIKAT -->
+                                @if($arsip->is_duplicate == 1)
+                                    <span class="badge bg-danger">DUPLIKAT</span>
                                 @endif
-                            </span>
+
+                            </div>
                         </td>
                         <td class="text-center">
                             <div class="btn-group btn-group-sm" style="gap: 6px;">

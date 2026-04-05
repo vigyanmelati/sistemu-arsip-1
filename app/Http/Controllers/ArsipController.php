@@ -25,25 +25,42 @@ class ArsipController extends Controller
             'LANGSUNG'
         ]);
           // Filter duplikat
-    if ($request->has('show_duplicates') && $request->show_duplicates == 1) {
-        // Ambil semua ID yang memiliki duplikat (minimal 2 record dengan judul & tahun sama)
-        $duplicateIds = DB::table('arsips')
-            ->select('uraian_arsip', 'tahun_arsip', DB::raw('GROUP_CONCAT(id) as ids'))
-            ->groupBy('uraian_arsip', 'tahun_arsip')
-            ->havingRaw('COUNT(*) > 1')
-            ->get()
-            ->flatMap(function ($group) {
-                return explode(',', $group->ids);
-            })
-            ->unique()
-            ->toArray();
+          if ($request->show_duplicates == 1) {
 
-        if (empty($duplicateIds)) {
-            $query->whereRaw('1 = 0'); // tidak ada duplikat, hasil kosong
-        } else {
-            $query->whereIn('id', $duplicateIds);
-        }
+    // RESET hanya yang BUKAN NON_ARSIP
+    DB::table('arsips')
+        ->where('status_arsip', '!=', 'NON_ARSIP')
+        ->update([
+            'is_duplicate' => 0,
+            'duplicate_reason' => null
+        ]);
+
+    $duplicateGroups = DB::table('arsips')
+        ->select('uraian_arsip', 'tahun_arsip')
+        ->where('status_arsip', '!=', 'NON_ARSIP') // ⬅️ PENTING
+        ->groupBy('uraian_arsip', 'tahun_arsip')
+        ->havingRaw('COUNT(*) > 1')
+        ->get();
+
+    foreach ($duplicateGroups as $group) {
+        DB::table('arsips')
+            ->where('uraian_arsip', $group->uraian_arsip)
+            ->where('tahun_arsip', $group->tahun_arsip)
+            ->where('status_arsip', '!=', 'NON_ARSIP') // ⬅️ PENTING
+            ->update([
+                'is_duplicate' => 1,
+                'duplicate_reason' => DB::raw("
+                    CASE 
+                        WHEN duplicate_reason IS NULL 
+                        THEN 'Duplikat otomatis' 
+                        ELSE duplicate_reason 
+                    END
+                ")
+            ]);
     }
+
+    $query->where('is_duplicate', 1);
+}
         // Filter berdasarkan status arsip
         if ($request->has('status_arsip') && $request->status_arsip != '') {
             $query->where('status_arsip', $request->status_arsip);
@@ -442,10 +459,10 @@ private function extractNumberFromText($text)
         'satuan_arsip'        => 'required|in:BENDEL,LEMBAR',
 
         // Masa Retensi
-        'aktif_tahun'         => 'required|string|max:100',
-        'inaktif_tahun'       => 'required|string|max:100',
-        'tanggal_referensi'   => 'nullable|date',
-        'keterangan_jra'      => 'required|in:PERMANEN,MUSNAH',
+        'aktif_tahun'   => 'nullable|string|max:100',
+        'inaktif_tahun' => 'nullable|string|max:100',
+        'tanggal_referensi' => 'nullable|date',
+        'keterangan_jra'=> 'nullable|in:PERMANEN,MUSNAH',
 
         // Hasil hitung (akan dihitung ulang)
         'aktif_sampai'        => 'nullable|date',
@@ -463,6 +480,8 @@ private function extractNumberFromText($text)
         // File
         'file_dokumen'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         'hapus_file'          => 'nullable|in:0,1',
+        'tangani_duplikat' => 'nullable|in:1',
+        'duplicate_reason' => 'nullable|string|max:1000',
     ]);
 
     try {
@@ -514,22 +533,66 @@ private function extractNumberFromText($text)
         // =========================
         // HITUNG ULANG RETENSI (SERVER SIDE)
         // =========================
-        $perhitungan = $this->hitungRetensi(
-            $validated['aktif_tahun'],
-            $validated['inaktif_tahun'],
-            $validated['keterangan_jra'],
-            $validated['tanggal_arsip'],
-            $validated['tanggal_referensi'] ?? null
-        );
+        $perhitungan = null;
+       if (!empty($validated['aktif_tahun']) && 
+            !empty($validated['inaktif_tahun']) && 
+            !empty($validated['keterangan_jra'])) {
 
-        $validated['aktif_sampai']  = $perhitungan['aktif_sampai'];
-        $validated['inaktif_sampai']= $perhitungan['inaktif_sampai'];
-        $validated['status_arsip'] = $perhitungan['status_arsip'];
+            $perhitungan = $this->hitungRetensi(
+                $validated['aktif_tahun'],
+                $validated['inaktif_tahun'],
+                $validated['keterangan_jra'],
+                $validated['tanggal_arsip'],
+                $validated['tanggal_referensi'] ?? null
+            );
+
+            $validated['aktif_sampai']   = $perhitungan['aktif_sampai'];
+            $validated['inaktif_sampai'] = $perhitungan['inaktif_sampai'];
+            $validated['status_arsip']   = $perhitungan['status_arsip'];
+
+        } else {
+            // kalau tidak diisi, kosongkan
+            $validated['aktif_sampai']   = null;
+            $validated['inaktif_sampai'] = null;
+
+            // status default (opsional, kamu bisa ubah)
+            $validated['status_arsip'] = $validated['status_arsip'] ?? 'AKTIF';
+        }
+        // =========================
+        // PENANGANAN DUPLIKAT
+        // =========================
+        $validated['duplicate_reason'] = $request->duplicate_reason;
+       if ($request->tangani_duplikat == '1') {
+
+            if (!$request->duplicate_reason) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Alasan wajib diisi untuk penanganan duplikat.');
+            }
+
+            // Arsip ini jadi NON ARSIP
+            $validated['status_arsip'] = 'NON_ARSIP';
+
+            // Hilangkan flag duplikat
+            $validated['is_duplicate'] = 0;
+
+            // Cari arsip lain yang sama → jadikan bukan duplikat juga
+            Arsip::where('uraian_arsip', $arsip->uraian_arsip)
+                ->where('tahun_arsip', $arsip->tahun_arsip)
+                ->where('id', '!=', $arsip->id)
+                ->update([
+                    'is_duplicate' => 0
+                ]);
+
+            $validated['duplicate_reason'] = $request->duplicate_reason;
+        }
 
         unset($validated['status_pindah']);
 
 
-        \Log::info('Hasil hitung retensi update:', $perhitungan);
+      \Log::info('Hasil hitung retensi update:', [
+        'perhitungan' => $perhitungan
+    ]);
 
         // =========================
         // UPDATE DATA

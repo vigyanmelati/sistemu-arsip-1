@@ -54,6 +54,8 @@ class Arsip extends Model
     'tanggal_diverifikasi',
 
     'catatan_perbaikan',
+     'duplicate_reason',
+    'is_duplicate',
     ];
      protected $guarded = ['skipHistory'];
 

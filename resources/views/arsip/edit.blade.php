@@ -18,6 +18,11 @@
             </ul>
         </div>
         @endif
+        @if(session('error'))
+    <div class="alert alert-danger">
+        {{ session('error') }}
+    </div>
+@endif
         <form action="{{ route('arsip.update', $arsip->id) }}" method="POST" enctype="multipart/form-data" id="arsipForm">
             @csrf
             @method('PUT')
@@ -178,7 +183,7 @@
                         class="form-control"
                         placeholder="Contoh: 2 TAHUN / 2 TAHUN SETELAH KEGIATAN"
                         value="{{ old('aktif_tahun', $arsip->aktif_tahun) }}"
-                        required>
+                        >
                     <small class="text-muted">
                         Gunakan kata <strong>SETELAH</strong> jika berbasis tanggal referensi
                     </small>
@@ -198,7 +203,7 @@
                         class="form-control"
                         placeholder="Contoh: 3 TAHUN / 3 TAHUN SETELAH KEGIATAN"
                         value="{{ old('inaktif_tahun', $arsip->inaktif_tahun) }}"
-                        required>
+                       >
                     @error('inaktif_tahun')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -225,7 +230,7 @@
                 <div class="col-md-4 mb-3">
                     <label for="keterangan_jra" class="form-label">Keterangan JRA <span class="text-danger">*</span></label>
                     <select class="form-control @error('keterangan_jra') is-invalid @enderror" 
-                            id="keterangan_jra" name="keterangan_jra" required>
+                            id="keterangan_jra" name="keterangan_jra">
                         <option value="">Pilih Keterangan</option>
                         <option value="PERMANEN" {{ old('keterangan_jra', $arsip->keterangan_jra) == 'PERMANEN' ? 'selected' : '' }}>Permanen</option>
                         <option value="MUSNAH" {{ old('keterangan_jra', $arsip->keterangan_jra) == 'MUSNAH' ? 'selected' : '' }}>Musnah</option>
@@ -329,6 +334,53 @@
                     @enderror
                 </div>
             </div>
+
+            <hr class="my-4">
+
+<div class="card border-danger">
+    <div class="card-header bg-danger text-white">
+        <strong>Penanganan Arsip Duplikat</strong>
+    </div>
+
+    <div class="card-body">
+        <div class="row align-items-center">
+
+            <!-- Checkbox -->
+            <div class="col-md-4 mb-3">
+                <div class="form-check mt-2">
+                    <input class="form-check-input" 
+                        type="checkbox" 
+                        id="tangani_duplikat" 
+                        name="tangani_duplikat"
+                        value="1">
+
+                    <label class="form-check-label fw-bold">
+                        Ubah status menjadi <span class="text-danger">NON ARSIP</span>
+                    </label>
+
+                    <small class="d-block text-muted">
+                        Gunakan jika arsip ini terbukti duplikat dan tidak digunakan
+                    </small>
+                </div>
+            </div>
+
+            <!-- Alasan -->
+            <div class="col-md-8 mb-3">
+                <label class="form-label fw-bold">Alasan Penanganan</label>
+                <textarea name="duplicate_reason"
+                    id="duplicate_reason"
+                    class="form-control"
+                    rows="3"
+                    placeholder="Tuliskan alasan kenapa arsip ini dijadikan non arsip...">{{ old('duplicate_reason') }}</textarea>
+                
+                <small class="text-muted">
+                    Wajib diisi jika status diubah menjadi Non Arsip
+                </small>
+            </div>
+
+        </div>
+    </div>
+</div>
             
             <!-- TOMBOL SIMPAN -->
             <div class="d-flex justify-content-between mt-4">
@@ -536,11 +588,11 @@ document.addEventListener('DOMContentLoaded', function () {
         hitungRetensi(); // Pastikan perhitungan terakhir
         
         // Validasi minimal
-        if (!keteranganJRA.value) {
-            e.preventDefault();
-            alert('Silakan pilih Keterangan JRA.');
-            return;
-        }
+        // if (!keteranganJRA.value) {
+        //     e.preventDefault();
+        //     alert('Silakan pilih Keterangan JRA.');
+        //     return;
+        // }
         
         // Validasi file upload (opsional)
         const fileInput = document.getElementById('file_dokumen');
@@ -575,6 +627,17 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     }
+
+    const tanganiCheckbox = document.getElementById('tangani_duplikat');
+    const alasanDuplicate = document.getElementById('duplicate_reason');
+
+    form.addEventListener('submit', function(e) {
+        if (tanganiCheckbox.checked && !alasanDuplicate.value.trim()) {
+            e.preventDefault();
+            alert('Alasan wajib diisi untuk penanganan duplikat');
+            return;
+        }
+    });
 
     // Initial load - tampilkan preview berdasarkan data yang ada
     setTimeout(function() {

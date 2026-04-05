@@ -241,6 +241,8 @@
                     </tr>
                 </table>
             </div>
+
+            
             
             <!-- Catatan Tambahan -->
             @if($arsip->aktif_tahun && stripos($arsip->aktif_tahun, 'SETELAH') !== false && !$arsip->tanggal_referensi)
@@ -251,6 +253,33 @@
             </div>
             @endif
         </div>
+        <!-- Riwayat Duplikasi -->
+<div class="col-md-12 mt-3">
+    <h6 class="font-weight-bold text-danger mb-3">Riwayat Duplikasi</h6>
+
+    @if($arsip->duplicate_reason)
+        <div class="alert alert-warning">
+            <strong>Status:</strong> 
+            @if($arsip->status_arsip == 'NON_ARSIP')
+                <span class="badge bg-secondary">Sudah Ditangani (NON ARSIP)</span>
+            @elseif($arsip->is_duplicate == 1)
+                <span class="badge bg-danger">Masih Duplikat</span>
+            @else
+                <span class="badge bg-success">Sudah Tidak Duplikat</span>
+            @endif
+
+            <br><br>
+
+            <strong>Alasan:</strong><br>
+            {{ $arsip->duplicate_reason }}
+        </div>
+    @else
+        <div class="alert alert-light border">
+            <i class="bi bi-info-circle"></i>
+            Arsip ini tidak memiliki riwayat duplikasi.
+        </div>
+    @endif
+</div>
         <!-- Riwayat/History Arsip -->
 <!-- Riwayat/History Arsip -->
 <div class="col-md-12 mt-4">
