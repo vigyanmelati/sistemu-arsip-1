@@ -66,7 +66,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="text-muted mb-2">Usul Musnah</h6>
+                        <h6 class="text-muted mb-2">HABIS RETENSI</h6>
                         <h2 class="fw-bold text-danger mb-0">{{ $arsipUsulMusnah }}</h2>
                         <small class="text-danger">
                             {{ $totalArsip > 0 ? number_format(($arsipUsulMusnah/$totalArsip)*100, 1) : 0 }}% dari total
@@ -85,7 +85,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="text-muted mb-2">Usul Musnah</h6>
+                        <h6 class="text-muted mb-2">HABIS RETENSI</h6>
                         <h2 class="fw-bold text-danger mb-0">{{ $arsipMusnah }}</h2>
                         <small class="text-danger">
                             {{ $totalArsip > 0 ? number_format(($arsipMusnah/$totalArsip)*100, 1) : 0 }}% dari total
@@ -229,7 +229,7 @@
                 
                 <div class="mb-4">
                     <div class="d-flex justify-content-between mb-2">
-                        <span>Usul Musnah</span>
+                        <span>HABIS RETENSI</span>
                         <span class="fw-bold">{{ $arsipMusnah }}</span>
                     </div>
                     <div class="progress" style="height: 10px;">

@@ -19,7 +19,7 @@ class DashboardController extends Controller
         
         // // Di database Anda: status_arsip enum('AKTIF', 'UMSUL_MUSNAH', 'PERMANEN')
         // // 'UMSUL_MUSNAH' bukan 'MUSNAH'
-        // $arsipUsulMusnah = Arsip::where('status_arsip', 'USUL_MUSNAH')->count();
+        // $arsipUsulMusnah = Arsip::where('status_arsip', 'HABIS_RETENSI')->count();
         // $arsipMusnah = Arsip::where('status_arsip', 'MUSNAH')->count();
         // $arsipPermanen = Arsip::where('status_arsip', 'PERMANEN')->count();
         
@@ -86,7 +86,7 @@ class DashboardController extends Controller
             ->count();
 
         $arsipUsulMusnah = (clone $baseQuery)
-            ->where('status_arsip', 'USUL_MUSNAH')
+            ->where('status_arsip', 'HABIS_RETENSI')
             ->count();
 
         $arsipMusnah = (clone $baseQuery)
@@ -135,7 +135,7 @@ class DashboardController extends Controller
         $statusData = [
             'AKTIF'        => $arsipAktif,
             'INAKTIF'      => $arsipInaktif,
-            'USUL_MUSNAH'  => $arsipUsulMusnah,
+            'HABIS_RETENSI'  => $arsipUsulMusnah,
             'PERMANEN'     => $arsipPermanen,
         ];
 

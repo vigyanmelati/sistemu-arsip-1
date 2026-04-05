@@ -165,7 +165,8 @@ class ArsipExport implements
         $statusMap = [
             'AKTIF' => 'AKTIF',
             'INAKTIF' => 'INAKTIF',
-            'USUL_MUSNAH' => 'USUL MUSNAH',
+            // 'HABIS_RETENSI' => 'HABIS RETENSI',
+             'HABIS_RETENSI' => 'HABIS RETESNI',
             'PERMANEN' => 'PERMANEN',
             'MUSNAH' => 'MUSNAH'
         ];

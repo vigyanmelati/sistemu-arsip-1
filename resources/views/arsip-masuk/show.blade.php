@@ -55,7 +55,7 @@
                                             'INAKTIF' => 'warning',
                                             'PERMANEN' => 'info',
                                             'MUSNAH' => 'danger',
-                                            'USUL_MUSNAH' => 'secondary'
+                                            'HABIS_RETENSI' => 'secondary'
                                         ];
                                         $color = $statusColors[$arsip->status_arsip] ?? 'secondary';
                                     @endphp

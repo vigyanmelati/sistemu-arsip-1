@@ -52,7 +52,7 @@ class SubBagianDashboardController extends Controller
             ->count();
 
         // Jumlah arsip per status_arsip
-        $statusOptions = ['AKTIF', 'INAKTIF', 'USUL_MUSNAH', 'PERMANEN', 'MUSNAH'];
+        $statusOptions = ['AKTIF', 'INAKTIF', 'HABIS_RETENSI', 'PERMANEN', 'MUSNAH'];
         $arsipPerStatus = [];
         foreach ($statusOptions as $status) {
             $arsipPerStatus[$status] = Arsip::where('sub_bagian_id', $user->sub_bagian_id)

@@ -31,7 +31,7 @@
         <strong>Catatan:</strong>
         <ul class="mb-0">
             <li>Setiap pemusnahan merupakan <strong>satu kegiatan / batch</strong></li>
-            <li>Arsip tetap berstatus <strong>USUL_MUSNAH</strong></li>
+            <li>Arsip tetap berstatus <strong>HABIS_RETENSI</strong></li>
             <li>Keputusan akhir dicatat pada dokumen pemusnahan</li>
         </ul>
     </div>

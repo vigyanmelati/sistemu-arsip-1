@@ -142,7 +142,7 @@ class ArsipController extends Controller
         $statusOptions = [
             'AKTIF' => 'Aktif',
             'INAKTIF' => 'Inaktif', 
-            'USUL_MUSNAH' => 'Usul Musnah',
+            'HABIS_RETENSI' => 'HABIS RETENSI',
             'MUSNAH' => 'Musnah',
             'PERMANEN' => 'Permanen'
         ];
@@ -359,9 +359,9 @@ class ArsipController extends Controller
         } elseif ($sekarang <= $inaktifSampai) {
             $result['status_arsip'] = 'INAKTIF';
         } elseif ($sekarang <= $musnahSampai) {
-            $result['status_arsip'] = 'USUL_MUSNAH';
+            $result['status_arsip'] = 'HABIS_RETENSI';
         } else {
-            $result['status_arsip'] = 'USUL_MUSNAH';
+            $result['status_arsip'] = 'HABIS_RETENSI';
         }
     } else {
         if ($sekarang <= $aktifSampai) {
@@ -468,7 +468,7 @@ private function extractNumberFromText($text)
         // Hasil hitung (akan dihitung ulang)
         'aktif_sampai'        => 'nullable|date',
         'inaktif_sampai'      => 'nullable|date',
-        'status_arsip'        => 'nullable|in:AKTIF,INAKTIF,USUL_MUSNAH,MUSNAH,PERMANEN',
+        'status_arsip'        => 'nullable|in:AKTIF,INAKTIF,HABIS_RETENSI,MUSNAH,PERMANEN',
 
         // Optional
         'nomor_rak'           => 'nullable|string|max:50',

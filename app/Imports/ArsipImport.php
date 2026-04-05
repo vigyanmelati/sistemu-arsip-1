@@ -150,9 +150,9 @@ class ArsipImport implements ToModel, WithHeadingRow
             } elseif ($sekarang <= $inaktifSampai) {
                 $result['status_arsip'] = 'INAKTIF';
             } elseif ($sekarang <= $musnahSampai) {
-                $result['status_arsip'] = 'USUL_MUSNAH';
+                $result['status_arsip'] = 'HABIS_RETENSI';
             } else {
-                $result['status_arsip'] = 'USUL_MUSNAH';
+                $result['status_arsip'] = 'HABIS_RETENSI';
             }
         } else {
             if ($sekarang <= $aktifSampai) {

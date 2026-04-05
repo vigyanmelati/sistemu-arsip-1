@@ -28,7 +28,7 @@
     <div class="alert alert-info">
         <strong>Catatan:</strong>
         <ul class="mb-0">
-            <li>Arsip tetap berstatus <b>USUL_MUSNAH</b></li>
+            <li>Arsip tetap berstatus <b>HABIS_RETENSI</b></li>
             <li>Keputusan ditentukan saat sidang penilaian</li>
         </ul>
     </div>

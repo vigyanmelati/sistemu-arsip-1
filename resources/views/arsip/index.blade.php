@@ -215,7 +215,7 @@
                                 $statusColors = [
                                     'AKTIF' => 'success',
                                     'INAKTIF' => 'warning',
-                                    'USUL_MUSNAH' => 'danger',
+                                    'HABIS_RETENSI' => 'danger',
                                     'PERMANEN' => 'info',
                                     'NON_ARSIP' => 'secondary'
                                 ];
@@ -226,8 +226,8 @@
 
                                 <!-- Status utama -->
                                 <span class="badge bg-{{ $color }}">
-                                    @if($arsip->status_arsip == 'USUL_MUSNAH')
-                                        USUL MUSNAH
+                                    @if($arsip->status_arsip == 'HABIS_RETENSI')
+                                        HABIS RETENSI
                                     @elseif($arsip->status_arsip == 'NON_ARSIP')
                                         NON ARSIP
                                     @else

@@ -102,7 +102,7 @@ class SubBagianArsipController extends Controller
 
         // Filter dropdown options
         $kodeKlasifikasiOptions = KodeKlasifikasi::orderBy('kode')->get();
-        $statusOptions = ['AKTIF'=>'Aktif','INAKTIF'=>'Inaktif','USUL_MUSNAH'=>'Usul Musnah','MUSNAH'=>'Musnah','PERMANEN'=>'Permanen'];
+        $statusOptions = ['AKTIF'=>'Aktif','INAKTIF'=>'Inaktif','HABIS_RETENSI'=>'HABIS RETENSI','MUSNAH'=>'Musnah','PERMANEN'=>'Permanen'];
         $kondisiOptions = ['BAIK'=>'Baik','RUSAK'=>'Rusak','HILANG'=>'Hilang'];
         $keteranganJraOptions = ['MUSNAH'=>'Musnah','PERMANEN'=>'Permanen'];
 

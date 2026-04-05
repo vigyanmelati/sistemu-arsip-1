@@ -25,7 +25,7 @@ class DaftarArsipUsulMusnahExport implements
      */
     public function collection()
     {
-        return Arsip::where('status_arsip', 'USUL_MUSNAH')
+        return Arsip::where('status_arsip', 'HABIS_RETENSI')
             ->where('keterangan_jra', 'MUSNAH')
             ->orderBy('tahun_arsip', 'asc')
             ->get();

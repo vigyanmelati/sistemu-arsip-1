@@ -43,7 +43,7 @@ class PemusnahanController extends Controller
      */
     public function create()
     {
-        $arsip = Arsip::where('status_arsip', 'USUL_MUSNAH')
+        $arsip = Arsip::where('status_arsip', 'HABIS_RETENSI')
             ->where('keterangan_jra', 'MUSNAH')
             ->orderBy('tahun_arsip')
             ->get();
@@ -81,7 +81,7 @@ class PemusnahanController extends Controller
      */
     public function show(Pemusnahan $pemusnahan)
     {
-        $arsipList = Arsip::where('status_arsip', 'usul_musnah')
+        $arsipList = Arsip::where('status_arsip', 'HABIS_RETENSI')
             ->whereDoesntHave('pemusnahanDetails', function ($q) use ($pemusnahan) {
                 $q->where('pemusnahan_id', $pemusnahan->id);
             })
@@ -231,7 +231,7 @@ class PemusnahanController extends Controller
     {
         return Excel::download(
             new DaftarArsipUsulMusnahExport,
-            'Daftar_Arsip_Usul_Musnah.xlsx'
+            'Daftar_Arsip_HABIS_RETENSI.xlsx'
         );
     }
 
