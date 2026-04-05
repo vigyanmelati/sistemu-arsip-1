@@ -384,6 +384,32 @@
                             <label class="form-label fw-semibold">Box</label>
                             <input type="text" name="nomor_box" class="form-control" value="{{ request('nomor_box') }}" placeholder="Contoh: B-01">
                         </div>
+
+                                                <div class="col-md-6 mb-3">
+    <label class="form-label fw-semibold">Aktif Tahun</label>
+    <select name="aktif_tahun_kosong" class="form-select">
+        <option value="">Semua</option>
+        <option value="1" {{ request('aktif_tahun_kosong') == '1' ? 'selected' : '' }}>
+            Belum Diisi
+        </option>
+        <option value="0" {{ request('aktif_tahun_kosong') == '0' ? 'selected' : '' }}>
+            Sudah Diisi
+        </option>
+    </select>
+</div>
+
+<div class="col-md-6 mb-3">
+    <label class="form-label fw-semibold">Inaktif Tahun</label>
+    <select name="inaktif_tahun_kosong" class="form-select">
+        <option value="">Semua</option>
+        <option value="1" {{ request('inaktif_tahun_kosong') == '1' ? 'selected' : '' }}>
+            Belum Diisi
+        </option>
+        <option value="0" {{ request('inaktif_tahun_kosong') == '0' ? 'selected' : '' }}>
+            Sudah Diisi
+        </option>
+    </select>
+</div>
                     </div>
                     
                     <div class="alert alert-info mt-3 mb-0 d-flex align-items-center">

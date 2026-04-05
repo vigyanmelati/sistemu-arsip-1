@@ -90,6 +90,31 @@ class ArsipController extends Controller
         if ($request->has('keterangan_jra') && $request->keterangan_jra != '') {
             $query->where('keterangan_jra', $request->keterangan_jra);
         }
+// Filter aktif_sampai kosong / tidak
+if (request('aktif_tahun_kosong') == '1') {
+    // BELUM DIISI
+    $query->where(function($q) {
+        $q->whereNull('aktif_sampai')
+          ->orWhere('aktif_sampai', '0000-00-00');
+    });
+} else if (request('aktif_tahun_kosong') == '0') {
+    // SUDAH DIISI
+    $query->whereNotNull('aktif_sampai')
+          ->where('aktif_sampai', '!=', '0000-00-00');
+}
+
+// Filter inaktif_tahun kosong / tidak
+if (request('inaktif_tahun_kosong') == '1') {
+    // BELUM DIISI
+    $query->where(function($q) {
+        $q->whereNull('inaktif_sampai')
+          ->orWhere('inaktif_sampai', '0000-00-00');
+    });
+} else if (request('inaktif_tahun_kosong') == '0') {
+    // SUDAH DIISI
+    $query->whereNotNull('inaktif_sampai')
+          ->where('inaktif_sampai', '!=', '0000-00-00');
+}
 
         $kondisiOptions = [
             'BAIK' => 'Baik',
