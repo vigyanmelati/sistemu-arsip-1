@@ -27,40 +27,40 @@ class ArsipController extends Controller
           // Filter duplikat
           if ($request->show_duplicates == 1) {
 
-    // RESET hanya yang BUKAN NON_ARSIP
-    DB::table('arsips')
-        ->where('status_arsip', '!=', 'NON_ARSIP')
-        ->update([
-            'is_duplicate' => 0,
-            'duplicate_reason' => null
-        ]);
+            // RESET hanya yang BUKAN NON_ARSIP
+            DB::table('arsips')
+                ->where('status_arsip', '!=', 'NON_ARSIP')
+                ->update([
+                    'is_duplicate' => 0,
+                    'duplicate_reason' => null
+                ]);
 
-    $duplicateGroups = DB::table('arsips')
-        ->select('uraian_arsip', 'tahun_arsip')
-        ->where('status_arsip', '!=', 'NON_ARSIP') // ⬅️ PENTING
-        ->groupBy('uraian_arsip', 'tahun_arsip')
-        ->havingRaw('COUNT(*) > 1')
-        ->get();
+            $duplicateGroups = DB::table('arsips')
+                ->select('uraian_arsip', 'tahun_arsip')
+                ->where('status_arsip', '!=', 'NON_ARSIP') // ⬅️ PENTING
+                ->groupBy('uraian_arsip', 'tahun_arsip')
+                ->havingRaw('COUNT(*) > 1')
+                ->get();
 
-    foreach ($duplicateGroups as $group) {
-        DB::table('arsips')
-            ->where('uraian_arsip', $group->uraian_arsip)
-            ->where('tahun_arsip', $group->tahun_arsip)
-            ->where('status_arsip', '!=', 'NON_ARSIP') // ⬅️ PENTING
-            ->update([
-                'is_duplicate' => 1,
-                'duplicate_reason' => DB::raw("
-                    CASE 
-                        WHEN duplicate_reason IS NULL 
-                        THEN 'Duplikat otomatis' 
-                        ELSE duplicate_reason 
-                    END
-                ")
-            ]);
-    }
+            foreach ($duplicateGroups as $group) {
+                DB::table('arsips')
+                    ->where('uraian_arsip', $group->uraian_arsip)
+                    ->where('tahun_arsip', $group->tahun_arsip)
+                    ->where('status_arsip', '!=', 'NON_ARSIP') // ⬅️ PENTING
+                    ->update([
+                        'is_duplicate' => 1,
+                        'duplicate_reason' => DB::raw("
+                            CASE 
+                                WHEN duplicate_reason IS NULL 
+                                THEN 'Duplikat otomatis' 
+                                ELSE duplicate_reason 
+                            END
+                        ")
+                    ]);
+            }
 
-    $query->where('is_duplicate', 1);
-}
+            $query->where('is_duplicate', 1);
+        }
         // Filter berdasarkan status arsip
         if ($request->has('status_arsip') && $request->status_arsip != '') {
             $query->where('status_arsip', $request->status_arsip);
@@ -217,6 +217,7 @@ class ArsipController extends Controller
         'nomor_rak' => 'nullable|string|max:50',
         'nomor_box' => 'nullable|string|max:50',
         'nomor_sampul' => 'nullable|string|max:100',
+        'lokasi_arsip' => 'nullable|in:SUB_BAGIAN,RECORD_CENTER_PERMANEN,RECORD_CENTER_INAKTIF',
         'tingkat_perkembangan' => 'nullable|in:ASLI,COPY,SALINAN',
         'keterangan' => 'nullable|in:BAIK,RUSAK,HILANG',
         'media_arsip' => 'nullable|string|max:255',
@@ -473,6 +474,7 @@ private function extractNumberFromText($text)
         'nomor_rak'           => 'nullable|string|max:50',
         'nomor_box'           => 'nullable|string|max:50',
         'nomor_sampul'        => 'nullable|string|max:100',
+        'lokasi_arsip'        => 'nullable|in:SUB_BAGIAN,RECORD_CENTER_PERMANEN,RECORD_CENTER_INAKTIF',
         'tingkat_perkembangan'=> 'nullable|in:ASLI,COPY,SALINAN',
         'keterangan'          => 'nullable|in:BAIK,RUSAK,HILANG',
         'media_arsip'         => 'nullable|string|max:255',

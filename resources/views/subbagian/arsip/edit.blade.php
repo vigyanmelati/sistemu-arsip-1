@@ -247,6 +247,52 @@
                     @enderror
                 </div>
             </div>
+              <hr class="my-4">
+
+<div class="card border-danger">
+    <div class="card-header bg-danger text-white">
+        <strong>Penanganan Arsip Duplikat</strong>
+    </div>
+
+    <div class="card-body">
+        <div class="row align-items-center">
+
+            <!-- Checkbox -->
+            <div class="col-md-4 mb-3">
+                <div class="form-check mt-2">
+                    <input class="form-check-input" 
+                        type="checkbox" 
+                        id="tangani_duplikat" 
+                        name="tangani_duplikat"
+                        value="1">
+
+                    <label class="form-check-label fw-bold">
+                        Ubah status menjadi <span class="text-danger">NON ARSIP</span>
+                    </label>
+
+                    <small class="d-block text-muted">
+                        Gunakan jika arsip ini terbukti duplikat dan tidak digunakan
+                    </small>
+                </div>
+            </div>
+
+            <!-- Alasan -->
+            <div class="col-md-8 mb-3">
+                <label class="form-label fw-bold">Alasan Penanganan</label>
+                <textarea name="duplicate_reason"
+                    id="duplicate_reason"
+                    class="form-control"
+                    rows="3"
+                    placeholder="Tuliskan alasan kenapa arsip ini dijadikan non arsip...">{{ old('duplicate_reason') }}</textarea>
+                
+                <small class="text-muted">
+                    Wajib diisi jika status diubah menjadi Non Arsip
+                </small>
+            </div>
+
+        </div>
+    </div>
+</div>
             
             <!-- TOMBOL SIMPAN -->
             <div class="d-flex justify-content-between mt-4">

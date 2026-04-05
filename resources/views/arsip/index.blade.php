@@ -131,16 +131,22 @@
                                 @endif
                             </a>
                         </th>
-                        {{-- <th style="min-width: 100px;" class="sortable-header">
-                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'no_sampul', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
-                                <span>Sampul</span>
-                                @if(request('sort') == 'no_sampul')
+                       <th style="min-width: 150px;" class="sortable-header">
+                            <a href="{{ request()->fullUrlWithQuery([
+                                'sort' => 'lokasi_arsip',
+                                'direction' => request('direction') == 'asc' ? 'desc' : 'asc'
+                            ]) }}" 
+                            class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
+                                
+                                <span>Lokasi Arsip</span>
+
+                                @if(request('sort') == 'lokasi_arsip')
                                     <i class="bi bi-caret-{{ request('direction') == 'asc' ? 'up' : 'down' }}-fill text-dark"></i>
                                 @else
                                     <i class="bi bi-caret-up-down text-secondary"></i>
                                 @endif
                             </a>
-                        </th> --}}
+                        </th>
                         <th style="min-width: 120px;" class="sortable-header">
                             <a href="{{ request()->fullUrlWithQuery(['sort' => 'aktif_sampai', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
                                 <span>Aktif Sampai</span>
@@ -183,6 +189,12 @@
                         <td>{{ $arsip->tahun_arsip }}</td>
                         <td>{{ $arsip->nomor_rak }}</td>
                         <td>{{ $arsip->nomor_box }}</td>
+                       <td>
+                            {{ $arsip->lokasi_arsip 
+                                ? ucwords(str_replace('_', ' ', $arsip->lokasi_arsip)) 
+                                : '-' 
+                            }}
+                        </td>
                         {{-- <td>{{ $arsip->no_sampul ?? '-' }}</td> --}}
                         <td>
                             @if($arsip->aktif_sampai)

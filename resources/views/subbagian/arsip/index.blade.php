@@ -21,6 +21,10 @@
                     <i class="bi bi-funnel-fill"></i>
                     <span>Filter</span>
                 </button>
+                  <a href="{{ route('subbagian.arsip.index', ['show_duplicates' => 1]) }}" class="btn btn-danger d-flex align-items-center gap-2" id="checkDuplicatesBtn">
+                    <i class="bi bi-files"></i>
+                    <span>Cek Duplikasi</span>
+                </a>
                 <button class="btn btn-warning d-flex align-items-center gap-2 shadow-sm" id="ajukanPindahBtn" style="display: none;">
                     <i class="bi bi-arrow-right-circle-fill"></i>
                     <span>Ajukan Pindah ke Unit Kearsipan</span>
@@ -68,6 +72,15 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         @endif
+          @if(request('show_duplicates'))
+<div class="alert alert-info mb-3 d-flex align-items-center">
+    <i class="bi bi-info-circle-fill me-2"></i>
+    Menampilkan arsip yang memiliki duplikat (berdasarkan judul dan tahun).
+    <a href="{{ route('subbagian.arsip.index', request()->except('show_duplicates')) }}" class="ms-auto btn btn-sm btn-outline-secondary">
+        <i class="bi bi-x-lg"></i> Hapus filter
+    </a>
+</div>
+@endif
         
         <!-- Table dengan horizontal scroll -->
         <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
@@ -136,6 +149,7 @@
                                     <i class="bi bi-caret-up-down text-secondary"></i>
                                 @endif
                             </a>
+                           
                         </th>
                         <th style="min-width: 150px;" class="text-center">Aksi</th>
                     </tr>
@@ -168,6 +182,10 @@
                             @else
                                 <span class="badge bg-secondary">Belum Diajukan</span>
                             @endif
+                              <!-- Label DUPLIKAT -->
+                                @if($arsip->is_duplicate == 1)
+                                    <span class="badge bg-danger">DUPLIKAT</span>
+                                @endif
                         </td>
                         <td class="text-center">
                             <div class="btn-group btn-group-sm" style="gap: 6px;">

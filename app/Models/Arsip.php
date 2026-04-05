@@ -42,6 +42,7 @@ class Arsip extends Model
         'nomor_rak',
         'nomor_box',
         'nomor_sampul',
+        'lokasi_arsip',
         'tingkat_perkembangan',
         'keterangan',
         'media_arsip',

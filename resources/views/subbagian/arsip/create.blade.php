@@ -187,6 +187,18 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
+
+                <div class="col-md-6 mb-3">
+                    {{-- <label for="lokasi_arsip" class="form-label">Lokasi Arsip</label> --}}
+                    <input type="hidden" name="lokasi_arsip" value="SUB_BAGIAN">
+                    {{-- <div class="col-md-6 mb-3">
+                        <label class="form-label">Lokasi Arsip</label>
+                        <input type="text" class="form-control" value="Ruang Sub Bagian" readonly>
+                    </div> --}}
+                    @error('lokasi_arsip')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
                                 
                 
             </div>

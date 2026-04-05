@@ -274,7 +274,25 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
-                                
+            
+                <div class="col-md-6 mb-3">
+                    <label for="lokasi_arsip" class="form-label">Lokasi Arsip</label>
+                    <select name="lokasi_arsip" id="lokasi_arsip" class="form-control @error('lokasi_arsip') is-invalid @enderror">
+                        <option value="">Pilih Lokasi</option>
+                        <option value="SUB_BAGIAN" {{ old('lokasi_arsip') == 'SUB_BAGIAN' ? 'selected' : '' }}>
+                            Ruang Sub Bagian
+                        </option>
+                        <option value="RECORD_CENTER_PERMANEN" {{ old('lokasi_arsip') == 'RECORD_CENTER_PERMANEN' ? 'selected' : '' }}>
+                            Record Center (Arsip Permanen)
+                        </option>
+                        <option value="RECORD_CENTER_INAKTIF" {{ old('lokasi_arsip') == 'RECORD_CENTER_INAKTIF' ? 'selected' : '' }}>
+                            Record Center (Arsip Inaktif)
+                        </option>
+                    </select>
+                    @error('lokasi_arsip')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
                 
             </div>
             

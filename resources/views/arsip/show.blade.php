@@ -90,6 +90,26 @@
                         <td>: {{ $arsip->nomor_sampul ?: '-' }}</td>
                     </tr>
                     <tr>
+                        <td><strong>Lokasi Arsip</strong></td>
+                        <td>: 
+                            @php
+                                $lokasiLabels = [
+                                    'SUB_BAGIAN' => 'Ruang Sub Bagian',
+                                    'RECORD_CENTER_PERMANEN' => 'Record Center (Arsip Permanen)',
+                                    'RECORD_CENTER_INAKTIF' => 'Record Center (Arsip Inaktif)',
+                                ];
+                            @endphp
+
+                            @if($arsip->lokasi_arsip)
+                                <span class="badge bg-info">
+                                    {{ $lokasiLabels[$arsip->lokasi_arsip] ?? $arsip->lokasi_arsip }}
+                                </span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                    </tr>
+                    <tr>
                         <td><strong>Kondisi Fisik</strong></td>
                         <td>: 
                             @php

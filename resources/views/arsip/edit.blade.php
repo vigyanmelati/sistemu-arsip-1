@@ -293,6 +293,33 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
+
+                <!-- Lokasi Arsip -->
+                <div class="col-md-3 mb-3">
+                    <label for="lokasi_arsip" class="form-label">Lokasi Arsip</label>
+                    <select class="form-control @error('lokasi_arsip') is-invalid @enderror" 
+                        id="lokasi_arsip" name="lokasi_arsip">
+                    <option value="">Pilih Lokasi</option>
+
+                    <option value="SUB_BAGIAN" 
+                        {{ old('lokasi_arsip', $arsip->lokasi_arsip) == 'SUB_BAGIAN' ? 'selected' : '' }}>
+                        Ruang Sub Bagian
+                    </option>
+
+                    <option value="RECORD_CENTER_PERMANEN" 
+                        {{ old('lokasi_arsip', $arsip->lokasi_arsip) == 'RECORD_CENTER_PERMANEN' ? 'selected' : '' }}>
+                        Record Center (Arsip Permanen)
+                    </option>
+
+                    <option value="RECORD_CENTER_INAKTIF" 
+                        {{ old('lokasi_arsip', $arsip->lokasi_arsip) == 'RECORD_CENTER_INAKTIF' ? 'selected' : '' }}>
+                        Record Center (Arsip Inaktif)
+                    </option>
+                </select>
+                    @error('lokasi_arsip')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
                 
                 <!-- Tanggal Masuk -->
                 <div class="col-md-3 mb-3">

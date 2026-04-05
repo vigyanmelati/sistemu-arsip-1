@@ -61,7 +61,43 @@ class SubBagianArsipController extends Controller
                   });
             });
         }
+ // Filter duplikat
+          if ($request->show_duplicates == 1) {
 
+            // RESET hanya yang BUKAN NON_ARSIP
+            DB::table('arsips')
+                ->where('status_arsip', '!=', 'NON_ARSIP')
+                ->update([
+                    'is_duplicate' => 0,
+                    'duplicate_reason' => null
+                ]);
+
+            $duplicateGroups = DB::table('arsips')
+                ->select('uraian_arsip', 'tahun_arsip')
+                ->where('status_pindah', '!=', 'NON_ARSIP') // ⬅️ PENTING
+                ->groupBy('uraian_arsip', 'tahun_arsip')
+                ->havingRaw('COUNT(*) > 1')
+                ->get();
+
+            foreach ($duplicateGroups as $group) {
+                DB::table('arsips')
+                    ->where('uraian_arsip', $group->uraian_arsip)
+                    ->where('tahun_arsip', $group->tahun_arsip)
+                    ->where('status_pindah', '!=', 'NON_ARSIP') // ⬅️ PENTING
+                    ->update([
+                        'is_duplicate' => 1,
+                        'duplicate_reason' => DB::raw("
+                            CASE 
+                                WHEN duplicate_reason IS NULL 
+                                THEN 'Duplikat otomatis' 
+                                ELSE duplicate_reason 
+                            END
+                        ")
+                    ]);
+            }
+
+            $query->where('is_duplicate', 1);
+        }
         $arsips = $query->orderBy('id','desc')->paginate(15);
 
         // Filter dropdown options
@@ -108,6 +144,7 @@ class SubBagianArsipController extends Controller
             'nomor_rak'=>'nullable|string|max:50',
             'nomor_box'=>'nullable|string|max:50',
             'nomor_sampul'=>'nullable|string|max:100',
+            'lokasi_arsip' => 'nullable|in:SUB_BAGIAN,RECORD_CENTER_PERMANEN,RECORD_CENTER_INAKTIF',
             'tingkat_perkembangan'=>'nullable|in:ASLI,COPY,SALINAN',
             'keterangan'=>'nullable|in:BAIK,RUSAK,HILANG',
             'media_arsip'=>'nullable|string|max:255',
@@ -118,6 +155,7 @@ class SubBagianArsipController extends Controller
         $validated['created_by'] = $user->id;
         $validated['tanggal_masuk'] = now()->format('Y-m-d');
         $validated['status_pindah'] = 'BELUM';
+        $validated['lokasi_arsip'] = 'SUB_BAGIAN';
 
         if($request->hasFile('file_dokumen')){
             $file=$request->file('file_dokumen');
@@ -180,13 +218,16 @@ class SubBagianArsipController extends Controller
             'nomor_rak'=>'nullable|string|max:50',
             'nomor_box'=>'nullable|string|max:50',
             'nomor_sampul'=>'nullable|string|max:100',
+            'lokasi_arsip' => 'nullable|in:SUB_BAGIAN,RECORD_CENTER_PERMANEN,RECORD_CENTER_INAKTIF',
             'tingkat_perkembangan'=>'nullable|in:ASLI,COPY,SALINAN',
             'keterangan'=>'nullable|in:BAIK,RUSAK,HILANG',
             'media_arsip'=>'nullable|string|max:255',
             'file_dokumen'=>'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'hapus_file'=>'nullable|in:0,1'
+            'hapus_file'=>'nullable|in:0,1',
+            'tangani_duplikat' => 'nullable|in:1',
+            'duplicate_reason' => 'nullable|string|max:1000',
         ]);
-
+        $validated['lokasi_arsip'] = 'SUB_BAGIAN';
         if(($request->hapus_file??'0')=='1' && $arsip->file_dokumen){
             Storage::disk('public')->delete('arsip/'.$arsip->file_dokumen);
             $validated['file_dokumen']=null;
@@ -210,7 +251,35 @@ class SubBagianArsipController extends Controller
         // $validated['aktif_sampai']=$perhitungan['aktif_sampai'];
         // $validated['inaktif_sampai']=$perhitungan['inaktif_sampai'];
         // $validated['status_arsip']=$perhitungan['status_arsip'];
-        unset($validated['status_pindah']);
+        // =========================
+        // PENANGANAN DUPLIKAT
+        // =========================
+        $validated['duplicate_reason'] = $request->duplicate_reason;
+       if ($request->tangani_duplikat == '1') {
+
+            if (!$request->duplicate_reason) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Alasan wajib diisi untuk penanganan duplikat.');
+            }
+
+            // Arsip ini jadi NON ARSIP
+            $validated['status_pindah'] = 'NON_ARSIP';
+
+            // Hilangkan flag duplikat
+            $validated['is_duplicate'] = 0;
+
+            // Cari arsip lain yang sama → jadikan bukan duplikat juga
+            Arsip::where('uraian_arsip', $arsip->uraian_arsip)
+                ->where('tahun_arsip', $arsip->tahun_arsip)
+                ->where('id', '!=', $arsip->id)
+                ->update([
+                    'is_duplicate' => 0
+                ]);
+
+            $validated['duplicate_reason'] = $request->duplicate_reason;
+        }
+        // unset($validated['status_pindah']);
 
 
         $arsip->update($validated);
@@ -370,4 +439,33 @@ class SubBagianArsipController extends Controller
             return back()->with('error', 'Gagal mengajukan pemindahan: ' . $e->getMessage());
         }
     }
+
+    public function duplicate(Arsip $arsip)
+{
+    $user = Auth::user();
+
+    // pastikan arsip milik sub bagian user
+    if ($arsip->sub_bagian_id != $user->sub_bagian_id) {
+        abort(403);
+    }
+
+    // duplikat data
+    $newArsip = $arsip->replicate();
+
+    // reset beberapa field penting
+    $newArsip->created_by = $user->id;
+    $newArsip->tanggal_masuk = now()->format('Y-m-d');
+    $newArsip->status_pindah = 'BELUM';
+
+    // opsional: kasih penanda biar keliatan duplikat
+    $newArsip->uraian_arsip = $arsip->uraian_arsip . ' (Copy)';
+
+    // kalau mau reset file biar tidak ikut
+    // $newArsip->file_dokumen = null;
+
+    $newArsip->save();
+
+    return redirect()->route('subbagian.arsip.index')
+        ->with('success', 'Arsip berhasil diduplikasi.');
+}
 }
