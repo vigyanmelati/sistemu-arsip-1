@@ -23,7 +23,7 @@ Route::middleware(['auth'])->group(function () {
             ->name('arsip.export');
 
              Route::get('/arsip/check-duplicates', [ArsipController::class, 'checkDuplicates'])->name('arsip.check-duplicates');
-    
+    Route::post('/arsip/update-status-bulk', [ArsipController::class, 'updateStatusBulk'])->name('arsip.update-status-bulk');
     // Arsip (untuk Admin dan Super Admin)
     Route::middleware(['admin'])->group(function () {
         Route::resource('arsip', ArsipController::class);

@@ -9,6 +9,10 @@
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Daftar Arsip</h5>
            <div class="action-buttons d-flex gap-2">
+               <button type="button" class="btn btn-warning d-flex align-items-center gap-2 shadow-sm" id="updateStatusBtn">
+                    <i class="bi bi-arrow-repeat"></i>
+                    <span>Update Status Arsip</span>
+                </button>
                 <button class="btn btn-gradient-purple d-flex align-items-center gap-2 shadow-sm" id="openExportModal">
                     <i class="bi bi-file-earmark-excel-fill"></i>
                     <span>Export</span>
@@ -578,6 +582,20 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Loading -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+                <h5>Sedang Update Status...</h5>
+                <p class="text-muted">Mohon tunggu, proses update sedang berjalan.</p>
+                <div id="updateProgress" class="mt-2"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -1292,6 +1310,101 @@ checkAll.addEventListener('change', function () {
             header.addEventListener('mouseenter', () => header.style.backgroundColor = '#e9ecef');
             header.addEventListener('mouseleave', () => header.style.backgroundColor = '#f8f9fa');
         });
+
+        // Tambahkan di bagian script yang sudah ada
+
+// Update Status Bulk
+// HAPUS semua kode updateStatusBtn yang lama dan GANTI dengan ini:
+
+// Update Status Bulk - SATU event listener SAJA
+const updateStatusBtn = document.getElementById('updateStatusBtn');
+if (updateStatusBtn) {
+    updateStatusBtn.addEventListener('click', function() {
+        // Konfirmasi dulu
+        if (!confirm('Update status semua arsip berdasarkan tahun sekarang? Proses ini akan mengubah status arsip yang sudah memasuki masa HABIS_RETENSI.')) {
+            return;
+        }
+        
+        // Tampilkan modal loading
+        const modal = new bootstrap.Modal(document.getElementById('updateStatusModal'));
+        modal.show();
+        
+        // Ubah tombol jadi loading
+        const originalHtml = updateStatusBtn.innerHTML;
+        updateStatusBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Mengupdate...';
+        updateStatusBtn.disabled = true;
+        
+        // Kirim request
+        fetch('{{ route("arsip.update-status-bulk") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // TUTUP MODAL LOADING
+            modal.hide();
+            
+            // KEMBALIKAN TOMBOL KE SEMULA
+            updateStatusBtn.innerHTML = originalHtml;
+            updateStatusBtn.disabled = false;
+            
+            if (data.success) {
+                // Tampilkan notifikasi sukses
+                showNotification('success', data.message);
+                
+                // Reload halaman setelah 1.5 detik
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showNotification('error', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            
+            // TUTUP MODAL LOADING
+            modal.hide();
+            
+            // KEMBALIKAN TOMBOL KE SEMULA
+            updateStatusBtn.innerHTML = originalHtml;
+            updateStatusBtn.disabled = false;
+            
+            showNotification('error', 'Terjadi kesalahan saat update status: ' + error.message);
+        });
+    });
+}
+
+// Fungsi notifikasi
+function showNotification(type, message) {
+    // Hapus notifikasi yang sudah ada
+    const existingAlert = document.querySelector('.alert-notification');
+    if (existingAlert) {
+        existingAlert.remove();
+    }
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show alert-notification position-fixed top-0 start-50 translate-middle-x mt-3`;
+    alertDiv.style.zIndex = '9999';
+    alertDiv.style.minWidth = '300px';
+    alertDiv.style.maxWidth = '500px';
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-${type === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill'} fs-5"></i>
+            <span>${message}</span>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    // Auto close setelah 3 detik
+    setTimeout(() => {
+        if (alertDiv) alertDiv.remove();
+    }, 3000);
+}
 
         // Auto-focus search
         const searchInput = document.querySelector('input[name="search"]');
