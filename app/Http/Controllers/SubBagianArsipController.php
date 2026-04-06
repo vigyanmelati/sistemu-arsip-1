@@ -155,7 +155,22 @@ class SubBagianArsipController extends Controller
         $validated['created_by'] = $user->id;
         $validated['tanggal_masuk'] = now()->format('Y-m-d');
         $validated['status_pindah'] = 'BELUM';
-        $validated['lokasi_arsip'] = 'SUB_BAGIAN';
+        // $validated['lokasi_arsip'] = 'SUB_BAGIAN';
+
+        $user = auth()->user();
+
+        $namaSub = $user->subBagian->nama_sub_bagian ?? null;
+
+        $mapLokasi = [
+            'Sub Bagian Umum dan Logistik' => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
+            'Sub Bagian Partisipasi, Hubungan Masyarakat dan SDM' => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
+            'Sub Bagian Keuangan' => 'RUANG_SUBBAGIAN_KEUANGAN',
+            'Sub Bagian Perencanaan, Data, dan Informasi' => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
+            'Sub Bagian Teknis Penyelenggaraan Pemilu' => 'RUANG_SUBBAGIAN_TEKNIS',
+            'Sub Bagian Hukum' => 'RUANG_SUBBAGIAN_HUKUM',
+        ];
+
+        $validated['lokasi_arsip'] = $mapLokasi[$namaSub] ?? null;
 
         if($request->hasFile('file_dokumen')){
             $file=$request->file('file_dokumen');
