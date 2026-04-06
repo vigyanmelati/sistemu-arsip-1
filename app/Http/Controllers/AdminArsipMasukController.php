@@ -117,6 +117,7 @@ class AdminArsipMasukController extends Controller
             'nomor_rak_baru' => 'required|string|max:50',
             'nomor_box_baru' => 'required|string|max:50',
             'catatan' => 'nullable|string|max:500',
+            'lokasi_tujuan' => 'nullable|in:RECORD_CENTER_INAKTIF,RECORD_CENTER_PERMANEN',
         ]);
 
         if ($arsip->status_pindah !== 'DIAJUKAN') {
@@ -144,6 +145,7 @@ class AdminArsipMasukController extends Controller
             $arsip->tanggal_diverifikasi = now();
             $arsip->diverifikasi_oleh = auth()->id();
             $arsip->catatan_verifikasi = $request->catatan;
+             $arsip->lokasi_arsip = $request->lokasi_tujuan ?? $arsip->lokasi_arsip;
 
             $arsip->skipHistory = true;
             $arsip->save();
@@ -259,7 +261,8 @@ class AdminArsipMasukController extends Controller
         $request->validate([
             'status_arsip_setelah_pindah' => 'required|in:AKTIF,INAKTIF,PERMANEN,MUSNAH',
             'nomor_rak_pemindahan' => 'nullable|string|max:50',
-            'nomor_box_pemindahan' => 'nullable|string|max:50'
+            'nomor_box_pemindahan' => 'nullable|string|max:50',
+             'lokasi_tujuan' => 'nullable|in:RECORD_CENTER_INAKTIF,RECORD_CENTER_PERMANEN',
         ]);
 
         // Pastikan arsip sudah DIPINDAHKAN
@@ -296,10 +299,18 @@ class AdminArsipMasukController extends Controller
                 ]);
             }
 
+            // $lokasiArsip = match ($request->status_arsip_setelah_pindah) {
+            //     'INAKTIF' => 'RECORD_CENTER_INAKTIF',
+            //     'PERMANEN' => 'RECORD_CENTER_PERMANEN',
+            //     default => null
+            // };
+
+
             // Update status arsip
             $arsip->status_pindah = 'DIPINDAHKAN';
             $arsip->tanggal_dipindahkan = $tanggalPindah;
             $arsip->status_arsip = $request->status_arsip_setelah_pindah;
+           $arsip->lokasi_arsip = $request->lokasi_tujuan ?? $arsip->lokasi_arsip;
             $arsip->skipHistory = true;
             $arsip->save();
 
