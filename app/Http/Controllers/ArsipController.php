@@ -32,7 +32,7 @@ class ArsipController extends Controller
                 ->where('status_arsip', '!=', 'NON_ARSIP')
                 ->update([
                     'is_duplicate' => 0,
-                    'duplicate_reason' => null
+                  
                 ]);
 
             $duplicateGroups = DB::table('arsips')
@@ -690,6 +690,7 @@ private function extractNumberFromText($text)
             Arsip::where('uraian_arsip', $arsip->uraian_arsip)
                 ->where('tahun_arsip', $arsip->tahun_arsip)
                 ->where('id', '!=', $arsip->id)
+                 ->where('status_arsip', '!=', 'NON_ARSIP')
                 ->update([
                     'is_duplicate' => 0
                 ]);
@@ -805,6 +806,7 @@ public function checkDuplicates()
 {
     try {
         $duplicates = DB::table('arsips')
+          ->where('status_arsip', '!=', 'NON_ARSIP')
             ->select(
                 'uraian_arsip',
                 'tahun_arsip',
