@@ -89,53 +89,7 @@
                     </div>
                 </div>
                 
-                <!-- History Perpindahan (jika ada) -->
-                <!-- @if($arsip->historyPindah && $arsip->historyPindah->count() > 0)
-                <div class="mt-4">
-                    <label class="form-label fw-semibold">Riwayat Perubahan Lokasi Arsip</label>
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Tanggal</th>
-                                    <th>Dari</th>
-                                    <th>Ke</th>
-                                    <th>Alasan</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($arsip->historyPindah->take(3) as $history)
-                                <tr>
-                                    <td>{{ \Carbon\Carbon::parse($history->tanggal_pindah)->format('d/m/Y') }}</td>
-                                    <td>
-                                        @if($history->dari_rak)
-                                            Rak: {{ $history->dari_rak }}, Box: {{ $history->dari_box }}
-                                        @else
-                                            -
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($history->ke_rak)
-                                            Rak: {{ $history->ke_rak }}, Box: {{ $history->ke_box }}
-                                        @else
-                                            -
-                                        @endif
-                                    </td>
-                                    <td>{{ Str::limit($history->alasan_pindah, 50) }}</td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                        @if($arsip->historyPindah->count() > 3)
-                        <div class="text-end">
-                            <a href="{{ route('arsip.history', $arsip->id) }}" class="btn btn-sm btn-outline-primary">
-                                Lihat Semua History
-                            </a>
-                        </div>
-                        @endif
-                    </div>
-                </div>
-                @endif -->
+         
                 
                 <!-- File Dokumen Arsip -->
                 @if($arsip->file_dokumen)
@@ -223,7 +177,7 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-semibold">Nomor Rak Baru <span class="text-danger">*</span></label>
                             <input type="text" name="nomor_rak_baru" class="form-control" 
-                                placeholder="Contoh: A-01" required
+                                placeholder="Contoh: 1" required
                                 value="{{ old('nomor_rak_baru') }}">
                             @error('nomor_rak_baru')
                                 <div class="text-danger small">{{ $message }}</div>
@@ -232,12 +186,24 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-semibold">Nomor Box Baru <span class="text-danger">*</span></label>
                             <input type="text" name="nomor_box_baru" class="form-control" 
-                                placeholder="Contoh: B-01" required
+                                placeholder="Contoh: 1" required
                                 value="{{ old('nomor_box_baru') }}">
                             @error('nomor_box_baru')
                                 <div class="text-danger small">{{ $message }}</div>
                             @enderror
                         </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Lokasi Tujuan Arsip <span class="text-danger">*</span></label>
+                        <select name="lokasi_tujuan" class="form-select">
+                            <option value="">-- Pilih Lokasi --</option>
+                            <option value="RECORD_CENTER_PERMANEN">Record Center Permanen</option>
+                            <option value="RECORD_CENTER_INAKTIF">Record Center Inaktif</option>
+                        </select>
+                        @error('lokasi_tujuan')
+                            <div class="text-danger small">{{ $message }}</div>
+                        @enderror
                     </div>
                     
                     <div class="mb-3">
@@ -420,6 +386,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const nomorRakBaru = this.querySelector('[name="nomor_rak_baru"]').value;
         const nomorBoxBaru = this.querySelector('[name="nomor_box_baru"]').value;
         const catatan = this.querySelector('[name="catatan"]').value;
+        const lokasiTujuan = this.querySelector('[name="lokasi_tujuan"]').value;
         
         console.log('Nomor Rak Baru:', nomorRakBaru); // Debugging
         console.log('Nomor Box Baru:', nomorBoxBaru); // Debugging
@@ -434,7 +401,8 @@ document.addEventListener('DOMContentLoaded', function() {
             _token: this.querySelector('[name="_token"]').value,
             nomor_rak_baru: nomorRakBaru,
             nomor_box_baru: nomorBoxBaru,
-            catatan: catatan
+            catatan: catatan,
+             lokasi_tujuan: lokasiTujuan
         };
         
         // Tampilkan konfirmasi

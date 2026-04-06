@@ -279,9 +279,9 @@
                     <label for="lokasi_arsip" class="form-label">Lokasi Arsip</label>
                     <select name="lokasi_arsip" id="lokasi_arsip" class="form-control @error('lokasi_arsip') is-invalid @enderror">
                         <option value="">Pilih Lokasi</option>
-                        <option value="SUB_BAGIAN" {{ old('lokasi_arsip') == 'SUB_BAGIAN' ? 'selected' : '' }}>
+                        <!-- <option value="SUB_BAGIAN" {{ old('lokasi_arsip') == 'SUB_BAGIAN' ? 'selected' : '' }}>
                             Ruang Sub Bagian
-                        </option>
+                        </option> -->
                         <option value="RECORD_CENTER_PERMANEN" {{ old('lokasi_arsip') == 'RECORD_CENTER_PERMANEN' ? 'selected' : '' }}>
                             Record Center (Arsip Permanen)
                         </option>
