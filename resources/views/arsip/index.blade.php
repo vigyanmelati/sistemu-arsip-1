@@ -783,11 +783,28 @@
     }
     
     /* Body modal */
-    .modal-body {
+    /* .modal-body {
         padding: 1.5rem;
         overflow-y: auto;
         flex: 1;
-    }
+    } */
+
+    .modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+    max-height: calc(90vh - 140px); /* penting */
+}
+
+.modal-content {
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+}
+
+.modal-body {
+    scrollbar-width: thin;
+}
     
     /* Footer modal */
     .modal-footer {
