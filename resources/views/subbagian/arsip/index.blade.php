@@ -350,7 +350,7 @@
                             </select>
                         </div>
                         
-                        <div class="col-md-6 mb-3">
+                        {{-- <div class="col-md-6 mb-3">
                             <label class="form-label fw-semibold">Sub Bagian</label>
                             <select name="sub_bagian_id" class="form-select">
                                 <option value="">Semua Sub Bagian</option>
@@ -360,7 +360,7 @@
                                 </option>
                                 @endforeach
                             </select>
-                        </div>
+                        </div> --}}
 
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-semibold">Kondisi Fisik</label>
