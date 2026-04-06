@@ -710,9 +710,12 @@ private function extractNumberFromText($text)
         // =========================
         $arsip->update($validated);
 
-        return redirect()
-            ->route('arsip.show', $arsip->id)
-            ->with('success', 'Arsip berhasil diperbarui.');
+        // return redirect()
+        //     ->route('arsip.show', $arsip->id)
+        //     ->with('success', 'Arsip berhasil diperbarui.');
+
+        return redirect($request->redirect_url ?? route('arsip.index'))
+        ->with('success', 'Arsip berhasil diupdate');
 
     } catch (\Exception $e) {
 

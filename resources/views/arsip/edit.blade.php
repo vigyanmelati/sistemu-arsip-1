@@ -26,7 +26,7 @@
         <form action="{{ route('arsip.update', $arsip->id) }}" method="POST" enctype="multipart/form-data" id="arsipForm">
             @csrf
             @method('PUT')
-            
+            <input type="hidden" name="redirect_url" value="{{ url()->previous() }}">
             <!-- BAGIAN DATA DASAR (WAJIB) -->
             <h6 class="mb-3 text-primary">Data Dasar Arsip (Wajib)</h6>
             <div class="row">
