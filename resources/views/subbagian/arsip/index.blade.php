@@ -506,7 +506,7 @@
                     <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                 @endif
             @endforeach
-
+<input type="hidden" name="sub_bagian_id" value="{{ auth()->user()->sub_bagian_id }}">
                 <div class="modal-body">
                     <div class="row">
                         @php

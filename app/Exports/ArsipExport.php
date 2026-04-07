@@ -42,50 +42,63 @@ class ArsipExport implements
      * Query: jika ada selectedIds, hanya ambil data itu.
      * Jika tidak, gunakan semua filter yang sudah ada.
      */
-    public function query()
-    {
-        $query = Arsip::query()
-            ->with(['kodeKlasifikasi', 'subBagian'])
-            ->whereIn('status_pindah', ['DIPINDAHKAN', 'LANGSUNG'])
-            ->orderBy('tahun_arsip', 'asc');
+   public function query()
+{
+    $query = Arsip::query()->with(['kodeKlasifikasi', 'subBagian']);
 
-        // Jika user memilih baris tertentu, abaikan filter lain dan hanya ambil ID tersebut
-        if (!empty($this->selectedIds)) {
-            $query->whereIn('id', $this->selectedIds);
-            return $query;
-        }
+    // ==========================================
+    // KONDISIONAL BERDASARKAN SUB_BAGIAN_ID USER
+    // ==========================================
+    if (auth()->user()->sub_bagian_id) {
+        // USER BIASA (punya sub_bagian_id)
+        // Hanya arsip milik sub_bagiannya DAN status_pindah = 'BELUM'
+        $query->where('sub_bagian_id', auth()->user()->sub_bagian_id)
+              ->where('status_pindah', 'BELUM');
+    } else {
+        // ADMIN (tidak punya sub_bagian_id)
+        // Bisa disesuaikan: misal export semua arsip atau dengan filter status tertentu
+        // Contoh: tetap gunakan whereIn seperti sebelumnya
+        $query->whereIn('status_pindah', ['DIPINDAHKAN', 'LANGSUNG']);
+        // Atau jika ingin export semua tanpa filter status_pindah:
+        // $query->whereNotNull('id'); // semua data
+    }
 
-        // Terapkan filter seperti biasa
-        if ($this->request->filled('tahun_arsip')) {
-            $query->where('tahun_arsip', $this->request->tahun_arsip);
-        }
-
-        if ($this->request->filled('status_arsip')) {
-            $query->where('status_arsip', $this->request->status_arsip);
-        }
-
-        if ($this->request->filled('sub_bagian_id')) {
-            $query->where('sub_bagian_id', $this->request->sub_bagian_id);
-        }
-
-        if ($this->request->filled('kode_klasifikasi_id')) {
-            $query->where('kode_klasifikasi_id', $this->request->kode_klasifikasi_id);
-        }
-
-        if ($this->request->filled('nomor_rak')) {
-            $query->where('nomor_rak', $this->request->nomor_rak);
-        }
-
-        if ($this->request->filled('nomor_box')) {
-            $query->where('nomor_box', $this->request->nomor_box);
-        }
-
-        if ($this->request->filled('keterangan')) {
-            $query->where('keterangan', $this->request->keterangan);
-        }
-
+    // ==========================================
+    // JIKA ADA SELECTED IDS (checkbox dari user)
+    // ==========================================
+    if (!empty($this->selectedIds)) {
+        $query->whereIn('id', $this->selectedIds);
         return $query;
     }
+
+    // ==========================================
+    // FILTER TAMBAHAN DARI REQUEST
+    // ==========================================
+    if ($this->request->filled('tahun_arsip')) {
+        $query->where('tahun_arsip', $this->request->tahun_arsip);
+    }
+    if ($this->request->filled('status_arsip')) {
+        $query->where('status_arsip', $this->request->status_arsip);
+    }
+    if ($this->request->filled('sub_bagian_id')) {
+        $query->where('sub_bagian_id', $this->request->sub_bagian_id);
+    }
+    if ($this->request->filled('kode_klasifikasi_id')) {
+        $query->where('kode_klasifikasi_id', $this->request->kode_klasifikasi_id);
+    }
+    if ($this->request->filled('nomor_rak')) {
+        $query->where('nomor_rak', $this->request->nomor_rak);
+    }
+    if ($this->request->filled('nomor_box')) {
+        $query->where('nomor_box', $this->request->nomor_box);
+    }
+    if ($this->request->filled('keterangan')) {
+        $query->where('keterangan', $this->request->keterangan);
+    }
+
+    $query->orderBy('tahun_arsip', 'asc');
+    return $query;
+}
 
     /**
      * Header kolom hanya sesuai dengan kolom yang dipilih user.

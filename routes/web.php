@@ -19,8 +19,10 @@ Route::middleware(['auth'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::get('arsip/export', [ArsipController::class, 'export'])
-            ->name('arsip.export');
+    // Route::get('arsip/export', [ArsipController::class, 'export'])
+    //         ->name('arsip.export');
+
+    Route::post('/arsip/export', [ArsipController::class, 'export'])->name('arsip.export');
 
              Route::get('/arsip/check-duplicates', [ArsipController::class, 'checkDuplicates'])->name('arsip.check-duplicates');
     Route::post('/arsip/update-status-bulk', [ArsipController::class, 'updateStatusBulk'])->name('arsip.update-status-bulk');

@@ -514,7 +514,8 @@
                 </button>
             </div>
 
-            <form method="GET" action="{{ route('arsip.export') }}">
+           <form method="POST" action="{{ route('arsip.export') }}">
+    @csrf
                 {{-- kirim SEMUA query filter yang aktif --}}
                 @foreach(request()->except('page') as $key => $value)
                     @if(is_array($value))

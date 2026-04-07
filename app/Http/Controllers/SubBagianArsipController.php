@@ -334,16 +334,34 @@ foreach ($duplicateGroups as $group) {
             return back()->with('error', 'Gagal import: ' . $e->getMessage());
         }
     }
-    public function export(Request $request)
-    {
-        $columns = $request->input('columns',[]);
-        if(count($columns)==0) return back()->with('error','Pilih minimal satu kolom.');
+    // public function export(Request $request)
+    // {
+    //     $columns = $request->input('columns',[]);
+    //     if(count($columns)==0) return back()->with('error','Pilih minimal satu kolom.');
 
-        return Excel::download(
-            new ArsipExport($request,$columns,Auth::user()->sub_bagian_id),
-            'arsip_subbagian_'.date('Y-m-d-H-i-s').'.xlsx'
-        );
+    //     return Excel::download(
+    //         new ArsipExport($request,$columns,Auth::user()->sub_bagian_id),
+    //         'arsip_subbagian_'.date('Y-m-d-H-i-s').'.xlsx'
+    //     );
+    // }
+
+public function export(Request $request)
+{
+    $columns = $request->input('columns', []);
+    if (count($columns) == 0) {
+        return back()->with('error', 'Pilih minimal satu kolom.');
     }
+
+    // Ubah 'jumlah_berkas' menjadi 'jumlah' karena di Export class menggunakan key 'jumlah'
+    $columns = array_map(function($col) {
+        return $col === 'jumlah_berkas' ? 'jumlah' : $col;
+    }, $columns);
+
+    return Excel::download(
+        new ArsipExport($request, $columns, []), // $selectedIds = []
+        'arsip_subbagian_' . date('Y-m-d-H-i-s') . '.xlsx'
+    );
+}
 
     public function ajukanPindah(Request $request, Arsip $arsip)
     {
