@@ -62,39 +62,46 @@ class SubBagianArsipController extends Controller
             });
         }
  // Filter duplikat
-          if ($request->show_duplicates == 1) {
+if ($request->show_duplicates == 1) {
 
             // RESET hanya yang BUKAN NON_ARSIP
-            DB::table('arsips')
-                ->where('status_arsip', '!=', 'NON_ARSIP')
-                ->update([
-                    'is_duplicate' => 0,
-                    'duplicate_reason' => null
-                ]);
+            // RESET (hanya sub bagian user)
+DB::table('arsips')
+    ->where('sub_bagian_id', $user->sub_bagian_id)
+    ->update([
+        'is_duplicate' => 0,
+        'duplicate_reason' => null
+    ]);
 
-            $duplicateGroups = DB::table('arsips')
-                ->select('uraian_arsip', 'tahun_arsip')
-                ->where('status_pindah', '!=', 'NON_ARSIP') // ⬅️ PENTING
-                ->groupBy('uraian_arsip', 'tahun_arsip')
-                ->havingRaw('COUNT(*) > 1')
-                ->get();
+// DETEKSI DUPLIKAT (judul + tahun + sub bagian)
+$duplicateGroups = DB::table('arsips')
+    ->select(
+        DB::raw('LOWER(TRIM(REPLACE(uraian_arsip, "  ", " "))) as uraian_arsip'),
+        'tahun_arsip'
+    )
+    ->where('status_arsip', '!=', 'NON_ARSIP')
+    ->where('sub_bagian_id', $user->sub_bagian_id)
+    ->groupBy(
+        DB::raw('LOWER(TRIM(REPLACE(uraian_arsip, "  ", " ")))'),
+        'tahun_arsip'
+    )
+    ->havingRaw('COUNT(*) > 1')
+    ->get();
 
-            foreach ($duplicateGroups as $group) {
-                DB::table('arsips')
-                    ->where('uraian_arsip', $group->uraian_arsip)
-                    ->where('tahun_arsip', $group->tahun_arsip)
-                    ->where('status_pindah', '!=', 'NON_ARSIP') // ⬅️ PENTING
-                    ->update([
-                        'is_duplicate' => 1,
-                        'duplicate_reason' => DB::raw("
-                            CASE 
-                                WHEN duplicate_reason IS NULL 
-                                THEN 'Duplikat otomatis' 
-                                ELSE duplicate_reason 
-                            END
-                        ")
-                    ]);
-            }
+// UPDATE FLAG
+foreach ($duplicateGroups as $group) {
+    DB::table('arsips')
+        ->where('sub_bagian_id', $user->sub_bagian_id)
+        ->where('tahun_arsip', $group->tahun_arsip)
+        ->whereRaw(
+            'LOWER(TRIM(REPLACE(uraian_arsip, "  ", " "))) = ?',
+            [$group->uraian_arsip]
+        )
+        ->update([
+            'is_duplicate' => 1,
+            'duplicate_reason' => 'Duplikat otomatis'
+        ]);
+}
 
             $query->where('is_duplicate', 1);
         }
@@ -233,7 +240,7 @@ class SubBagianArsipController extends Controller
             'nomor_rak'=>'nullable|string|max:50',
             'nomor_box'=>'nullable|string|max:50',
             'nomor_sampul'=>'nullable|string|max:100',
-            'lokasi_arsip' => 'nullable|in:SUB_BAGIAN,RECORD_CENTER_PERMANEN,RECORD_CENTER_INAKTIF',
+            'lokasi_arsip' => 'nullable|string|max:100',
             'tingkat_perkembangan'=>'nullable|in:ASLI,COPY,SALINAN',
             'keterangan'=>'nullable|in:BAIK,RUSAK,HILANG',
             'media_arsip'=>'nullable|string|max:255',
@@ -242,7 +249,7 @@ class SubBagianArsipController extends Controller
             'tangani_duplikat' => 'nullable|in:1',
             'duplicate_reason' => 'nullable|string|max:1000',
         ]);
-        $validated['lokasi_arsip'] = 'SUB_BAGIAN';
+        $validated['lokasi_arsip'] = $this->getLokasiArsip($user);
         if(($request->hapus_file??'0')=='1' && $arsip->file_dokumen){
             Storage::disk('public')->delete('arsip/'.$arsip->file_dokumen);
             $validated['file_dokumen']=null;
@@ -482,5 +489,21 @@ class SubBagianArsipController extends Controller
 
     return redirect()->route('subbagian.arsip.index')
         ->with('success', 'Arsip berhasil diduplikasi.');
+}
+
+private function getLokasiArsip($user)
+{
+    $namaSub = $user->subBagian->nama_sub_bagian ?? null;
+
+    $mapLokasi = [
+        'Sub Bagian Umum dan Logistik' => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
+        'Sub Bagian Partisipasi, Hubungan Masyarakat dan SDM' => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
+        'Sub Bagian Keuangan' => 'RUANG_SUBBAGIAN_KEUANGAN',
+        'Sub Bagian Perencanaan, Data, dan Informasi' => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
+        'Sub Bagian Teknis Penyelenggaraan Pemilu' => 'RUANG_SUBBAGIAN_TEKNIS',
+        'Sub Bagian Hukum' => 'RUANG_SUBBAGIAN_HUKUM',
+    ];
+
+    return $mapLokasi[$namaSub] ?? null;
 }
 }

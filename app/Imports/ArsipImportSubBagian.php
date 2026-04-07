@@ -511,9 +511,9 @@ class ArsipImportSubBagian implements ToModel, WithHeadingRow
     // =======================
     // RETENSI (ambil dari kode klasifikasi)
     // =======================
-    $aktifTahun = $kode->aktif_tahun ?? '1 TAHUN';
-    $inaktifTahun = $kode->inaktif_tahun ?? '5 TAHUN';
-    $keteranganJRA = $kode->keterangan_jra ?? 'MUSNAH';
+    $aktifTahun = $this->parseRetensiString($row['aktif'] ?? null); 
+    $inaktifTahun = $this->parseRetensiString($row['inaktif'] ?? null);
+    $keteranganJRA = $kode->keterangan_jra ?? 'BELUM DITENTUKAN';
     
     // =======================
     // TANGGAL ARSIP (dari tahun)

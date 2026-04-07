@@ -405,7 +405,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
+                <div class="modal-footer bg-light d-flex justify-content-end gap-2">
                     <button type="button" class="btn btn-outline-secondary" id="resetFilter">
                         <i class="bi bi-arrow-clockwise me-1"></i> Reset Filter
                     </button>
@@ -457,7 +457,7 @@
                         <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
                         <div>
                             <strong>Perhatian!</strong> Pastikan format file sesuai dengan template sistem.
-                            <a href="{{ asset('template/Contoh Format Arsip.xlsx') }}" 
+                            <a href="{{ asset('template/template_daftar_arsip_subbag.xlsx') }}" 
                             class="alert-link d-block mt-1"
                             download>
                                 <i class="bi bi-download me-1"></i> Download Template Excel
@@ -467,7 +467,7 @@
                     </div>
                 </div>
 
-                <div class="modal-footer bg-light">
+                <div class="modal-footer bg-light d-flex justify-content-end gap-2">
                     <button type="button" class="btn btn-outline-secondary" id="cancelImport">
                         <i class="bi bi-x-circle me-1"></i> Batal
                     </button>
@@ -548,7 +548,7 @@
                     </div>
                 </div>
 
-                <div class="modal-footer bg-light">
+                <div class="modal-footer bg-light d-flex gap-2">
                     <button type="button" class="btn btn-outline-secondary" id="cancelExport">
                         Batal
                     </button>
