@@ -424,7 +424,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
+                 <div class="modal-footer bg-light d-flex justify-content-end gap-2">
                     <button type="button" class="btn btn-outline-secondary" id="resetFilter">
                         <i class="bi bi-arrow-clockwise me-1"></i> Reset Filter
                     </button>
@@ -486,7 +486,7 @@
                     </div>
                 </div>
 
-                <div class="modal-footer bg-light">
+                 <div class="modal-footer bg-light d-flex justify-content-end gap-2">
                     <button type="button" class="btn btn-outline-secondary" id="cancelImport">
                         <i class="bi bi-x-circle me-1"></i> Batal
                     </button>
@@ -573,7 +573,7 @@
                     </div>
                 </div>
 
-                <div class="modal-footer bg-light">
+                <div class="modal-footer bg-light d-flex gap-2">
                     <button type="button" class="btn btn-outline-secondary" id="cancelExport">
                         Batal
                     </button>

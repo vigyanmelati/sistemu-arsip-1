@@ -166,7 +166,7 @@ class ArsipExport implements
             'AKTIF' => 'AKTIF',
             'INAKTIF' => 'INAKTIF',
             // 'HABIS_RETENSI' => 'HABIS RETENSI',
-             'HABIS_RETENSI' => 'HABIS RETESNI',
+             'HABIS_RETENSI' => 'HABIS RETENSI',
             'PERMANEN' => 'PERMANEN',
             'MUSNAH' => 'MUSNAH'
         ];
