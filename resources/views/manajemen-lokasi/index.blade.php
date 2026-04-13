@@ -47,6 +47,36 @@
             // Urutkan ruangan berdasarkan abjad
             $ruanganList = collect($ruangans)->filter()->sort()->values()->all();
 
+            // Warna gradien untuk border atas
+            $gradientColors = [
+                'linear-gradient(90deg, #dc3545, #f87171)',
+                'linear-gradient(90deg, #0d6efd, #0dcaf0)',
+                'linear-gradient(90deg, #198754, #20c997)',
+                'linear-gradient(90deg, #fd7e14, #ffc107)',
+                'linear-gradient(90deg, #6f42c1, #a78bfa)',
+                'linear-gradient(90deg, #d63384, #f472b6)',
+                'linear-gradient(90deg, #20c997, #198754)',
+                'linear-gradient(90deg, #0dcaf0, #0d6efd)'
+            ];
+            
+            // Warna icon
+            $iconColors = [
+                '#dc3545', '#0d6efd', '#198754', '#fd7e14', 
+                '#6f42c1', '#d63384', '#20c997', '#0dcaf0'
+            ];
+            
+            // Background colors yang soft
+            $bgColors = [
+                'rgba(220, 53, 69, 0.1)',
+                'rgba(13, 110, 253, 0.1)',
+                'rgba(25, 135, 84, 0.1)',
+                'rgba(253, 126, 20, 0.1)',
+                'rgba(111, 66, 193, 0.1)',
+                'rgba(214, 51, 132, 0.1)',
+                'rgba(32, 201, 151, 0.1)',
+                'rgba(13, 202, 240, 0.1)'
+            ];
+
             // Fungsi mapping ikon berdasarkan nama ruangan
             $getIconClass = function($ruanganName) {
                 $name = strtolower($ruanganName);
@@ -72,36 +102,44 @@
             };
         @endphp
 
-        @forelse($ruanganList as $ruangan)
+        @forelse($ruanganList as $index => $ruangan)
             @php
                 $iconClass = $getIconClass($ruangan);
-                // Warna unik berdasarkan hash nama ruangan (hue)
-                $hash = abs(crc32($ruangan));
-                $hue = $hash % 360;
-                $bgOpacity = 0.12;
-                $iconBgColor = "hsla({$hue}, 70%, 60%, {$bgOpacity})";
-                $iconColor = "hsl({$hue}, 75%, 45%)";
+                $iconColor = $iconColors[$index % count($iconColors)];
+                $bgColor = $bgColors[$index % count($bgColors)];
+                $gradientBorder = $gradientColors[$index % count($gradientColors)];
+                $displayName = $ruanganLabels[$ruangan] ?? ucwords(str_replace(['_', '-'], ' ', $ruangan));
             @endphp
 
             <div class="col-sm-6 col-lg-4 col-xl-3 ruangan-card" data-ruangan="{{ strtolower($ruangan) }}">
                 <a href="{{ route('manajemen-lokasi.rak', $ruangan) }}" class="text-decoration-none">
                     <div class="card h-100 border-0 shadow-sm hover-card rounded-4 overflow-hidden">
+                        <!-- Border atas gradien -->
+                        <div class="card-top-border" style="height: 6px; background: {{ $gradientBorder }}; width: 100%;"></div>
+                        
                         <div class="card-body text-center p-4">
-                            <div class="icon-wrapper rounded-circle d-inline-flex p-3 mb-3" 
-                                 style="background-color: {{ $iconBgColor }}; transition: all 0.2s;">
-                                <i class="{{ $iconClass }} fs-1" style="color: {{ $iconColor }};"></i>
+                            <!-- Icon Ruangan -->
+                            <div class="icon-wrapper rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 85px; height: 85px; background: {{ $bgColor }}; transition: all 0.3s;">
+                                <i class="{{ $iconClass }} fs-1" style="color: {{ $iconColor }}; font-size: 3rem !important;"></i>
                             </div>
-                            <h5 class="card-title fw-semibold mb-2">
-                                {{ $ruanganLabels[$ruangan] ?? ucwords(str_replace(['_', '-'], ' ', $ruangan)) }}
-                            </h5>
-                            <p class="card-text text-muted small mb-0">
-                                <i class="bi bi-arrow-repeat me-1"></i> Kelola rak & arsip
-                            </p>
-                        </div>
-                        <div class="card-footer bg-transparent border-0 text-center pb-3 pt-0">
-                            <span class="badge bg-light text-dark px-3 py-2 rounded-pill">
-                                <i class="bi bi-eye me-1"></i> Lihat rak
-                            </span>
+                            
+                            <h5 class="card-title fw-semibold mb-2" style="color: {{ $iconColor }};">{{ $displayName }}</h5>
+                            
+                            <!-- Badge informasi -->
+                            <div class="mb-3">
+                                <span class="badge px-3 py-2 rounded-pill" style="background: {{ $bgColor }}; color: {{ $iconColor }}; font-weight: 500;">
+                                    <i class="bi bi-arrow-repeat me-1"></i> Kelola rak & arsip
+                                </span>
+                            </div>
+                            
+                            <!-- Tombol Lihat Rak -->
+                            <div class="d-grid gap-2">
+                                <span class="btn btn-sm view-rak-btn" 
+                                      style="border: 2px solid {{ $iconColor }}; color: {{ $iconColor }}; background: white; border-radius: 50px; font-weight: 500; transition: all 0.3s;">
+                                    <i class="bi bi-eye me-1"></i> Lihat Rak
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </a>
@@ -128,70 +166,178 @@
 <style>
     /* Efek hover kartu */
     .hover-card {
-        transition: all 0.25s ease-in-out;
+        transition: all 0.3s ease-in-out;
         cursor: pointer;
+        position: relative;
+        background: white;
     }
+    
     .hover-card:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 1rem 2rem rgba(0,0,0,0.1) !important;
+        transform: translateY(-8px);
+        box-shadow: 0 1.5rem 2.5rem rgba(0,0,0,0.12) !important;
     }
+    
+    /* Efek border atas saat hover */
+    .hover-card:hover .card-top-border {
+        height: 8px !important;
+        transition: height 0.3s ease;
+    }
+    
     .hover-card:hover .icon-wrapper {
-        transform: scale(1.08);
-        transition: transform 0.2s ease;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transform: scale(1.1) rotate(5deg);
+        transition: transform 0.3s ease;
     }
+    
+    /* Hover tombol - Background berubah tapi TEKS TETAP WARNA ASLI */
+    .hover-card:hover .view-rak-btn {
+        background-color: rgba(0,0,0,0.05) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    /* Efek animasi garis pada border */
+    .card-top-border {
+        transition: height 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .card-top-border::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    .hover-card:hover .card-top-border::after {
+        left: 100%;
+    }
+    
     .icon-wrapper {
-        width: 64px;
-        height: 64px;
-        transition: all 0.2s;
+        width: 85px;
+        height: 85px;
+        transition: all 0.3s ease;
     }
+    
     /* Search box styling */
     .search-box .input-group-text,
     .search-box .form-control {
         background-color: #fff;
         border: 1px solid #dee2e6;
     }
+    
     .search-box .form-control:focus {
         box-shadow: none;
         border-color: #dc3545;
     }
+    
     .search-box .input-group-text {
         border-right: none;
     }
+    
     .search-box .form-control {
         border-left: none;
     }
+    
     .search-box .btn-outline-secondary {
         border-color: #dee2e6;
         color: #6c757d;
     }
+    
     .search-box .btn-outline-secondary:hover {
         background-color: #f8f9fa;
         border-color: #dee2e6;
         color: #dc3545;
     }
+    
     /* Alert kustom */
     .alert-warning {
         background-color: #fff3e0;
         border-left-width: 5px !important;
     }
+    
+    /* Animasi untuk kartu */
+    .ruangan-card {
+        animation: fadeInUp 0.5s ease backwards;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Memberikan delay animasi untuk setiap kartu */
+    @for($i = 0; $i < 20; $i++)
+    .ruangan-card:nth-child({{ $i + 1 }}) {
+        animation-delay: {{ $i * 0.05 }}s;
+    }
+    @endfor
+    
+    /* Badge styling */
+    .badge {
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
     /* Responsif */
     @media (max-width: 576px) {
         .card-body {
             padding: 1.25rem !important;
         }
         .icon-wrapper {
-            width: 52px;
-            height: 52px;
+            width: 65px !important;
+            height: 65px !important;
         }
         .icon-wrapper i {
-            font-size: 1.75rem !important;
+            font-size: 2rem !important;
         }
+        .card-title {
+            font-size: 1.1rem;
+        }
+    }
+    
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: #dc3545;
+    }
+    
+    /* Efek tambahan untuk teks */
+    .card-title {
+        transition: transform 0.3s ease;
+    }
+    
+    .hover-card:hover .card-title {
+        transform: scale(1.02);
     }
 </style>
 
 <script>
-    // Filter ruangan secara real-time
+    // Filter ruangan secara real-time dengan animasi
     document.addEventListener('DOMContentLoaded', function () {
         const searchInput = document.getElementById('searchRuangan');
         const clearBtn = document.getElementById('clearSearch');
@@ -202,10 +348,19 @@
             const keyword = searchInput.value.toLowerCase().trim();
             let hasVisible = false;
 
-            cards.forEach(card => {
+            cards.forEach((card, index) => {
                 const ruanganName = card.getAttribute('data-ruangan') || '';
                 if (ruanganName.includes(keyword) || keyword === '') {
                     card.style.display = '';
+                    setTimeout(() => {
+                        card.style.opacity = '0';
+                        card.style.transform = 'translateY(10px)';
+                        setTimeout(() => {
+                            card.style.transition = 'all 0.3s ease';
+                            card.style.opacity = '1';
+                            card.style.transform = 'translateY(0)';
+                        }, 50);
+                    }, index * 10);
                     hasVisible = true;
                 } else {
                     card.style.display = 'none';
@@ -214,6 +369,11 @@
 
             if (!hasVisible && cards.length > 0) {
                 noResultDiv.classList.remove('d-none');
+                noResultDiv.style.opacity = '0';
+                setTimeout(() => {
+                    noResultDiv.style.transition = 'opacity 0.3s';
+                    noResultDiv.style.opacity = '1';
+                }, 50);
             } else {
                 noResultDiv.classList.add('d-none');
             }
