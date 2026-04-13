@@ -249,6 +249,7 @@
             </div>
               <hr class="my-4">
 
+@if($arsip->is_duplicate == 1)
 <div class="card border-danger">
     <div class="card-header bg-danger text-white">
         <strong>Penanganan Arsip Duplikat</strong>
@@ -293,7 +294,7 @@
         </div>
     </div>
 </div>
-            
+      @endif      
             <!-- TOMBOL SIMPAN -->
             <div class="d-flex justify-content-between mt-4">
                 <a href="{{ route('subbagian.arsip.show', $arsip->id) }}" class="btn btn-secondary">
