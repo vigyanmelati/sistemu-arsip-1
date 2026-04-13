@@ -204,7 +204,7 @@ class SubBagianRiwayatPemindahanController extends Controller
             // Berita acara baru (opsional)
             'file_berita_acara_baru' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048', // ← perbaikan typo
             
-            // Catatan perbaikan (jika diperlukan)
+            // Catatan perbaikan 
             // 'catatan_perbaikan' => 'required|string|max:1000',
         ]);
 
