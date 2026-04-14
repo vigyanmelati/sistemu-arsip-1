@@ -211,14 +211,128 @@ class ArsipController extends Controller
         ));
     }
 
-   public function store(Request $request)
+//    public function store(Request $request)
+// {
+//     // Debug data yang dikirim
+//     \Log::info('Data yang dikirim:', $request->all());
+    
+//     // Validate data berdasarkan view
+//     $validated = $request->validate([
+//         // WAJIB - Data Dasar
+//         'kode_klasifikasi_id' => 'required|exists:kode_klasifikasis,id',
+//         'uraian_arsip' => 'required|string|max:500',
+//         'sub_bagian_id' => 'required|exists:sub_bagians,id',
+//         'tahun_arsip' => 'required|integer|min:2000|max:' . (date('Y') + 1),
+//         'tanggal_arsip' => 'required|date',
+//         'jumlah_berkas' => 'required|integer|min:1',
+//         'satuan_arsip' => 'required|in:BENDEL,LEMBAR',
+        
+//         // Masa Retensi - BENTUK TEKS LENGKAP
+//         'aktif_tahun' => 'nullable|string|max:100',
+//         'inaktif_tahun' => 'nullable|string|max:100',
+//         'tanggal_referensi' => 'nullable|date',
+//         'keterangan_jra' => 'nullable|in:PERMANEN,MUSNAH',
+        
+//         // HASIL PERHITUNGAN (opsional dari JS, akan dihitung ulang)
+//         'aktif_sampai' => 'nullable|date',
+//         'inaktif_sampai' => 'nullable|date',
+//         'status_arsip' => 'nullable|in:AKTIF,INAKTIF,MUSNAH,PERMANEN',
+        
+//         // OPTIONAL
+//         'nomor_rak' => 'nullable|string|max:50',
+//         'nomor_box' => 'nullable|string|max:50',
+//         'nomor_sampul' => 'nullable|string|max:100',
+//         'lokasi_arsip' => 'nullable|in:SUB_BAGIAN,RECORD_CENTER_PERMANEN,RECORD_CENTER_INAKTIF',
+//         'tingkat_perkembangan' => 'nullable|in:ASLI,COPY,SALINAN',
+//         'keterangan' => 'nullable|in:BAIK,RUSAK,HILANG',
+//         'media_arsip' => 'nullable|string|max:255',
+//         'file_dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+//     ]);
+    
+//     \Log::info('Data yang lolos validasi:', $validated);
+    
+//     try {
+//         // Konversi tipe data
+//         $validated['tahun_arsip'] = (string) $validated['tahun_arsip'];
+        
+//         // Tambahkan created_by jika ada user login
+//         if (auth()->check()) {
+//             $validated['created_by'] = auth()->id();
+//         }
+        
+//         // Tambahkan tanggal_masuk (otomatis hari ini)
+//         $validated['tanggal_masuk'] = now()->format('Y-m-d');
+        
+//         // Set default untuk kolom yang mungkin null
+//         $defaults = [
+//             'nomor_rak' => '',
+//             'nomor_box' => '',
+//             'nomor_sampul' => '',
+//             'keterangan' => 'BAIK',
+//             'tingkat_perkembangan' => 'ASLI',
+//             'status_pindah' => 'LANGSUNG'
+//         ];
+        
+//         foreach ($defaults as $field => $defaultValue) {
+//             if (!isset($validated[$field]) || $validated[$field] === '') {
+//                 $validated[$field] = $defaultValue;
+//             }
+//         }
+        
+//         // Handle file upload
+//         if ($request->hasFile('file_dokumen')) {
+//             $file = $request->file('file_dokumen');
+//             $fileName = time() . '_' . $file->getClientOriginalName();
+//             $filePath = $file->storeAs('arsip', $fileName, 'public');
+//             $validated['file_dokumen'] = $fileName;
+//         }
+        
+//         // ============================================
+//         // PERHITUNGAN RETENSI OTOMATIS (WAJIB DILAKUKAN)
+//         // ============================================
+//         // Selalu hitung ulang dari data input untuk memastikan konsistensi
+//         $perhitungan = $this->hitungRetensi(
+//             $validated['aktif_tahun'],
+//             $validated['inaktif_tahun'],
+//             $validated['keterangan_jra'],
+//             $validated['tanggal_arsip'],
+//             $validated['tanggal_referensi'] ?? null
+//         );
+        
+//         // Timpa nilai dari JS dengan hasil perhitungan di server
+//         $validated['aktif_sampai'] = $perhitungan['aktif_sampai'];
+//         $validated['inaktif_sampai'] = $perhitungan['inaktif_sampai'];
+//         $validated['status_arsip'] = $perhitungan['status_arsip'];
+        
+//         \Log::info('Hasil perhitungan retensi:', $perhitungan);
+//         \Log::info('Data sebelum disimpan:', $validated);
+        
+//         // Simpan data
+//         $arsip = Arsip::create($validated);
+        
+//         \Log::info('Arsip berhasil dibuat dengan ID: ' . $arsip->id);
+//         \Log::info('Status arsip: ' . $arsip->status_arsip);
+//         \Log::info('Aktif sampai: ' . $arsip->aktif_sampai);
+//         \Log::info('Inaktif sampai: ' . $arsip->inaktif_sampai);
+        
+//         return redirect()->route('arsip.index')
+//             ->with('success', 'Arsip berhasil ditambahkan.');
+            
+//     } catch (\Exception $e) {
+//         \Log::error('Gagal menyimpan arsip: ' . $e->getMessage());
+//         \Log::error('Trace: ' . $e->getTraceAsString());
+        
+//         return back()->withInput()
+//             ->with('error', 'Gagal menyimpan arsip: ' . $e->getMessage());
+//     }
+// }
+
+public function store(Request $request)
 {
-    // Debug data yang dikirim
     \Log::info('Data yang dikirim:', $request->all());
     
-    // Validate data berdasarkan view
     $validated = $request->validate([
-        // WAJIB - Data Dasar
+        // WAJIB
         'kode_klasifikasi_id' => 'required|exists:kode_klasifikasis,id',
         'uraian_arsip' => 'required|string|max:500',
         'sub_bagian_id' => 'required|exists:sub_bagians,id',
@@ -226,19 +340,19 @@ class ArsipController extends Controller
         'tanggal_arsip' => 'required|date',
         'jumlah_berkas' => 'required|integer|min:1',
         'satuan_arsip' => 'required|in:BENDEL,LEMBAR',
-        
-        // Masa Retensi - BENTUK TEKS LENGKAP
-        'aktif_tahun' => 'required|string|max:100',
-        'inaktif_tahun' => 'required|string|max:100',
+
+        // OPTIONAL RETENSI
+        'aktif_tahun' => 'nullable|string|max:100',
+        'inaktif_tahun' => 'nullable|string|max:100',
         'tanggal_referensi' => 'nullable|date',
-        'keterangan_jra' => 'required|in:PERMANEN,MUSNAH',
-        
-        // HASIL PERHITUNGAN (opsional dari JS, akan dihitung ulang)
+        'keterangan_jra' => 'nullable|in:PERMANEN,MUSNAH',
+
+        // hasil hitung
         'aktif_sampai' => 'nullable|date',
         'inaktif_sampai' => 'nullable|date',
         'status_arsip' => 'nullable|in:AKTIF,INAKTIF,MUSNAH,PERMANEN',
-        
-        // OPTIONAL
+
+        // optional lain
         'nomor_rak' => 'nullable|string|max:50',
         'nomor_box' => 'nullable|string|max:50',
         'nomor_sampul' => 'nullable|string|max:100',
@@ -248,22 +362,33 @@ class ArsipController extends Controller
         'media_arsip' => 'nullable|string|max:255',
         'file_dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
     ]);
-    
-    \Log::info('Data yang lolos validasi:', $validated);
-    
+
+    // ====================================
+    // 🔥 VALIDASI TAHUN HARUS SAMA
+    // ====================================
+    $tahunInput = (int) $validated['tahun_arsip'];
+    $tahunTanggal = (int) date('Y', strtotime($validated['tanggal_arsip']));
+
+    if ($tahunInput !== $tahunTanggal) {
+        return back()
+            ->withInput()
+            ->withErrors([
+                'tahun_arsip' => 'Tahun arsip harus sama dengan tahun pada tanggal arsip.',
+                'tanggal_arsip' => 'Tanggal arsip harus sesuai dengan tahun arsip.'
+            ]);
+    }
+
     try {
-        // Konversi tipe data
+        // pastikan string
         $validated['tahun_arsip'] = (string) $validated['tahun_arsip'];
-        
-        // Tambahkan created_by jika ada user login
+
         if (auth()->check()) {
             $validated['created_by'] = auth()->id();
         }
-        
-        // Tambahkan tanggal_masuk (otomatis hari ini)
+
         $validated['tanggal_masuk'] = now()->format('Y-m-d');
-        
-        // Set default untuk kolom yang mungkin null
+
+        // default field
         $defaults = [
             'nomor_rak' => '',
             'nomor_box' => '',
@@ -272,56 +397,50 @@ class ArsipController extends Controller
             'tingkat_perkembangan' => 'ASLI',
             'status_pindah' => 'LANGSUNG'
         ];
-        
-        foreach ($defaults as $field => $defaultValue) {
+
+        foreach ($defaults as $field => $value) {
             if (!isset($validated[$field]) || $validated[$field] === '') {
-                $validated[$field] = $defaultValue;
+                $validated[$field] = $value;
             }
         }
-        
-        // Handle file upload
+
+        // upload file
         if ($request->hasFile('file_dokumen')) {
             $file = $request->file('file_dokumen');
             $fileName = time() . '_' . $file->getClientOriginalName();
-            $filePath = $file->storeAs('arsip', $fileName, 'public');
+            $file->storeAs('arsip', $fileName, 'public');
             $validated['file_dokumen'] = $fileName;
         }
-        
-        // ============================================
-        // PERHITUNGAN RETENSI OTOMATIS (WAJIB DILAKUKAN)
-        // ============================================
-        // Selalu hitung ulang dari data input untuk memastikan konsistensi
-        $perhitungan = $this->hitungRetensi(
-            $validated['aktif_tahun'],
-            $validated['inaktif_tahun'],
-            $validated['keterangan_jra'],
-            $validated['tanggal_arsip'],
-            $validated['tanggal_referensi'] ?? null
-        );
-        
-        // Timpa nilai dari JS dengan hasil perhitungan di server
-        $validated['aktif_sampai'] = $perhitungan['aktif_sampai'];
-        $validated['inaktif_sampai'] = $perhitungan['inaktif_sampai'];
-        $validated['status_arsip'] = $perhitungan['status_arsip'];
-        
-        \Log::info('Hasil perhitungan retensi:', $perhitungan);
-        \Log::info('Data sebelum disimpan:', $validated);
-        
-        // Simpan data
+
+        // ====================================
+        // 🔥 HANDLE RETENSI OPTIONAL
+        // ====================================
+        if (empty($validated['aktif_tahun']) || empty($validated['inaktif_tahun'])) {
+            $validated['aktif_sampai'] = null;
+            $validated['inaktif_sampai'] = null;
+            $validated['status_arsip'] = 'AKTIF';
+        } else {
+            $perhitungan = $this->hitungRetensi(
+                $validated['aktif_tahun'],
+                $validated['inaktif_tahun'],
+                $validated['keterangan_jra'],
+                $validated['tanggal_arsip'],
+                $validated['tanggal_referensi'] ?? null
+            );
+
+            $validated['aktif_sampai'] = $perhitungan['aktif_sampai'];
+            $validated['inaktif_sampai'] = $perhitungan['inaktif_sampai'];
+            $validated['status_arsip'] = $perhitungan['status_arsip'];
+        }
+
         $arsip = Arsip::create($validated);
-        
-        \Log::info('Arsip berhasil dibuat dengan ID: ' . $arsip->id);
-        \Log::info('Status arsip: ' . $arsip->status_arsip);
-        \Log::info('Aktif sampai: ' . $arsip->aktif_sampai);
-        \Log::info('Inaktif sampai: ' . $arsip->inaktif_sampai);
-        
+
         return redirect()->route('arsip.index')
             ->with('success', 'Arsip berhasil ditambahkan.');
-            
+
     } catch (\Exception $e) {
-        \Log::error('Gagal menyimpan arsip: ' . $e->getMessage());
-        \Log::error('Trace: ' . $e->getTraceAsString());
-        
+        \Log::error('Error: ' . $e->getMessage());
+
         return back()->withInput()
             ->with('error', 'Gagal menyimpan arsip: ' . $e->getMessage());
     }

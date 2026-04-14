@@ -165,7 +165,7 @@
                 <div class="col-md-4 mb-3">
                     <label class="form-label">
                         Masa Retensi Aktif
-                        <span class="text-danger">*</span>
+                        <!-- <span class="text-danger">*</span> -->
                     </label>
                     <input type="text"
                         id="aktif_tahun"
@@ -173,7 +173,7 @@
                         class="form-control"
                         placeholder="Contoh: 2 TAHUN / 2 TAHUN SETELAH KEGIATAN"
                         value="{{ old('aktif_tahun') }}"
-                        required>
+                        >
                     <small class="text-muted">
                         Gunakan kata <strong>SETELAH</strong> jika berbasis tanggal referensi
                     </small>
@@ -182,7 +182,7 @@
                 <div class="col-md-4 mb-3">
                     <label class="form-label">
                         Masa Retensi Inaktif
-                        <span class="text-danger">*</span>
+                        <!-- <span class="text-danger">*</span> -->
                     </label>
                     <input type="text"
                         id="inaktif_tahun"
@@ -190,7 +190,7 @@
                         class="form-control"
                         placeholder="Contoh: 3 TAHUN / 3 TAHUN SETELAH KEGIATAN"
                         value="{{ old('inaktif_tahun') }}"
-                        required>
+                        >
                 </div>
 
                 <div class="col-md-4 mb-3" id="tanggal_referensi_wrapper" style="display:none;">
@@ -209,9 +209,9 @@
                 
                 <!-- Keterangan JRA -->
                 <div class="col-md-4 mb-3">
-                    <label for="keterangan_jra" class="form-label">Keterangan JRA <span class="text-danger">*</span></label>
+                    <label for="keterangan_jra" class="form-label">Keterangan JRA </label>
                     <select class="form-control @error('keterangan_jra') is-invalid @enderror" 
-                            id="keterangan_jra" name="keterangan_jra" required>
+                            id="keterangan_jra" name="keterangan_jra">
                         <option value="">Pilih Keterangan</option>
                         <option value="PERMANEN" {{ old('keterangan_jra') == 'PERMANEN' ? 'selected' : '' }}>Permanen</option>
                         <option value="MUSNAH" {{ old('keterangan_jra') == 'MUSNAH' ? 'selected' : '' }}>Musnah</option>
@@ -515,38 +515,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Form submission validation
     form.addEventListener('submit', function(e) {
-        hitungRetensi(); // Pastikan perhitungan terakhir
-        
-        // Validasi minimal
-        if (!keteranganJRA.value) {
+    hitungRetensi();
+
+    // VALIDASI FILE SAJA
+    const fileInput = document.getElementById('file_dokumen');
+    if (fileInput && fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const fileSize = (file.size / 1024 / 1024).toFixed(2);
+        const ext = file.name.split('.').pop().toLowerCase();
+
+        if (fileSize > 2) {
             e.preventDefault();
-            alert('Silakan pilih Keterangan JRA.');
+            alert('Ukuran file melebihi 2MB');
             return;
         }
-        
-        // Validasi file upload (opsional)
-        const fileInput = document.getElementById('file_dokumen');
-        if (fileInput && fileInput.files.length > 0) {
-            const file = fileInput.files[0];
-            const fileSize = (file.size / 1024 / 1024).toFixed(2);
-            const fileName = file.name;
-            const fileExtension = fileName.split('.').pop().toLowerCase();
-            
-            if (fileSize > 2) {
-                e.preventDefault();
-                alert('Ukuran file melebihi 2MB');
-                return;
-            }
-            
-            const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
-            if (!allowedExtensions.includes(fileExtension)) {
-                e.preventDefault();
-                alert('Format file tidak didukung. Gunakan PDF, JPG, JPEG, atau PNG.');
-                return;
-            }
-        }
-    });
 
+        if (!['pdf','jpg','jpeg','png'].includes(ext)) {
+            e.preventDefault();
+            alert('Format file tidak didukung');
+            return;
+        }
+    }
+});
+// AUTO SYNC TAHUN DARI TANGGAL
+tanggalArsipInput.addEventListener('change', function() {
+    if (this.value) {
+        const tahun = new Date(this.value).getFullYear();
+        document.getElementById('tahun_arsip').value = tahun;
+    }
+});
     // Initial load
     cekSetelah();
 });

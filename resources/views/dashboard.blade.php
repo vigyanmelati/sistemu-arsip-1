@@ -73,7 +73,7 @@
                         </small>
                     </div>
                     <div class="icon-shape bg-danger bg-opacity-10 rounded-circle p-3">
-                        <i class="bi bi-trash text-danger fs-4"></i>
+                        <i class="bi bi-exclamation-triangle-fill text-danger fs-4"></i></i>
                     </div>
                 </div>
             </div>
@@ -86,14 +86,14 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-muted mb-2">Arsip Musnah</h6>
-                        <h2 class="fw-bold text-danger mb-0">{{ $arsipMusnah }}</h2>
-                        <small class="text-danger">
+                        <h2 class="fw-bold text-dark mb-0">{{ $arsipMusnah }}</h2>
+                        <small class="text-dark">
                             {{ $totalArsip > 0 ? number_format(($arsipMusnah/$totalArsip)*100, 1) : 0 }}% dari total
                         </small>
-                    </div>
-                    <div class="icon-shape bg-danger bg-opacity-10 rounded-circle p-3">
-                        <i class="bi bi-trash text-danger fs-4"></i>
-                    </div>
+                        </div>
+                        <div class="icon-shape bg-dark bg-opacity-10 rounded-circle p-3">
+                            <i class="bi bi-trash-fill text-dark fs-4"></i>
+                        </div>
                 </div>
             </div>
         </div>
