@@ -12,6 +12,7 @@ use App\Http\Controllers\SubBagianDashboardController;
 use App\Http\Controllers\SubBagianArsipController;
 use App\Http\Controllers\SubBagianRiwayatPemindahanController;
 use App\Http\Controllers\AdminArsipMasukController;
+use App\Http\Controllers\LokasiController;
 
 require __DIR__.'/auth.php';
 
@@ -211,6 +212,16 @@ Route::middleware(['auth', 'subbagian'])->prefix('subbagian')->name('subbagian.'
 
 Route::post('/subbagian/arsip/{arsip}/duplicate', [SubBagianArsipController::class, 'duplicate'])
     ->name('subbagian.arsip.duplicate');
+
+
+    // Manajemen Lokasi (tanpa tabel baru)
+// routes/web.php
+Route::prefix('manajemen-lokasi')->name('manajemen-lokasi.')->group(function () {
+    Route::get('/', [LokasiController::class, 'index'])->name('index');                  // card ruangan
+    Route::get('/ruangan/{ruangan}', [LokasiController::class, 'listRak'])->name('rak'); // card rak
+    Route::get('/ruangan/{ruangan}/rak/{rak}', [LokasiController::class, 'listBox'])->name('box'); // card box
+    Route::get('/ruangan/{ruangan}/rak/{rak}/box/{box}', [LokasiController::class, 'listArsip'])->name('arsip'); // list arsip
+});
 
 
 

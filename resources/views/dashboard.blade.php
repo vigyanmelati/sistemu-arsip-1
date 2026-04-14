@@ -66,7 +66,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="text-muted mb-2">HABIS RETENSI</h6>
+                        <h6 class="text-muted mb-2">Arsip Habis Retensi</h6>
                         <h2 class="fw-bold text-danger mb-0">{{ $arsipUsulMusnah }}</h2>
                         <small class="text-danger">
                             {{ $totalArsip > 0 ? number_format(($arsipUsulMusnah/$totalArsip)*100, 1) : 0 }}% dari total
@@ -85,7 +85,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="text-muted mb-2">HABIS RETENSI</h6>
+                        <h6 class="text-muted mb-2">Arsip Musnah</h6>
                         <h2 class="fw-bold text-danger mb-0">{{ $arsipMusnah }}</h2>
                         <small class="text-danger">
                             {{ $totalArsip > 0 ? number_format(($arsipMusnah/$totalArsip)*100, 1) : 0 }}% dari total
@@ -105,7 +105,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="text-muted mb-2">Permanen</h6>
+                        <h6 class="text-muted mb-2">Arsip Permanen</h6>
                         <h2 class="fw-bold text-info mb-0">{{ $arsipPermanen }}</h2>
                         <small class="text-info">
                             {{ $totalArsip > 0 ? number_format(($arsipPermanen/$totalArsip)*100, 1) : 0 }}% dari total

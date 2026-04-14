@@ -529,6 +529,7 @@
                     <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
                 </a>
             </li>
+          
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('arsip.*') ? 'active' : '' }}" href="{{ route('arsip.index') }}">
                     <i class="bi bi-folder"></i> <span>Kelola Arsip</span>
@@ -543,6 +544,12 @@
                     @endif
                 </a>
             </li>
+
+             <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('manajemen-lokasi.*') ? 'active' : '' }}" href="{{ route('manajemen-lokasi.index') }}">
+            <i class="bi bi-geo-alt-fill"></i> <span>Manajemen Lokasi</span>
+        </a>
+    </li>
             
             <li class="nav-item">
                 <a class="nav-link d-flex align-items-center {{ request()->routeIs('pemusnahan.*') ? 'active' : '' }}"
@@ -573,6 +580,7 @@
                                 <span>Riwayat Pemusnahan</span>
                             </a>
                         </li>
+                       
                     </ul>
                 </div>
             </li>
