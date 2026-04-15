@@ -17,6 +17,7 @@ use App\Models\BeritaAcaraPindah;
 use App\Models\BeritaAcaraDetail;
 use Illuminate\Support\Facades\DB;
 
+
 class SubBagianArsipController extends Controller
 {
     public function index(Request $request)
@@ -319,21 +320,23 @@ foreach ($duplicateGroups as $group) {
         return redirect()->route('subbagian.arsip.index')->with('success','Arsip berhasil dihapus.');
     }
 
-     public function import(Request $request)
-    {
-        $request->validate([
-            'file_excel' => 'required|file|mimes:xlsx,xls'
-        ]);
+   public function import(Request $request)
+{
+    $request->validate([
+        'file_excel' => 'required|file|mimes:xlsx,xls'
+    ]);
 
-        try {
-            Excel::import(new ArsipImportSubBagian, $request->file('file_excel'));
+    try {
+        Excel::import(new ArsipImportSubBagian, $request->file('file_excel'));
 
-            return redirect()->route('subbagian.arsip.index')
-                ->with('success', 'Data arsip berhasil diimport.');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Gagal import: ' . $e->getMessage());
-        }
+        return redirect()->route('subbagian.arsip.index')
+            ->with('success', '✅ Data arsip berhasil diimport.');
+            
+    } catch (\Exception $e) {
+
+        return back()->with('error', '❌ Import gagal: ' . $e->getMessage());
     }
+}
     // public function export(Request $request)
     // {
     //     $columns = $request->input('columns',[]);

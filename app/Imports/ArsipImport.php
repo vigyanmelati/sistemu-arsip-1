@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 
 class ArsipImport implements ToModel, WithHeadingRow
 {
+
     public function headingRow(): int
     {
         return 1;
@@ -32,13 +33,19 @@ class ArsipImport implements ToModel, WithHeadingRow
             $kodeInput = strtoupper(trim($row['kode_klasifikasi'] ?? ''));
             $kodeInput = str_replace(' ', '', $kodeInput);
 
-            if (!$kodeInput) return null;
+            // if (!$kodeInput) return null;
+            if (!$kodeInput) {
+                throw new \Exception('Kode klasifikasi kosong di Excel');
+            }
 
             $kode = KodeKlasifikasi::whereRaw('REPLACE(kode, " ", "") = ?', [$kodeInput])->first();
 
+            // if (!$kode) {
+            //     Log::warning('Kode tidak ditemukan: ' . $kodeInput);
+            //     return null;
+            // }
             if (!$kode) {
-                Log::warning('Kode tidak ditemukan: ' . $kodeInput);
-                return null;
+                throw new \Exception('Kode klasifikasi tidak ditemukan: ' . $kodeInput);
             }
 
             // =======================
@@ -52,11 +59,14 @@ class ArsipImport implements ToModel, WithHeadingRow
                 $subBagian = SubBagian::where('nama_sub_bagian', $namaSubBagian)->first();
             }
 
-            if (!$subBagian) {
-                Log::warning('Sub bagian tidak ditemukan: ' . $namaSubBagian);
-                return null;
-            }
+            // if (!$subBagian) {
+            //     Log::warning('Sub bagian tidak ditemukan: ' . $namaSubBagian);
+            //     return null;
+            // }
 
+            if (!$subBagian) {
+                throw new \Exception('Sub bagian tidak ditemukan untuk user');
+            }
             // =======================
             // MAPPING EXCEL
             // =======================
@@ -64,6 +74,7 @@ class ArsipImport implements ToModel, WithHeadingRow
             if (empty($uraianArsip)) {
                 Log::warning('Uraian arsip kosong');
                 return null;
+                   throw new \Exception('Uraian Arsip Kosong');
             }
 
             $tahunArsip = $row['tahun_arsip'] ?? date('Y');
@@ -220,7 +231,8 @@ if ($isAfterCondition) {
         } catch (\Exception $e) {
             Log::error('Import Error: ' . $e->getMessage());
             Log::error($e->getTraceAsString());
-            return null;
+            // return null;
+               throw new \Exception('Import Error: ' . $e->getMessage());
         }
     }
 
