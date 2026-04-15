@@ -53,9 +53,29 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-muted mb-2">Arsip Diajukan</h6>
-                        <h2 class="fw-bold text-danger mb-0">{{ $arsipDiajukan }}</h2>
+                        <h2 class="fw-bold text-warning mb-0">{{ $arsipDiajukan }}</h2>
+                        <small class="text-warning">
+                             {{ $totalArsip > 0 ? number_format(($arsipDiajukan/$totalArsip)*100, 1) : 0 }}% dari total
+                        </small>
+                    </div>
+                    <div class="icon-shape bg-warning bg-opacity-10 rounded-circle p-3">
+                        <i class="bi bi-clock text-warning fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Arsip Belum Dipindahkan -->
+    <div class="col-xl-3 col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Belum Dipindahkan</h6>
+                        <h2 class="fw-bold text-danger mb-0">{{ $arsipBelumDipindahkan }}</h2>
                         <small class="text-danger">
-                            {{ $totalArsip > 0 ? number_format(($arsipDiajukan/$totalArsip)*100, 1) : 0 }}% dari total
+                           {{ $totalArsip > 0 ? number_format(($arsipBelumDipindahkan/$totalArsip)*100, 1) : 0 }}% dari total
                         </small>
                     </div>
                     <div class="icon-shape bg-danger bg-opacity-10 rounded-circle p-3">
@@ -66,25 +86,8 @@
         </div>
     </div>
     
-    <!-- Arsip Belum Dipindahkan -->
-    <div class="col-xl-3 col-lg-6 mb-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-2">Belum Dipindahkan</h6>
-                        <h2 class="fw-bold text-warning mb-0">{{ $arsipBelumDipindahkan }}</h2>
-                        <small class="text-warning">
-                            {{ $totalArsip > 0 ? number_format(($arsipBelumDipindahkan/$totalArsip)*100, 1) : 0 }}% dari total
-                        </small>
-                    </div>
-                    <div class="icon-shape bg-warning bg-opacity-10 rounded-circle p-3">
-                        <i class="bi bi-clock text-warning fs-4"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+   
+    
 </div>
 
 
