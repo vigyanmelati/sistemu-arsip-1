@@ -50,7 +50,7 @@ class SubBagianRiwayatPemindahanController extends Controller
 
         // Data untuk filter
         $tahunOptions = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
-            ->whereIn('status_pindah', ['DIPINDAHKAN', 'DITOLAK'])
+           ->whereIn('status_pindah', ['DIPINDAHKAN', 'DITOLAK', 'DIAJUKAN', 'DIPERBAIKI'])
             ->selectRaw('YEAR(updated_at) as tahun')
             ->distinct()
             ->orderBy('tahun', 'desc')

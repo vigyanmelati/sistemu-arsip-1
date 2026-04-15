@@ -23,7 +23,7 @@
                                         <select name="status_pindah" class="form-control form-control-sm w-100">
                                             <option value="">Semua Status</option>
                                             <option value="DIPINDAHKAN" {{ request('status_pindah') == 'DIPINDAHKAN' ? 'selected' : '' }}>Dipindahkan</option>
-                                            <option value="DITOLAK" {{ request('status_pindah') == 'DITOLAK' ? 'selected' : '' }}>Ditolak</option>
+                                            <option value="DIAJUKAN" {{ request('status_pindah') == 'DIAJUKAN' ? 'selected' : '' }}>Diajukan</option>
                                         </select>
                                     </div>
                                     <div class="col-md-3 mb-2">
