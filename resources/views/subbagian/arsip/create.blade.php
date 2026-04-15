@@ -106,7 +106,7 @@
 
                 <!-- Kondisi Fisik -->
                 <div class="col-md-6 mb-3">
-                    <label for="keterangan" class="form-label">Kondisi Fisik</label>
+                    <label for="keterangan" class="form-label">Kondisi Fisik <span class="text-danger">*</span></label>
                     <select class="form-control @error('keterangan') is-invalid @enderror" 
                             id="keterangan" name="keterangan">
                         <option value="">Pilih Kondisi</option>
@@ -119,7 +119,7 @@
                     @enderror
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label for="media_arsip" class="form-label">Media Arsip</label>
+                    <label for="media_arsip" class="form-label">Media Arsip <span class="text-danger">*</span></label>
                     <select name="media_arsip" id="media_arsip" class="form-control">
                         <option value="">Pilih Media</option>
                         <option value="TEKSTUAL" {{ old('media_arsip') == 'TEKSTUAL' ? 'selected' : '' }}>Tekstual</option>
@@ -129,7 +129,7 @@
 
                  <!-- Tingkat Perkembangan -->
                 <div class="col-md-6 mb-3">
-                    <label for="tingkat_perkembangan" class="form-label">Tingkat Perkembangan</label>
+                    <label for="tingkat_perkembangan" class="form-label">Tingkat Perkembangan <span class="text-danger">*</span></label>
                     <select class="form-control @error('tingkat_perkembangan') is-invalid @enderror" 
                             id="tingkat_perkembangan" name="tingkat_perkembangan">
                         <option value="">Pilih Tingkat</option>
@@ -237,229 +237,237 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('arsipForm');
-    const aktifInput = document.getElementById('aktif_tahun');
-    const inaktifInput = document.getElementById('inaktif_tahun');
+    // const aktifInput = document.getElementById('aktif_tahun');
+    // const inaktifInput = document.getElementById('inaktif_tahun');
     const tanggalArsipInput = document.getElementById('tanggal_arsip');
-    const tanggalRefInput = document.getElementById('tanggal_referensi');
-    const wrapperRef = document.getElementById('tanggal_referensi_wrapper');
-    const keteranganJRA = document.getElementById('keterangan_jra');
-    const aktifSampaiInput = document.getElementById('aktif_sampai');
-    const inaktifSampaiInput = document.getElementById('inaktif_sampai');
-    const statusArsipInput = document.getElementById('status_arsip_final');
-    const previewRetensi = document.getElementById('previewRetensi');
-    const previewText = document.getElementById('previewText');
-
-    function cekSetelah() {
-        const aktifVal = aktifInput.value.toLowerCase();
-        const inaktifVal = inaktifInput.value.toLowerCase();
-
-        if (aktifVal.includes('setelah') || inaktifVal.includes('setelah')) {
-            wrapperRef.style.display = 'block';
-        } else {
-            wrapperRef.style.display = 'none';
-            if (tanggalRefInput) {
-                tanggalRefInput.value = '';
-            }
-        }
-        
-        hitungRetensi();
+    // const tanggalRefInput = document.getElementById('tanggal_referensi');
+    // const wrapperRef = document.getElementById('tanggal_referensi_wrapper');
+    // const keteranganJRA = document.getElementById('keterangan_jra');
+    // const aktifSampaiInput = document.getElementById('aktif_sampai');
+    // const inaktifSampaiInput = document.getElementById('inaktif_sampai');
+    // const statusArsipInput = document.getElementById('status_arsip_final');
+    // const previewRetensi = document.getElementById('previewRetensi');
+    // const previewText = document.getElementById('previewText');
+    const tahunArsipInput = document.getElementById('tahun_arsip');
+tanggalArsipInput.addEventListener('change', function () {
+    if (this.value) {
+        const tahun = new Date(this.value).getFullYear();
+        tahunArsipInput.value = tahun;
     }
+});
+    // function cekSetelah() {
+    //     const aktifVal = aktifInput.value.toLowerCase();
+    //     const inaktifVal = inaktifInput.value.toLowerCase();
 
-    function hitungRetensi() {
-        const aktifVal = aktifInput.value.trim().toUpperCase();
-        const inaktifVal = inaktifInput.value.trim().toUpperCase();
-        const keterangan = keteranganJRA.value;
-        const tanggalArsip = tanggalArsipInput.value;
-        const tanggalReferensi = tanggalRefInput ? tanggalRefInput.value : '';
+    //     if (aktifVal.includes('setelah') || inaktifVal.includes('setelah')) {
+    //         wrapperRef.style.display = 'block';
+    //     } else {
+    //         wrapperRef.style.display = 'none';
+    //         if (tanggalRefInput) {
+    //             tanggalRefInput.value = '';
+    //         }
+    //     }
         
-        if (!aktifVal || !inaktifVal || !tanggalArsip) {
-            previewRetensi.style.display = 'none';
-            // default status ke AKTIF
-            statusArsipInput.value = 'AKTIF';
-            aktifSampaiInput.value = '';
-            inaktifSampaiInput.value = '';
-            return;
-        }
+    //     hitungRetensi();
+    // }
 
-        // LOGIKA UTAMA: Jika aktif_tahun mengandung SETELAH tetapi tanggal_referensi belum diisi
-        if ((aktifVal.includes('SETELAH') || inaktifVal.includes('SETELAH')) && !tanggalReferensi) {
-            // Otomatis set status arsip ke AKTIF (sesuai permintaan)
-            statusArsipInput.value = 'AKTIF';
+    // function hitungRetensi() {
+    //     const aktifVal = aktifInput.value.trim().toUpperCase();
+    //     const inaktifVal = inaktifInput.value.trim().toUpperCase();
+    //     const keterangan = keteranganJRA.value;
+    //     const tanggalArsip = tanggalArsipInput.value;
+    //     const tanggalReferensi = tanggalRefInput ? tanggalRefInput.value : '';
+        
+    //     if (!aktifVal || !inaktifVal || !tanggalArsip) {
+    //         previewRetensi.style.display = 'none';
+    //         // default status ke AKTIF
+    //         statusArsipInput.value = 'AKTIF';
+    //         aktifSampaiInput.value = '';
+    //         inaktifSampaiInput.value = '';
+    //         return;
+    //     }
+
+    //     // LOGIKA UTAMA: Jika aktif_tahun mengandung SETELAH tetapi tanggal_referensi belum diisi
+    //     if ((aktifVal.includes('SETELAH') || inaktifVal.includes('SETELAH')) && !tanggalReferensi) {
+    //         // Otomatis set status arsip ke AKTIF (sesuai permintaan)
+    //         statusArsipInput.value = 'AKTIF';
             
-            // Set nilai default untuk aktif_sampai dan inaktif_sampai (null)
-            aktifSampaiInput.value = '';
-            inaktifSampaiInput.value = '';
+    //         // Set nilai default untuk aktif_sampai dan inaktif_sampai (null)
+    //         aktifSampaiInput.value = '';
+    //         inaktifSampaiInput.value = '';
             
-            // Tampilkan preview khusus
-            let preview = `<strong>Perhatian:</strong><br>`;
-            preview += `Anda menggunakan format "SETELAH" untuk masa retensi, tetapi belum mengisi tanggal referensi.<br>`;
-            preview += `<strong>Status arsip otomatis di-set ke: AKTIF</strong><br>`;
-            preview += `Perhitungan retensi tidak dapat dilakukan tanpa tanggal referensi.<br>`;
-            preview += `Silakan isi tanggal referensi untuk perhitungan yang lebih akurat.`;
+    //         // Tampilkan preview khusus
+    //         let preview = `<strong>Perhatian:</strong><br>`;
+    //         preview += `Anda menggunakan format "SETELAH" untuk masa retensi, tetapi belum mengisi tanggal referensi.<br>`;
+    //         preview += `<strong>Status arsip otomatis di-set ke: AKTIF</strong><br>`;
+    //         preview += `Perhitungan retensi tidak dapat dilakukan tanpa tanggal referensi.<br>`;
+    //         preview += `Silakan isi tanggal referensi untuk perhitungan yang lebih akurat.`;
             
-            previewText.innerHTML = preview;
-            previewRetensi.style.display = 'block';
-            return;
-        }
+    //         previewText.innerHTML = preview;
+    //         previewRetensi.style.display = 'block';
+    //         return;
+    //     }
 
-        // Ekstrak angka tahun dari input
-        const aktifTahun = ekstrakAngka(aktifVal);
-        const inaktifTahun = ekstrakAngka(inaktifVal);
+    //     // Ekstrak angka tahun dari input
+    //     const aktifTahun = ekstrakAngka(aktifVal);
+    //     const inaktifTahun = ekstrakAngka(inaktifVal);
         
-        if (!aktifTahun || !inaktifTahun) {
-            previewText.textContent = 'Format tahun tidak valid. Contoh: "2 TAHUN"';
-            previewRetensi.style.display = 'block';
-            return;
-        }
+    //     if (!aktifTahun || !inaktifTahun) {
+    //         previewText.textContent = 'Format tahun tidak valid. Contoh: "2 TAHUN"';
+    //         previewRetensi.style.display = 'block';
+    //         return;
+    //     }
 
-        // Tentukan tanggal dasar perhitungan
-        let tanggalDasar;
-        let sumberTanggal = 'tanggal_arsip';
+    //     // Tentukan tanggal dasar perhitungan
+    //     let tanggalDasar;
+    //     let sumberTanggal = 'tanggal_arsip';
         
-        if (aktifVal.includes('SETELAH') || inaktifVal.includes('SETELAH')) {
-            tanggalDasar = tanggalReferensi;
-            sumberTanggal = 'tanggal_referensi';
-        } else {
-            tanggalDasar = tanggalArsip;
-        }
+    //     if (aktifVal.includes('SETELAH') || inaktifVal.includes('SETELAH')) {
+    //         tanggalDasar = tanggalReferensi;
+    //         sumberTanggal = 'tanggal_referensi';
+    //     } else {
+    //         tanggalDasar = tanggalArsip;
+    //     }
 
-        // Hitung tanggal aktif sampai
-        const aktifSampai = tambahTahun(tanggalDasar, aktifTahun);
+    //     // Hitung tanggal aktif sampai
+    //     const aktifSampai = tambahTahun(tanggalDasar, aktifTahun);
         
-        // Hitung tanggal inaktif sampai (ditambahkan setelah aktif)
-        const inaktifSampai = tambahTahun(aktifSampai, inaktifTahun);
+    //     // Hitung tanggal inaktif sampai (ditambahkan setelah aktif)
+    //     const inaktifSampai = tambahTahun(aktifSampai, inaktifTahun);
 
-        // Hitung tanggal musnah (hanya untuk display jika keterangan MUSNAH)
-        const musnahSampai = tambahTahun(inaktifSampai, 1);
+    //     // Hitung tanggal musnah (hanya untuk display jika keterangan MUSNAH)
+    //     const musnahSampai = tambahTahun(inaktifSampai, 1);
 
-        // Tentukan status arsip berdasarkan tanggal hari ini
-        const sekarang = new Date();
-        const aktifDate = new Date(aktifSampai);
-        const inaktifDate = new Date(inaktifSampai);
-        const musnahDate = new Date(musnahSampai);
+    //     // Tentukan status arsip berdasarkan tanggal hari ini
+    //     const sekarang = new Date();
+    //     const aktifDate = new Date(aktifSampai);
+    //     const inaktifDate = new Date(inaktifSampai);
+    //     const musnahDate = new Date(musnahSampai);
 
-        let statusArsip = 'AKTIF';
-        let statusText = '';
+    //     let statusArsip = 'AKTIF';
+    //     let statusText = '';
         
-        if (keterangan === 'PERMANEN') {
-            statusArsip = 'PERMANEN';
-            statusText = 'Status Arsip saat ini: PERMANEN';
-        } else if (keterangan === 'MUSNAH') {
-            // Tentukan status saat ini berdasarkan tanggal
-            if (sekarang <= aktifDate) {
-                statusArsip = 'AKTIF';
-                statusText = `Status Arsip saat ini: AKTIF`;
-            } else if (sekarang <= inaktifDate) {
-                statusArsip = 'INAKTIF';
-                statusText = `Status Arsip saat ini: INAKTIF`;
-            } else if (sekarang <= musnahDate) {
-                statusArsip = 'MUSNAH';
-                statusText = `Status Arsip saat ini: HABIS RETENSI`;
-            } else {
-                statusArsip = 'MUSNAH';
-                statusText = `Status Arsip saat ini: HABIS RETENSI (telah lewat)`;
-            }
-        } else {
-            // Jika keterangan tidak ada, gunakan logika biasa
-            if (sekarang <= aktifDate) {
-                statusArsip = 'AKTIF';
-                statusText = `Status Arsip saat ini: AKTIF`;
-            } else if (sekarang <= inaktifDate) {
-                statusArsip = 'INAKTIF';
-                statusText = `Status Arsip saat ini: INAKTIF`;
-            } else {
-                statusArsip = 'INAKTIF';
-                statusText = `Status Arsip saat ini: INAKTIF (telah lewat)`;
-            }
-        }
+    //     if (keterangan === 'PERMANEN') {
+    //         statusArsip = 'PERMANEN';
+    //         statusText = 'Status Arsip saat ini: PERMANEN';
+    //     } else if (keterangan === 'MUSNAH') {
+    //         // Tentukan status saat ini berdasarkan tanggal
+    //         if (sekarang <= aktifDate) {
+    //             statusArsip = 'AKTIF';
+    //             statusText = `Status Arsip saat ini: AKTIF`;
+    //         } else if (sekarang <= inaktifDate) {
+    //             statusArsip = 'INAKTIF';
+    //             statusText = `Status Arsip saat ini: INAKTIF`;
+    //         } else if (sekarang <= musnahDate) {
+    //             statusArsip = 'MUSNAH';
+    //             statusText = `Status Arsip saat ini: HABIS RETENSI`;
+    //         } else {
+    //             statusArsip = 'MUSNAH';
+    //             statusText = `Status Arsip saat ini: HABIS RETENSI (telah lewat)`;
+    //         }
+    //     } else {
+    //         // Jika keterangan tidak ada, gunakan logika biasa
+    //         if (sekarang <= aktifDate) {
+    //             statusArsip = 'AKTIF';
+    //             statusText = `Status Arsip saat ini: AKTIF`;
+    //         } else if (sekarang <= inaktifDate) {
+    //             statusArsip = 'INAKTIF';
+    //             statusText = `Status Arsip saat ini: INAKTIF`;
+    //         } else {
+    //             statusArsip = 'INAKTIF';
+    //             statusText = `Status Arsip saat ini: INAKTIF (telah lewat)`;
+    //         }
+    //     }
 
-        // Set nilai hidden inputs
-        aktifSampaiInput.value = aktifSampai;
-        inaktifSampaiInput.value = inaktifSampai;
-        statusArsipInput.value = statusArsip;
+    //     // Set nilai hidden inputs
+    //     aktifSampaiInput.value = aktifSampai;
+    //     inaktifSampaiInput.value = inaktifSampai;
+    //     statusArsipInput.value = statusArsip;
 
-        // Tampilkan preview dengan satu status saja
-        let preview = `<strong>Perhitungan Retensi:</strong><br>`;
-        preview += `Sumber Tanggal: ${sumberTanggal === 'tanggal_referensi' ? 'Tanggal Referensi' : 'Tanggal Arsip'}<br>`;
-        preview += `Tanggal Dasar: ${formatTanggal(tanggalDasar)}<br>`;
-        preview += `Aktif Sampai: ${formatTanggal(aktifSampai)}<br>`;
-        preview += `Inaktif Sampai: ${formatTanggal(inaktifSampai)}<br>`;
+    //     // Tampilkan preview dengan satu status saja
+    //     let preview = `<strong>Perhitungan Retensi:</strong><br>`;
+    //     preview += `Sumber Tanggal: ${sumberTanggal === 'tanggal_referensi' ? 'Tanggal Referensi' : 'Tanggal Arsip'}<br>`;
+    //     preview += `Tanggal Dasar: ${formatTanggal(tanggalDasar)}<br>`;
+    //     preview += `Aktif Sampai: ${formatTanggal(aktifSampai)}<br>`;
+    //     preview += `Inaktif Sampai: ${formatTanggal(inaktifSampai)}<br>`;
         
-        if (keterangan === 'MUSNAH') {
-            preview += `Musnah: ${formatTanggal(musnahSampai)}<br>`;
-        }
+    //     if (keterangan === 'MUSNAH') {
+    //         preview += `Musnah: ${formatTanggal(musnahSampai)}<br>`;
+    //     }
         
-        preview += `<strong>${statusText}</strong>`;
+    //     preview += `<strong>${statusText}</strong>`;
         
-        previewText.innerHTML = preview;
-        previewRetensi.style.display = 'block';
-    }
+    //     previewText.innerHTML = preview;
+    //     previewRetensi.style.display = 'block';
+    // }
 
-    function ekstrakAngka(text) {
-        const match = text.match(/\d+/);
-        return match ? parseInt(match[0]) : null;
-    }
+    // function ekstrakAngka(text) {
+    //     const match = text.match(/\d+/);
+    //     return match ? parseInt(match[0]) : null;
+    // }
 
-    function tambahTahun(tanggalString, tahun) {
-        const date = new Date(tanggalString);
-        date.setFullYear(date.getFullYear() + tahun);
-        return date.toISOString().split('T')[0];
-    }
+    // function tambahTahun(tanggalString, tahun) {
+    //     const date = new Date(tanggalString);
+    //     date.setFullYear(date.getFullYear() + tahun);
+    //     return date.toISOString().split('T')[0];
+    // }
 
-    function formatTanggal(tanggalString) {
-        const date = new Date(tanggalString);
-        return date.toLocaleDateString('id-ID', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    }
+    // function formatTanggal(tanggalString) {
+    //     const date = new Date(tanggalString);
+    //     return date.toLocaleDateString('id-ID', {
+    //         year: 'numeric',
+    //         month: 'long',
+    //         day: 'numeric'
+    //     });
+    // }
 
-    // Event listeners
-    aktifInput.addEventListener('input', cekSetelah);
-    inaktifInput.addEventListener('input', cekSetelah);
-    tanggalArsipInput.addEventListener('change', hitungRetensi);
-    if (tanggalRefInput) {
-        tanggalRefInput.addEventListener('change', hitungRetensi);
-    }
-    keteranganJRA.addEventListener('change', hitungRetensi);
+    // // Event listeners
+    // aktifInput.addEventListener('input', cekSetelah);
+    // inaktifInput.addEventListener('input', cekSetelah);
+    // tanggalArsipInput.addEventListener('change', hitungRetensi);
+    // if (tanggalRefInput) {
+    //     tanggalRefInput.addEventListener('change', hitungRetensi);
+    // }
+    // keteranganJRA.addEventListener('change', hitungRetensi);
 
-    // Form submission validation
-    form.addEventListener('submit', function(e) {
-        hitungRetensi(); // Pastikan perhitungan terakhir
+    // // Form submission validation
+    // form.addEventListener('submit', function(e) {
+    //     hitungRetensi(); // Pastikan perhitungan terakhir
         
-        // Validasi minimal
-        // if (!keteranganJRA.value) {
-        //     e.preventDefault();
-        //     alert('Silakan pilih Keterangan JRA.');
-        //     return;
-        // }
+    //     // Validasi minimal
+    //     // if (!keteranganJRA.value) {
+    //     //     e.preventDefault();
+    //     //     alert('Silakan pilih Keterangan JRA.');
+    //     //     return;
+    //     // }
         
-        // Validasi file upload (opsional)
-        const fileInput = document.getElementById('file_dokumen');
-        if (fileInput && fileInput.files.length > 0) {
-            const file = fileInput.files[0];
-            const fileSize = (file.size / 1024 / 1024).toFixed(2);
-            const fileName = file.name;
-            const fileExtension = fileName.split('.').pop().toLowerCase();
+    //     // Validasi file upload (opsional)
+    //     const fileInput = document.getElementById('file_dokumen');
+    //     if (fileInput && fileInput.files.length > 0) {
+    //         const file = fileInput.files[0];
+    //         const fileSize = (file.size / 1024 / 1024).toFixed(2);
+    //         const fileName = file.name;
+    //         const fileExtension = fileName.split('.').pop().toLowerCase();
             
-            if (fileSize > 2) {
-                e.preventDefault();
-                alert('Ukuran file melebihi 2MB');
-                return;
-            }
+    //         if (fileSize > 2) {
+    //             e.preventDefault();
+    //             alert('Ukuran file melebihi 2MB');
+    //             return;
+    //         }
             
-            const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
-            if (!allowedExtensions.includes(fileExtension)) {
-                e.preventDefault();
-                alert('Format file tidak didukung. Gunakan PDF, JPG, JPEG, atau PNG.');
-                return;
-            }
-        }
-    });
+    //         const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+    //         if (!allowedExtensions.includes(fileExtension)) {
+    //             e.preventDefault();
+    //             alert('Format file tidak didukung. Gunakan PDF, JPG, JPEG, atau PNG.');
+    //             return;
+    //         }
+    //     }
+        
+    // });
+
 
     // Initial load
-    cekSetelah();
+    // cekSetelah();
 });
 </script>
 @endpush

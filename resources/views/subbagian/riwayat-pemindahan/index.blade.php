@@ -235,9 +235,38 @@
                     </div>
 
                     <!-- Pagination -->
-                    <div class="d-flex justify-content-center mt-3">
+                    <!-- <div class="d-flex justify-content-center mt-3">
                         {{ $arsips->withQueryString()->links() }}
-                    </div>
+                    </div> -->
+                    <!-- Pagination tanpa tanda panah -->
+@if ($arsips->hasPages())
+<div class="d-flex justify-content-center mt-3">
+    <nav aria-label="Page navigation">
+        <ul class="pagination pagination-sm mb-0">
+            {{-- Tombol Previous tanpa panah --}}
+            <li class="page-item {{ $arsips->onFirstPage() ? 'disabled' : '' }}">
+                <a class="page-link" href="{{ $arsips->previousPageUrl() }}" rel="prev">
+                    Previous
+                </a>
+            </li>
+
+            {{-- Nomor halaman (opsional, bisa dihilangkan jika hanya ingin Prev/Next) --}}
+            @foreach ($arsips->getUrlRange(1, $arsips->lastPage()) as $page => $url)
+                <li class="page-item {{ $page == $arsips->currentPage() ? 'active' : '' }}">
+                    <a class="page-link" href="{{ $url }}">{{ $page }}</a>
+                </li>
+            @endforeach
+
+            {{-- Tombol Next tanpa panah --}}
+            <li class="page-item {{ !$arsips->hasMorePages() ? 'disabled' : '' }}">
+                <a class="page-link" href="{{ $arsips->nextPageUrl() }}" rel="next">
+                    Next
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+@endif
                 </div>
                 <div class="card-footer">
                     <div class="row">

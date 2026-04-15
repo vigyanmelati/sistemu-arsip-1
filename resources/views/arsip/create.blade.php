@@ -119,7 +119,7 @@
 
                 <!-- Kondisi Fisik -->
                 <div class="col-md-6 mb-3">
-                    <label for="keterangan" class="form-label">Kondisi Fisik</label>
+                    <label for="keterangan" class="form-label">Kondisi Fisik <span class="text-danger">*</span></label>
                     <select class="form-control @error('keterangan') is-invalid @enderror" 
                             id="keterangan" name="keterangan">
                         <option value="">Pilih Kondisi</option>
@@ -132,7 +132,7 @@
                     @enderror
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label for="media_arsip" class="form-label">Media Arsip</label>
+                    <label for="media_arsip" class="form-label">Media Arsip <span class="text-danger">*</span></label>
                     <select name="media_arsip" id="media_arsip" class="form-control">
                         <option value="">Pilih Media</option>
                         <option value="TEKSTUAL" {{ old('media_arsip') == 'TEKSTUAL' ? 'selected' : '' }}>Tekstual</option>
@@ -142,7 +142,7 @@
 
                  <!-- Tingkat Perkembangan -->
                 <div class="col-md-6 mb-3">
-                    <label for="tingkat_perkembangan" class="form-label">Tingkat Perkembangan</label>
+                    <label for="tingkat_perkembangan" class="form-label">Tingkat Perkembangan <span class="text-danger">*</span></label>
                     <select class="form-control @error('tingkat_perkembangan') is-invalid @enderror" 
                             id="tingkat_perkembangan" name="tingkat_perkembangan">
                         <option value="">Pilih Tingkat</option>
@@ -341,6 +341,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const statusArsipInput = document.getElementById('status_arsip_final');
     const previewRetensi = document.getElementById('previewRetensi');
     const previewText = document.getElementById('previewText');
+
+    // AUTO SYNC TAHUN DARI TANGGAL
+tanggalArsipInput.addEventListener('change', function() {
+    if (this.value) {
+        const tahun = new Date(this.value).getFullYear();
+        document.getElementById('tahun_arsip').value = tahun;
+    }
+});
 
     function cekSetelah() {
         const aktifVal = aktifInput.value.toLowerCase();

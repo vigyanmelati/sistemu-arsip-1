@@ -378,13 +378,13 @@
                                 <option value="">Semua Kode</option>
                                 @foreach($kodeKlasifikasiOptions as $kode)
                                 <option value="{{ $kode->id }}" {{ request('kode_klasifikasi_id') == $kode->id ? 'selected' : '' }}>
-                                    {{ $kode->kode }} - {{ Str::limit($kode->nama, 30) }}
+                                    {{ $kode->kode }} - {{ Str::limit($kode->uraian, 30) }}
                                 </option>
                                 @endforeach
                             </select>
                         </div>
 
-                        <div class="col-md-6 mb-3">
+                        <!-- <div class="col-md-6 mb-3">
                             <label class="form-label fw-semibold">Status Pindah</label>
                             <select name="status_pindah" class="form-select">
                                 <option value="">Semua Status</option>
@@ -394,7 +394,7 @@
                                 <option value="DITOLAK" {{ request('status_pindah') == 'DITOLAK' ? 'selected' : '' }}>Ditolak</option>
                                 <option value="SELESAI" {{ request('status_pindah') == 'SELESAI' ? 'selected' : '' }}>Selesai</option>
                             </select>
-                        </div>
+                        </div> -->
                     </div>
                     
                     <div class="alert alert-info mt-3 mb-0 d-flex align-items-center">
