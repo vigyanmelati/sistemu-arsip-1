@@ -13,6 +13,7 @@ use App\Http\Controllers\SubBagianArsipController;
 use App\Http\Controllers\SubBagianRiwayatPemindahanController;
 use App\Http\Controllers\AdminArsipMasukController;
 use App\Http\Controllers\LokasiController;
+use App\Http\Controllers\LokasiSubBagianController;
 
 require __DIR__.'/auth.php';
 
@@ -206,6 +207,14 @@ Route::middleware(['auth', 'subbagian'])->prefix('subbagian')->name('subbagian.'
             [SubBagianRiwayatPemindahanController::class, 'ajukanKembali'])
             ->name('ajukan-kembali');
         });
+
+        Route::prefix('manajemen-lokasi')->name('manajemen-lokasi.')->group(function () {
+        Route::get('/', [LokasiSubBagianController::class, 'index'])->name('index');                  // card ruangan
+        Route::get('/ruangan/{ruangan}', [LokasiSubBagianController::class, 'listRak'])->name('rak'); // card rak
+        Route::get('/ruangan/{ruangan}/rak/{rak}', [LokasiSubBagianController::class, 'listBox'])->name('box'); // card box
+        Route::get('/ruangan/{ruangan}/rak/{rak}/box/{box}', [LokasiSubBagianController::class, 'listArsip'])->name('arsip'); // list arsip
+    });
+
 
     
 });

@@ -277,10 +277,16 @@
         <div class="mt-4 pt-3 border-top">
             <div class="d-flex gap-2 align-items-center">
 
-                <a href="{{ $returnUrl ?? route('subbagian.arsip.index') }}"
+                {{-- <a href="{{ $returnUrl ?? route('subbagian.arsip.index') }}"
+                class="btn btn-secondary">
+                    ⬅ Kembali
+                </a> --}}
+
+                    <a href="{{ session('arsip_return_url') ?? url()->previous() ?? route('subbagian.arsip.index') }}"
                 class="btn btn-secondary">
                     ⬅ Kembali
                 </a>
+
 
                 <a href="{{ route('subbagian.arsip.edit', $arsip->id) }}"
                 class="btn btn-warning">
