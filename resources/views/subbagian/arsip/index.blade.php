@@ -515,9 +515,6 @@
                             'uraian_arsip' => 'Judul Arsip',
                             'tahun_arsip' => 'Tahun',
                             'jumlah_berkas' => 'Jumlah',
-                            'satuan_arsip' => 'Satuan',
-                            'status_pindah' => 'Status Pindah',
-                            'status_arsip' => 'Status Arsip',
                             'sub_bagian' => 'Sub Bagian',
                             'keterangan' => 'Kondisi Fisik',
                         ];
@@ -1400,6 +1397,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inisialisasi selection UI
     updateSelectionUI();
+    // Jika salah satu kolom di-uncheck → "Pilih Semua" ikut uncheck
+columnChecks.forEach(cb => {
+    cb.addEventListener('change', function() {
+        const allChecked = [...columnChecks].every(c => c.checked);
+        checkAll.checked = allChecked;
+    });
+});
 });
 </script>
 @endsection
