@@ -37,6 +37,11 @@ class SubBagianArsipController extends Controller
             ->orderBy('nama_sub_bagian')
             ->get();
 
+            $bapOptions = BeritaAcaraPindah::where('sub_bagian_id', $user->sub_bagian_id)
+    ->where('status', 'DIAJUKAN') // optional, biar hanya yg aktif
+    ->orderBy('tanggal_bap', 'desc')
+    ->get();
+
         // Filter & search sama seperti ArsipController
         if ($request->has('status_arsip') && $request->status_arsip != '') {
             $query->where('status_arsip', $request->status_arsip);
@@ -115,7 +120,7 @@ foreach ($duplicateGroups as $group) {
         $keteranganJraOptions = ['MUSNAH'=>'Musnah','PERMANEN'=>'Permanen'];
 
         return view('subbagian.arsip.index', compact(
-            'arsips','kodeKlasifikasiOptions','statusOptions','kondisiOptions','keteranganJraOptions', 'tahunOptions','subBagianOptions'
+            'arsips','kodeKlasifikasiOptions','statusOptions','kondisiOptions','keteranganJraOptions', 'tahunOptions','subBagianOptions', 'bapOptions'
         ));
     }
 
@@ -367,122 +372,101 @@ public function export(Request $request)
 }
 
     public function ajukanPindah(Request $request, Arsip $arsip)
-    {
-        $user = Auth::user();
-        if($arsip->sub_bagian_id != $user->sub_bagian_id) abort(403);
+{
+    $user = Auth::user();
 
-        $request->validate([
-            'file_berita_acara'=>'required|file|mimes:pdf,jpg,jpeg,png|max:2048'
-        ]);
-
-        $file = $request->file('file_berita_acara');
-        $fileName = time().'_'.$file->getClientOriginalName();
-        $file->storeAs('arsip',$fileName,'public');
-        $arsip->file_berita_acara = $fileName;
-        $arsip->status_pindah='DIAJUKAN';
-        $arsip->save();
-
-        return back()->with('success','Arsip berhasil diajukan pemindahannya.');
+    if ($arsip->sub_bagian_id != $user->sub_bagian_id) {
+        abort(403);
     }
 
-    // Tambahkan method ini di ArsipController
-    // public function ajukanPindahMultiple(Request $request)
-    // {
-    //     $user = Auth::user();
-        
-    //     $request->validate([
-    //         'arsip_ids' => 'required|array',
-    //         'arsip_ids.*' => 'exists:arsips,id',
-    //         'file_berita_acara' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048'
-    //     ]);
+    $request->validate([
+        'bap_id' => 'required|exists:berita_acara_pindah,id'
+    ]);
 
-    //     // Pastikan semua arsip milik sub bagian user
-    //     $arsips = Arsip::whereIn('id', $request->arsip_ids)
-    //                     ->where('sub_bagian_id', $user->sub_bagian_id)
-    //                     ->get();
+    // Ambil BAP
+    $bap = BeritaAcaraPindah::where('id', $request->bap_id)
+        ->where('sub_bagian_id', $user->sub_bagian_id)
+        ->firstOrFail();
 
-    //     if ($arsips->count() != count($request->arsip_ids)) {
-    //         return back()->with('error', 'Beberapa arsip tidak ditemukan atau tidak memiliki akses.');
-    //     }
-
-    //     // Simpan file berita acara
-    //     $file = $request->file('file_berita_acara');
-    //     $fileName = time().'_'.$file->getClientOriginalName();
-    //     $file->storeAs('arsip', $fileName, 'public');
-
-    //     // Update setiap arsip
-    //     foreach ($arsips as $arsip) {
-    //         $arsip->file_berita_acara = $fileName;
-    //         $arsip->status_pindah = 'DIAJUKAN';
-    //         $arsip->save();
-    //     }
-
-    //     return back()->with('success', count($request->arsip_ids) . ' arsip berhasil diajukan pemindahannya.');
-    // }
-
-    public function ajukanPindahMultiple(Request $request)
-    {
-        $user = Auth::user();
-        
-        $request->validate([
-            'arsip_ids'          => 'required|array',
-            'arsip_ids.*'        => 'exists:arsips,id',
-            'nomor_bap'          => 'required|string|max:100|unique:berita_acara_pindah,nomor_bap',
-            'tanggal_bap'        => 'required|date',
-            'file_berita_acara'  => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048'
+    DB::beginTransaction();
+    try {
+        // Simpan detail
+        BeritaAcaraDetail::create([
+            'bap_id'   => $bap->id,
+            'arsip_id' => $arsip->id,
+            'status'   => 'DIAJUKAN',
         ]);
 
-        // Pastikan semua arsip milik sub bagian user
-        $arsips = Arsip::whereIn('id', $request->arsip_ids)
-                        ->where('sub_bagian_id', $user->sub_bagian_id)
-                        ->get();
+        // Update arsip
+        $arsip->status_pindah = 'DIAJUKAN';
+        $arsip->file_berita_acara = $bap->file_bap;
+        $arsip->save();
 
-        if ($arsips->count() != count($request->arsip_ids)) {
-            return back()->with('error', 'Beberapa arsip tidak ditemukan atau tidak memiliki akses.');
-        }
+        DB::commit();
 
-        // Simpan file berita acara
-        $file = $request->file('file_berita_acara');
-        $fileName = time() . '_' . $file->getClientOriginalName();
-        $file->storeAs('berita_acara', $fileName, 'public');
+        return back()->with('success', 'Arsip berhasil diajukan menggunakan BAP: ' . $bap->nomor_bap);
 
-        DB::beginTransaction();
-        try {
-            // Buat header BAP
-            $bap = BeritaAcaraPindah::create([
-                'nomor_bap'      => $request->nomor_bap,
-                'tanggal_bap'    => $request->tanggal_bap,
-                'sub_bagian_id'  => $user->sub_bagian_id,
-                'created_by'     => $user->id,
-                'file_bap'       => $fileName,
-                'status'         => 'DIAJUKAN',
-            ]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->with('error', 'Gagal: ' . $e->getMessage());
+    }
+}
 
-            // Simpan detail dan update arsip
-            foreach ($arsips as $arsip) {
+public function ajukanPindahMultiple(Request $request)
+{
+    $user = Auth::user();
+
+    $request->validate([
+        'arsip_ids'   => 'required|array',
+        'arsip_ids.*' => 'exists:arsips,id',
+        'bap_id'      => 'required|exists:berita_acara_pindah,id'
+    ]);
+
+    // Ambil BAP
+    $bap = BeritaAcaraPindah::where('id', $request->bap_id)
+        ->where('sub_bagian_id', $user->sub_bagian_id)
+        ->firstOrFail();
+
+    // Ambil arsip milik user
+    $arsips = Arsip::whereIn('id', $request->arsip_ids)
+        ->where('sub_bagian_id', $user->sub_bagian_id)
+        ->get();
+
+    if ($arsips->count() != count($request->arsip_ids)) {
+        return back()->with('error', 'Beberapa arsip tidak ditemukan atau tidak memiliki akses.');
+    }
+
+    DB::beginTransaction();
+    try {
+        foreach ($arsips as $arsip) {
+
+            // Hindari double insert (optional tapi recommended 🔥)
+            $exists = BeritaAcaraDetail::where('arsip_id', $arsip->id)->exists();
+
+            if (!$exists) {
                 BeritaAcaraDetail::create([
                     'bap_id'   => $bap->id,
                     'arsip_id' => $arsip->id,
                     'status'   => 'DIAJUKAN',
                 ]);
-
-                // Update arsip
-                $arsip->status_pindah = 'DIAJUKAN';
-                $arsip->file_berita_acara = $fileName; // boleh diisi untuk referensi cepat
-                $arsip->save();
             }
 
-            DB::commit();
-
-            return redirect()->route('subbagian.arsip.index')
-                ->with('success', count($request->arsip_ids) . ' arsip berhasil diajukan dengan Nomor BAP: ' . $request->nomor_bap);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Storage::disk('public')->delete('berita_acara/' . $fileName);
-            return back()->with('error', 'Gagal mengajukan pemindahan: ' . $e->getMessage());
+            // Update arsip
+            $arsip->status_pindah = 'DIAJUKAN';
+            $arsip->file_berita_acara = $bap->file_bap;
+            $arsip->save();
         }
-    }
 
+        DB::commit();
+
+        return redirect()->route('subbagian.arsip.index')
+            ->with('success', count($arsips) . ' arsip berhasil diajukan dengan BAP: ' . $bap->nomor_bap);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->with('error', 'Gagal mengajukan: ' . $e->getMessage());
+    }
+}
     public function duplicate(Arsip $arsip)
 {
     $user = Auth::user();

@@ -14,10 +14,13 @@ use App\Http\Controllers\SubBagianRiwayatPemindahanController;
 use App\Http\Controllers\AdminArsipMasukController;
 use App\Http\Controllers\LokasiController;
 use App\Http\Controllers\LokasiSubBagianController;
+use App\Http\Controllers\BeritaAcaraPindahController;
+
 
 require __DIR__.'/auth.php';
 
 Route::middleware(['auth'])->group(function () {
+    Route::resource('berita-acara', BeritaAcaraPindahController::class);
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

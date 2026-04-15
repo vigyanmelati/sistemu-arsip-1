@@ -290,25 +290,14 @@
             <form method="POST" action="{{ route('subbagian.arsip.ajukanPindahMultiple') }}" enctype="multipart/form-data" id="ajukanPindahForm">
                 @csrf
                 <div class="modal-body p-4">
-                    <!-- Nomor Berita Acara -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Nomor Berita Acara <span class="text-danger">*</span></label>
-                        <input type="text" name="nomor_bap" class="form-control" placeholder="Contoh: BAP/001/III/2025" required>
-                        <small class="text-muted">Isi nomor berita acara sesuai dokumen fisik.</small>
-                    </div>
-
-                    <!-- Tanggal Berita Acara -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Tanggal Berita Acara <span class="text-danger">*</span></label>
-                        <input type="date" name="tanggal_bap" class="form-control" value="{{ date('Y-m-d') }}" required>
-                    </div>
-
-                    <!-- File Berita Acara -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">File Berita Acara (PDF/JPG/PNG) <span class="text-danger">*</span></label>
-                        <input type="file" name="file_berita_acara" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                        <small class="text-muted">Maksimal 2MB</small>
-                    </div>
+                   <select name="bap_id" class="form-select" required>
+    <option value="">-- Pilih Berita Acara --</option>
+    @foreach($bapOptions as $bap)
+        <option value="{{ $bap->id }}">
+            {{ $bap->nomor_bap }} - {{ $bap->tanggal_bap }}
+        </option>
+    @endforeach
+</select>
 
                     <!-- Daftar arsip yang dipilih -->
                     <div class="mb-3">

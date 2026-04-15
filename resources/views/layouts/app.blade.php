@@ -633,6 +633,13 @@
                 </a>
             </li>
 
+            <li class="nav-item">
+    <a class="nav-link {{ request()->routeIs('berita-acara.*') ? 'active' : '' }}" 
+       href="{{ route('berita-acara.index') }}">
+        <i class="bi bi-file-earmark-text"></i> 
+        <span>Berita Acara Pemindahan</span>
+    </a>
+</li>
 
             @endif
         @endauth
