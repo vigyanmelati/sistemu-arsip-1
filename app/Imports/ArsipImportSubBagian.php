@@ -10,12 +10,43 @@ use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Concerns\SkipsOnFailure;
+use Maatwebsite\Excel\Concerns\SkipsFailures;
+use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 
-class ArsipImportSubBagian implements ToModel, WithHeadingRow
+class ArsipImportSubBagian implements ToModel, WithHeadingRow, WithValidation, SkipsOnFailure, SkipsEmptyRows
 {
+      use SkipsFailures;
     /**
      * Parse nilai retensi dari Excel - handle multiline text
      */
+public function rules(): array
+{
+    return [
+        'kode_klasifikasi' => 'required|exists:kode_klasifikasis,kode',
+        'jenis_arsip'      => 'required',
+        'kurun_waktu'      => 'required|numeric',
+    ];
+}
+
+public function isEmptyWhen(array $row): bool
+{
+    return
+        empty(trim($row['kode_klasifikasi'] ?? '')) &&
+        empty(trim($row['jenis_arsip'] ?? '')) &&
+        empty(trim($row['kurun_waktu'] ?? ''));
+}
+
+public function customValidationMessages()
+{
+    return [
+        'kode_klasifikasi.required' => 'Kode klasifikasi kosong',
+        'kode_klasifikasi.exists'   => 'Kode klasifikasi tidak ditemukan',
+        'jenis_arsip.required'     => 'Jenis arsip kosong',
+        'kurun_waktu.required'     => 'Tahun arsip kosong',
+    ];
+}
     private function parseRetensiString($value)
     {
         if ($value === null) {
@@ -424,6 +455,13 @@ class ArsipImportSubBagian implements ToModel, WithHeadingRow
 
     public function model(array $row)
 {
+    if (
+    empty(trim($row['kode_klasifikasi'] ?? '')) &&
+    empty(trim($row['jenis_arsip'] ?? '')) &&
+    empty(trim($row['kurun_waktu'] ?? ''))
+) {
+    return null; // skip baris kosong
+}
     \Log::info('Importing row:', $row);
     
     // =======================
@@ -504,9 +542,9 @@ class ArsipImportSubBagian implements ToModel, WithHeadingRow
     // =======================
     // NOMOR BOX
     // =======================
-    $nomorBox = $row['nomor_boksnama_folder_optional'] ?? 
-                $row['NOMOR BOKS/NAMA FOLDER (OPTIONAL)'] ?? 
-                $row['nomor_boks'] ?? null;
+  $nomorBox = $row['namanomor_box'] ?? null;
+$nomorRak = $row['nama_raklemari'] ?? null;
+\Log::info('Available headers: ', array_keys($row));
     
     // =======================
     // RETENSI (ambil dari kode klasifikasi)
@@ -550,6 +588,7 @@ class ArsipImportSubBagian implements ToModel, WithHeadingRow
         'status_arsip'        => $perhitungan['status_arsip'],
         'status_pindah'       => 'BELUM',
         'nomor_box'           => (string) $nomorBox,
+        'nomor_rak'           => (string) $nomorRak,
         'tingkat_perkembangan' => $tingkatPerkembangan,
         'media_arsip'         => $mediaArsip,
         'keterangan'          => $kondisiFisik,

@@ -325,20 +325,35 @@ foreach ($duplicateGroups as $group) {
         return redirect()->route('subbagian.arsip.index')->with('success','Arsip berhasil dihapus.');
     }
 
-   public function import(Request $request)
+
+
+public function import(Request $request)
 {
     $request->validate([
         'file_excel' => 'required|file|mimes:xlsx,xls'
     ]);
 
     try {
-        Excel::import(new ArsipImportSubBagian, $request->file('file_excel'));
+        $import = new ArsipImportSubBagian();
 
+        Excel::import($import, $request->file('file_excel'));
+
+        // Ambil data error (baris yang gagal)
+        $failures = $import->failures();
+
+        // Jika ada error
+        if ($failures->isNotEmpty()) {
+            return back()->with([
+                'warning' => '⚠️ Import selesai, tapi ada data yang gagal.',
+                'import_errors' => $failures
+            ]);
+        }
+
+        // Jika semua sukses
         return redirect()->route('subbagian.arsip.index')
-            ->with('success', '✅ Data arsip berhasil diimport.');
-            
-    } catch (\Exception $e) {
+            ->with('success', '✅ Semua data berhasil diimport.');
 
+    } catch (\Exception $e) {
         return back()->with('error', '❌ Import gagal: ' . $e->getMessage());
     }
 }
