@@ -225,7 +225,7 @@
                                         <div class="text-muted">
                                             <i class="fas fa-inbox fa-3x mb-3"></i>
                                             <h5>Tidak ada data riwayat pemindahan</h5>
-                                            <p>Tidak ada arsip dengan status "Dipindahkan" atau "Ditolak" pada filter yang dipilih.</p>
+                                            <p>Tidak ada arsip dengan status "Dipindahkan" atau "Diajukan" pada filter yang dipilih.</p>
                                         </div>
                                     </td>
                                 </tr>
