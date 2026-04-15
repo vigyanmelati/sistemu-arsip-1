@@ -140,6 +140,27 @@
                                 @endif
                             </a>
                         </th>
+                        <th style="min-width: 100px;" class="sortable-header">
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'nomor_rak', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
+                                <span style="text-align: center">Nama/No Rak</span>
+                                @if(request('sort') == 'nomor_rak')
+                                    <i class="bi bi-caret-{{ request('direction') == 'asc' ? 'up' : 'down' }}-fill text-dark"></i>
+                                @else
+                                    <i class="bi bi-caret-up-down text-secondary"></i>
+                                @endif
+                            </a>
+                        </th>
+                        <th style="min-width: 100px;" class="sortable-header">
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'nomor_box', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
+                                <span style="text-align: center">Nama/No Box</span>
+                                @if(request('sort') == 'nomor_box')
+                                    <i class="bi bi-caret-{{ request('direction') == 'asc' ? 'up' : 'down' }}-fill text-dark"></i>
+                                @else
+                                    <i class="bi bi-caret-up-down text-secondary"></i>
+                                @endif
+                            </a>
+                        </th>
+                         
                         <th style="min-width: 120px;" class="sortable-header">
                             <a href="{{ request()->fullUrlWithQuery(['sort' => 'status_pindah', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
                                 <span>Status Pindah</span>
@@ -165,6 +186,8 @@
                         <td>{{ Str::limit($arsip->uraian_arsip, 200) }}</td>
                         <td>{{ $arsip->tahun_arsip }}</td>
                         <td>{{ $arsip->jumlah_berkas }} {{ $arsip->satuan_arsip }}</td>
+                        <td>{{ $arsip->nomor_rak ?? '-' }}</td>
+                        <td>{{ $arsip->nomor_box ?? '-' }}</td>
                         <td>
                             @if($arsip->status_pindah)
                                 @php
