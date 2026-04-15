@@ -905,32 +905,34 @@ private function extractNumberFromText($text)
     //         return back()->with('error', 'Gagal import: ' . $e->getMessage());
     //     }
     // }
-
-    public function import(Request $request)
+public function import(Request $request)
 {
     $request->validate([
         'file_excel' => 'required|file|mimes:xlsx,xls'
     ]);
 
     try {
-        $import = new ArsipImport;
+        $import = new ArsipImport();
+
         Excel::import($import, $request->file('file_excel'));
 
-        // Jika import class bisa mengembalikan jumlah baris sukses, lakukan pengecekan.
-        // Cara sederhana: hitung manual setelah import
-        $rows = Excel::toArray($import, $request->file('file_excel'));
-        $totalRows = count($rows[0]) - 1; // kurangi header
-        $insertedCount = Arsip::where('tanggal_masuk', now()->format('Y-m-d'))
-                            ->count();
-        
-        if ($insertedCount == 0 && $totalRows > 0) {
-            return back()->with('error', 'Import gagal: Tidak ada data yang tersimpan. Periksa format Excel dan log.');
+        // Ambil data error (baris yang gagal)
+        $failures = $import->failures();
+
+        // Jika ada error
+        if ($failures->isNotEmpty()) {
+            return back()->with([
+                'warning' => '⚠️ Import selesai, tapi ada data yang gagal.',
+                'import_errors' => $failures
+            ]);
         }
 
+        // Jika semua sukses
         return redirect()->route('arsip.index')
-            ->with('success', "Berhasil import {$insertedCount} dari {$totalRows} baris data.");
+            ->with('success', '✅ Semua data berhasil diimport.');
+
     } catch (\Exception $e) {
-        return back()->with('error', 'Gagal import: ' . $e->getMessage());
+        return back()->with('error', '❌ Import gagal: ' . $e->getMessage());
     }
 }
     public function export(Request $request)
