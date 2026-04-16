@@ -234,7 +234,7 @@
     @forelse($arsips as $arsip)
     @php
         // Cek apakah arsip sudah disetujui untuk dimusnahkan
-        $isApprovedForDestruction = in_array($arsip->status_arsip, ['DISETUJUI_MUSNAH', 'HABIS_RETENSI']);
+        $isApprovedForDestruction = in_array($arsip->status_arsip, ['DISETUJUI_MUSNAH','MUSNAH']);
     @endphp
     <tr data-id="{{ $arsip->id }}"
         data-tanggal-arsip="{{ $arsip->tanggal_arsip }}"

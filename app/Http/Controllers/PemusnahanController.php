@@ -151,7 +151,7 @@ class PemusnahanController extends Controller
             return view('pemusnahan.anri.index', compact('pemusnahan'));
         }
 
-        public function setujuiAnri(Request $request, Pemusnahan $pemusnahan)
+     public function setujuiAnri(Request $request, Pemusnahan $pemusnahan)
 {
     // VALIDASI
     $request->validate([
@@ -169,45 +169,35 @@ class PemusnahanController extends Controller
         );
     }
 
-    // upload file
-$filePath = $request->file('file_persetujuan_anri')
-    ->store('persetujuan_anri', 'public');
+    // upload file - PERBAIKAN DI SINI
+    $file = $request->file('file_persetujuan_anri');
+    $fileName = time() . '_' . $file->getClientOriginalName();
+    $filePath = $file->storeAs('persetujuan_anri', $fileName, 'public');
 
-$pemusnahan->update([
-    'status' => 'disetujui_anri',
-    'tanggal_persetujuan_anri' => now(),
-    'file_persetujuan_anri' => $filePath,
-]);
+    $pemusnahan->update([
+        'status' => 'disetujui_anri',
+        'tanggal_persetujuan_anri' => now(),
+        'file_persetujuan_anri' => $filePath, // SEKARANG TERISI
+    ]);
 
-foreach ($pemusnahan->details as $detail) {
+    foreach ($pemusnahan->details as $detail) {
+        $arsip = $detail->arsip;
 
-    $arsip = $detail->arsip;
-
-    if ($detail->keputusan === 'musnah') {
-
-        // ✅ MASUK FLOW PEMUSNAHAN
-        $arsip->status_arsip = 'disetujui_musnah';
-        $arsip->pemusnahan_id = $pemusnahan->id;
-
-    } else {
-
-        // ❌ KELUAR DARI FLOW
-        // langsung balik ke kelola arsip
-        $arsip->status_arsip = strtoupper($detail->keputusan); // INAKTIF / PERMANEN
-        $arsip->pemusnahan_id = null;
-
-        // 🔥 OPTIONAL (lebih bersih): hapus dari detail
-        $detail->delete();
+        if ($detail->keputusan === 'musnah') {
+            $arsip->status_arsip = 'disetujui_musnah';
+            $arsip->pemusnahan_id = $pemusnahan->id;
+        } else {
+            $arsip->status_arsip = strtoupper($detail->keputusan);
+            $arsip->pemusnahan_id = null;
+            $detail->delete();
+        }
+        $arsip->save();
     }
-
-    $arsip->save();
-}
 
     return redirect()
         ->route('pemusnahan.usulan.index')
         ->with('success', 'Pemusnahan arsip telah disetujui ANRI.');
 }
-
 
         public function simpanAnri(Request $request, Pemusnahan $pemusnahan)
         {
@@ -318,18 +308,19 @@ foreach ($pemusnahan->details as $detail) {
         'file_sk_pemusnahan' => 'required|file|mimes:pdf|max:2048',
     ]);
 
-    $beritaAcara = $request->file('file_berita_acara')
-        ->store('berita_acara', 'public');
+    // PERBAIKAN
+    $beritaAcaraFile = $request->file('file_berita_acara');
+    $beritaAcaraName = time() . '_ba_' . $beritaAcaraFile->getClientOriginalName();
+    $beritaAcara = $beritaAcaraFile->storeAs('berita_acara', $beritaAcaraName, 'public');
 
-    $sk = $request->file('file_sk_pemusnahan')
-        ->store('sk_pemusnahan', 'public');
+    $skFile = $request->file('file_sk_pemusnahan');
+    $skName = time() . '_sk_' . $skFile->getClientOriginalName();
+    $sk = $skFile->storeAs('sk_pemusnahan', $skName, 'public');
 
     foreach ($pemusnahan->details as $detail) {
-
         $arsip = $detail->arsip;
-
         if ($arsip->status_arsip == 'disetujui_musnah') {
-            $arsip->status_arsip = 'dimusnahkan';
+             $arsip->status_arsip = 'musnah';
             $arsip->save();
         }
     }
@@ -337,13 +328,12 @@ foreach ($pemusnahan->details as $detail) {
     $pemusnahan->update([
         'status' => 'dimusnahkan',
         'tanggal_pemusnahan' => now(),
-        'file_berita_acara' => $beritaAcara,
-        'file_sk_pemusnahan' => $sk,
+        'file_berita_acara' => $beritaAcara, // SEKARANG TERISI
+        'file_sk_pemusnahan' => $sk, // SEKARANG TERISI
     ]);
 
     return redirect()->route('pemusnahan.riwayat');
 }
-
 
 
 
@@ -429,18 +419,19 @@ public function simpanKpu(Request $request, Pemusnahan $pemusnahan)
         'file_persetujuan_kpu' => 'required|file|mimes:pdf|max:2048',
     ]);
 
-    $filePath = $request->file('file_persetujuan_kpu')
-        ->store('persetujuan_kpu', 'public');
+    // PERBAIKAN
+    $file = $request->file('file_persetujuan_kpu');
+    $fileName = time() . '_' . $file->getClientOriginalName();
+    $filePath = $file->storeAs('persetujuan_kpu', $fileName, 'public');
 
     $pemusnahan->update([
         'status' => 'disetujui_kpu',
-        'file_persetujuan_kpu' => $filePath,
+        'file_persetujuan_kpu' => $filePath, // PERBAIKAN
     ]);
 
     return redirect()
         ->route('pemusnahan.eksekusi', $pemusnahan->id)
         ->with('success', 'Persetujuan KPU berhasil diupload.');
 }
-
 
 }
