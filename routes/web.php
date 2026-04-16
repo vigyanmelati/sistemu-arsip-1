@@ -20,6 +20,8 @@ use App\Http\Controllers\BeritaAcaraPindahController;
 require __DIR__.'/auth.php';
 
 Route::middleware(['auth'])->group(function () {
+    Route::patch('/arsip/{id}/inline-update', [ArsipController::class, 'updateInline'])
+    ->name('arsip.inline-update');
     Route::resource('berita-acara', BeritaAcaraPindahController::class);
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
