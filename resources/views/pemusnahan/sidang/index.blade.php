@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Sidang Penilaian Pemusnahan Arsip')
+@section('title', 'Penelitian/Penilaian Pemusnahan Arsip')
 
 @section('content')
 <div class="container-fluid">
@@ -15,7 +15,7 @@
     {{-- ================= HEADER ================= --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="mb-1">Sidang Penilaian Pemusnahan Arsip</h4>
+            <h4 class="mb-1">Penelitian/Penilaian Pemusnahan Arsip</h4>
             <small class="text-muted">Tahun {{ $pemusnahan->tahun }}</small>
         </div>
 
@@ -232,8 +232,8 @@
     @csrf
     <div class="text-end">
         <button class="btn btn-danger"
-                onclick="return confirm('Tetapkan hasil sidang? Data arsip tidak bisa diubah.')">
-            ✔ Tetapkan Hasil Sidang
+                onclick="return confirm('Tetapkan hasil penelitian/penilaian? Data arsip tidak bisa diubah.')">
+            ✔ Tetapkan Hasil Penelitian/Penilaian Arsip
         </button>
     </div>
     </form>

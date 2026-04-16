@@ -568,6 +568,22 @@ $nomorRak = $row['nama_raklemari'] ?? null;
         $tanggalArsip->format('Y-m-d'),
         null
     );
+
+    $lokasiMapping = [
+    'SUB BAGIAN UMUM DAN LOGISTIK' => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
+    'SUB BAGIAN PARTISIPASI MASYARAKAT DAN SDM' => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
+    'SUB BAGIAN KEUANGAN' => 'RUANG_SUBBAGIAN_KEUANGAN',
+    'SUB BAGIAN PERENCANAAN DATA DAN INFORMASI' => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
+    'SUB BAGIAN TEKNIS' => 'RUANG_SUBBAGIAN_TEKNIS',
+    'SUB BAGIAN HUKUM' => 'RUANG_SUBBAGIAN_HUKUM',
+];
+
+$namaSubBagian = strtoupper(trim($subBagian->nama_sub_bagian ?? ''));
+$lokasiArsip = $lokasiMapping[$namaSubBagian] ?? null;
+
+if (!$lokasiArsip) {
+    \Log::warning('Mapping lokasi_arsip tidak ditemukan untuk sub bagian: ' . $namaSubBagian);
+}
     
     // =======================
     // BUAT DATA ARSIP
@@ -589,6 +605,7 @@ $nomorRak = $row['nama_raklemari'] ?? null;
         'status_pindah'       => 'BELUM',
         'nomor_box'           => (string) $nomorBox,
         'nomor_rak'           => (string) $nomorRak,
+        'lokasi_arsip' => $lokasiArsip,
         'tingkat_perkembangan' => $tingkatPerkembangan,
         'media_arsip'         => $mediaArsip,
         'keterangan'          => $kondisiFisik,

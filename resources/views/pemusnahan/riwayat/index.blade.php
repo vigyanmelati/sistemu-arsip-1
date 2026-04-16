@@ -119,11 +119,12 @@
                     <thead class="table-light">
                         <tr>
                             <th width="5%" class="text-center">No</th>
-                            <th width="10%" class="text-center">Tahun</th>
-                            <th width="20%">Tanggal Pemusnahan</th>
-                            <th width="15%" class="text-center">Jumlah Arsip</th>
-                            <th width="20%" class="text-center">Status</th>
-                            <th width="20%" class="text-center">Aksi</th>
+                            <th width="10%" style="text-align: center">Tahun</th>
+                            <th width="10%" style="text-align: center">Tanggal Pengajuan</th>
+                            <th width="15%" style="text-align: center">Jumlah Arsip</th>
+                            <th width="10%" style="text-align: center">Status Pindah</th>
+                            <th width="20%" style="text-align: center">Keterangan</th>
+                            <th width="10%" class="text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -155,6 +156,19 @@
                                     <i class="bi bi-check-circle me-1"></i>
                                     Dimusnahkan
                                 </span>
+                            </td>
+                            <td>
+                                @if($item->keterangan)
+                                    <small class="text-muted">
+                                        {{ Str::limit($item->keterangan, 80) }}
+                                    </small>
+                                @elseif($arsip->catatan_perbaikan)
+                                    <small class="text-warning">
+                                        {{ Str::limit($item->catatan_perbaikan, 80) }}
+                                    </small>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
                             </td>
                             <td class="text-center">
                                 <a href="{{ route('pemusnahan.riwayat.show', $item->id) }}"

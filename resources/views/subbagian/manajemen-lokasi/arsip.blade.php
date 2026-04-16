@@ -139,8 +139,8 @@
                                 <th style="width: 15%">Kode Klasifikasi</th>
                                 <th style="width: 35%">Judul Arsip</th>
                                 <th style="width: 6%">Tahun</th>
-                                <th style="width: 12%">Aktif Sampai</th>
-                                <th style="width: 12%">Inaktif Sampai</th>
+                                {{-- <th style="width: 12%">Aktif Sampai</th>
+                                <th style="width: 12%">Inaktif Sampai</th> --}}
                                 <th style="width: 10%">Status</th>
                                 <th style="width: 6%" class="text-center">Aksi</th>
                             </tr>
@@ -184,8 +184,8 @@
                                     @endif
                                 </td>
                                 <td><span class="badge bg-light text-dark">{{ $arsip->tahun_arsip ?? '-' }}</span></td>
-                                <td>{{ $arsip->aktif_sampai ? \Carbon\Carbon::parse($arsip->aktif_sampai)->translatedFormat('d/m/Y') : '-' }}</td>
-                                <td>{{ $arsip->inaktif_sampai ? \Carbon\Carbon::parse($arsip->inaktif_sampai)->translatedFormat('d/m/Y') : '-' }}</td>
+                                {{-- <td>{{ $arsip->aktif_sampai ? \Carbon\Carbon::parse($arsip->aktif_sampai)->translatedFormat('d/m/Y') : '-' }}</td>
+                                <td>{{ $arsip->inaktif_sampai ? \Carbon\Carbon::parse($arsip->inaktif_sampai)->translatedFormat('d/m/Y') : '-' }}</td> --}}
                                 <td>
                                     <span class="badge {{ $statusBadge }} px-3 py-2 rounded-pill">
                                         <i class="{{ $statusIcon }} me-1 fs-9"></i>

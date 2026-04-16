@@ -200,7 +200,7 @@
                                     @if ($item->status === 'draft')
                                         <a href="{{ route('pemusnahan.sidang', $item->id) }}"
                                            class="btn btn-sm btn-outline-warning">
-                                            <i class="bi bi-chat-dots me-1"></i> Sidang
+                                            <i class="bi bi-chat-dots me-1"></i> Penelitian/Penilaian
                                         </a>
                                     @endif
 
