@@ -102,7 +102,7 @@ class PemusnahanController extends Controller
     public function updateKeputusan(Request $request, PemusnahanDetail $detail)
     {
         $request->validate([
-            'keputusan' => 'required|in:musnah,tidak_musnah',
+            'keputusan' => 'required|in:musnah,inaktif,permanen',
         ]);
 
         $detail->update([
@@ -151,27 +151,62 @@ class PemusnahanController extends Controller
             return view('pemusnahan.anri.index', compact('pemusnahan'));
         }
 
-        public function setujuiAnri(Pemusnahan $pemusnahan)
-        {
-            $jumlahMusnah = $pemusnahan->details()
-                ->where('keputusan', 'musnah')
-                ->count();
+        public function setujuiAnri(Request $request, Pemusnahan $pemusnahan)
+{
+    // VALIDASI
+    $request->validate([
+        'file_persetujuan_anri' => 'required|file|mimes:pdf|max:2048',
+    ]);
 
-            if ($jumlahMusnah < 1) {
-                return back()->with('error',
-                    'Minimal 1 arsip harus diputuskan MUSNAH.'
-                );
-            }
+    // minimal 1 musnah
+    $jumlahMusnah = $pemusnahan->details()
+        ->where('keputusan', 'musnah')
+        ->count();
 
-            $pemusnahan->update([
-                'status' => 'disetujui_anri',
-                'tanggal_persetujuan_anri' => now(),
-            ]);
+    if ($jumlahMusnah < 1) {
+        return back()->with('error',
+            'Minimal 1 arsip harus diputuskan MUSNAH.'
+        );
+    }
 
-            return redirect()
-                ->route('pemusnahan.riwayat')
-                ->with('success', 'Pemusnahan arsip telah disetujui ANRI.');
-        }
+    // upload file
+$filePath = $request->file('file_persetujuan_anri')
+    ->store('persetujuan_anri', 'public');
+
+$pemusnahan->update([
+    'status' => 'disetujui_anri',
+    'tanggal_persetujuan_anri' => now(),
+    'file_persetujuan_anri' => $filePath,
+]);
+
+foreach ($pemusnahan->details as $detail) {
+
+    $arsip = $detail->arsip;
+
+    if ($detail->keputusan === 'musnah') {
+
+        // ✅ MASUK FLOW PEMUSNAHAN
+        $arsip->status_arsip = 'disetujui_musnah';
+        $arsip->pemusnahan_id = $pemusnahan->id;
+
+    } else {
+
+        // ❌ KELUAR DARI FLOW
+        // langsung balik ke kelola arsip
+        $arsip->status_arsip = strtoupper($detail->keputusan); // INAKTIF / PERMANEN
+        $arsip->pemusnahan_id = null;
+
+        // 🔥 OPTIONAL (lebih bersih): hapus dari detail
+        $detail->delete();
+    }
+
+    $arsip->save();
+}
+
+    return redirect()
+        ->route('pemusnahan.usulan.index')
+        ->with('success', 'Pemusnahan arsip telah disetujui ANRI.');
+}
 
 
         public function simpanAnri(Request $request, Pemusnahan $pemusnahan)
@@ -256,7 +291,10 @@ class PemusnahanController extends Controller
             abort(404);
         }
 
-        $pemusnahan->load(['details.arsip']);
+        $pemusnahan->load(['details' => function ($q) {
+    $q->where('keputusan', 'musnah')
+      ->with('arsip');
+}]);
 
         return view('pemusnahan.riwayat.show', compact('pemusnahan'));
     }
@@ -265,29 +303,46 @@ class PemusnahanController extends Controller
 
     public function eksekusi(Pemusnahan $pemusnahan)
     {
-        if ($pemusnahan->status !== 'disetujui_anri') {
-            return back()->with('error', 'Pemusnahan belum disetujui ANRI.');
-        }
+        // if ($pemusnahan->status !== 'disetujui_anri') {
+        //     return back()->with('error', 'Pemusnahan belum disetujui ANRI.');
+        // }
 
         return view('pemusnahan.riwayat.eksekusi', compact('pemusnahan'));
     }
 
 
-    public function simpanEksekusi(Pemusnahan $pemusnahan)
-    {
-        if ($pemusnahan->status !== 'disetujui_anri') {
-            return back()->with('error', 'Status tidak valid.');
+ public function simpanEksekusi(Request $request, Pemusnahan $pemusnahan)
+{
+    $request->validate([
+        'file_berita_acara' => 'required|file|mimes:pdf|max:2048',
+        'file_sk_pemusnahan' => 'required|file|mimes:pdf|max:2048',
+    ]);
+
+    $beritaAcara = $request->file('file_berita_acara')
+        ->store('berita_acara', 'public');
+
+    $sk = $request->file('file_sk_pemusnahan')
+        ->store('sk_pemusnahan', 'public');
+
+    foreach ($pemusnahan->details as $detail) {
+
+        $arsip = $detail->arsip;
+
+        if ($arsip->status_arsip == 'disetujui_musnah') {
+            $arsip->status_arsip = 'dimusnahkan';
+            $arsip->save();
         }
-
-        $pemusnahan->update([
-            'status' => 'dimusnahkan',
-            'tanggal_pemusnahan' => now(),
-        ]);
-
-        return redirect()
-            ->route('pemusnahan.riwayat.index')
-            ->with('success', 'Arsip berhasil dimusnahkan.');
     }
+
+    $pemusnahan->update([
+        'status' => 'dimusnahkan',
+        'tanggal_pemusnahan' => now(),
+        'file_berita_acara' => $beritaAcara,
+        'file_sk_pemusnahan' => $sk,
+    ]);
+
+    return redirect()->route('pemusnahan.riwayat');
+}
 
 
 
@@ -351,6 +406,41 @@ class PemusnahanController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+public function kpu(Pemusnahan $pemusnahan)
+{
+    if (!in_array($pemusnahan->status, ['disetujui_anri', 'menunggu_persetujuan_kpu'])) {
+        return back()->with('error', 'Harus melalui ANRI dulu.');
+    }
+
+    // 🔥 ambil hanya yang MUSNAH
+    $pemusnahan->load(['details' => function ($q) {
+        $q->where('keputusan', 'musnah')
+          ->with('arsip');
+    }]);
+
+    return view('pemusnahan.kpu.index', compact('pemusnahan'));
+}
+
+
+public function simpanKpu(Request $request, Pemusnahan $pemusnahan)
+{
+    $request->validate([
+        'file_persetujuan_kpu' => 'required|file|mimes:pdf|max:2048',
+    ]);
+
+    $filePath = $request->file('file_persetujuan_kpu')
+        ->store('persetujuan_kpu', 'public');
+
+    $pemusnahan->update([
+        'status' => 'disetujui_kpu',
+        'file_persetujuan_kpu' => $filePath,
+    ]);
+
+    return redirect()
+        ->route('pemusnahan.eksekusi', $pemusnahan->id)
+        ->with('success', 'Persetujuan KPU berhasil diupload.');
+}
 
 
 }

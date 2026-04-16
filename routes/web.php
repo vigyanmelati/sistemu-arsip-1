@@ -46,9 +46,15 @@ Route::middleware(['auth'])->group(function () {
         /* =====================================
         |  P E M U S N A H A N  A R S I P
         ===================================== */
+
         Route::prefix('pemusnahan')
         ->name('pemusnahan.')
         ->group(function () {
+            Route::get('/{pemusnahan}/kpu', [PemusnahanController::class, 'kpu'])
+    ->name('kpu');
+
+Route::post('/{pemusnahan}/kpu', [PemusnahanController::class, 'simpanKpu'])
+    ->name('kpu.simpan');
 
             // ===============================
             // USULAN PEMUSNAHAN

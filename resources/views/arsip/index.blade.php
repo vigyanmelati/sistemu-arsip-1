@@ -232,6 +232,10 @@
                 </thead>
               <tbody>
     @forelse($arsips as $arsip)
+    @php
+        // Cek apakah arsip sudah disetujui untuk dimusnahkan
+        $isApprovedForDestruction = in_array($arsip->status_arsip, ['DISETUJUI_MUSNAH', 'HABIS_RETENSI']);
+    @endphp
     <tr data-id="{{ $arsip->id }}"
         data-tanggal-arsip="{{ $arsip->tanggal_arsip }}"
         data-aktif-tahun="{{ $arsip->aktif_tahun }}"
@@ -242,19 +246,25 @@
         <td>{{ $loop->iteration + ($arsips->currentPage() - 1) * $arsips->perPage() }}</td>
         <td><strong>{{ $arsip->kodeKlasifikasi->kode ?? 'N/A' }}</strong></td>
         
-        <!-- Editable: Judul Arsip -->
-        <td class="editable" data-field="uraian_arsip">{{ Str::limit($arsip->uraian_arsip, 200) }}</td>
+        <!-- Editable: Judul Arsip - disabled jika sudah disetujui musnah -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="uraian_arsip">
+            {{ Str::limit($arsip->uraian_arsip, 200) }}
+        </td>
         
         <td>{{ $arsip->tahun_arsip }}</td>
         
-        <!-- Editable: Rak -->
-        <td class="editable" data-field="nomor_rak">{{ $arsip->nomor_rak }}</td>
+        <!-- Editable: Rak - disabled jika sudah disetujui musnah -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="nomor_rak">
+            {{ $arsip->nomor_rak }}
+        </td>
         
-        <!-- Editable: Box -->
-        <td class="editable" data-field="nomor_box">{{ $arsip->nomor_box }}</td>
+        <!-- Editable: Box - disabled jika sudah disetujui musnah -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="nomor_box">
+            {{ $arsip->nomor_box }}
+        </td>
         
-        <!-- Editable: Lokasi Arsip (dropdown) -->
-        <td class="editable-select" data-field="lokasi_arsip" data-value="{{ $arsip->lokasi_arsip }}">
+        <!-- Editable: Lokasi Arsip (dropdown) - disabled jika sudah disetujui musnah -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable-select' : '' }}" data-field="lokasi_arsip" data-value="{{ $arsip->lokasi_arsip }}">
             @php
                 $lokasiLabel = [
                     'RECORD_CENTER_PERMANEN' => 'Record Center (Arsip Permanen)',
@@ -264,14 +274,18 @@
             {{ $lokasiLabel }}
         </td>
         
-        <!-- Editable: Aktif Tahun -->
-        <td class="editable" data-field="aktif_tahun">{{ $arsip->aktif_tahun ?? '-' }}</td>
+        <!-- Editable: Aktif Tahun - disabled jika sudah disetujui musnah -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="aktif_tahun">
+            {{ $arsip->aktif_tahun ?? '-' }}
+        </td>
         
-        <!-- Editable: Inaktif Tahun -->
-        <td class="editable" data-field="inaktif_tahun">{{ $arsip->inaktif_tahun ?? '-' }}</td>
+        <!-- Editable: Inaktif Tahun - disabled jika sudah disetujui musnah -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="inaktif_tahun">
+            {{ $arsip->inaktif_tahun ?? '-' }}
+        </td>
         
-        <!-- Editable: Keterangan JRA (dropdown) -->
-        <td class="editable-select" data-field="keterangan_jra" data-value="{{ $arsip->keterangan_jra }}">
+        <!-- Editable: Keterangan JRA (dropdown) - disabled jika sudah disetujui musnah -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable-select' : '' }}" data-field="keterangan_jra" data-value="{{ $arsip->keterangan_jra }}">
             @php
                 $jraLabel = [
                     'PERMANEN' => 'Permanen',
@@ -292,10 +306,12 @@
                     'AKTIF' => 'success',
                     'INAKTIF' => 'warning',
                     'HABIS_RETENSI' => 'danger',
-                    'PERMANEN' => 'info'
+                    'PERMANEN' => 'info',
+                    'DISETUJUI_MUSNAH' => 'danger'
                 ];
                 $color = $statusColors[$arsip->status_arsip] ?? 'secondary';
                 $label = ($arsip->status_arsip == 'HABIS_RETENSI') ? 'HABIS RETENSI' : $arsip->status_arsip;
+                $label = ($label == 'DISETUJUI_MUSNAH') ? 'DISETUJUI MUSNAH' : $label;
             @endphp
             <span class="badge bg-{{ $color }}">{{ $label }}</span>
         </td>
@@ -305,6 +321,7 @@
                 <a href="{{ route('arsip.show', $arsip->id) }}" class="btn btn-info" title="Detail">
                     <i class="bi bi-eye"></i>
                 </a>
+                @if(!$isApprovedForDestruction)
                 <a href="{{ route('arsip.edit', $arsip->id) }}" class="btn btn-warning" title="Edit">
                     <i class="bi bi-pencil"></i>
                 </a>
@@ -315,6 +332,11 @@
                         <i class="bi bi-trash"></i>
                     </button>
                 </form>
+                @else
+                <span class="text-muted small" style="font-size: 0.7rem;">
+                    <i class="bi bi-lock-fill"></i> Tidak bisa diedit
+                </span>
+                @endif
             </div>
         </td>
     </tr>
@@ -334,12 +356,6 @@
         </div>
         
         <!-- Pagination -->
-        <!-- <div class="d-flex justify-content-between align-items-center mt-3">
-            <div class="text-muted">
-                Menampilkan {{ $arsips->firstItem() }} - {{ $arsips->lastItem() }} dari {{ $arsips->total() }} arsip
-            </div>
-            {{ $arsips->withQueryString()->links() }}
-        </div> -->
         <div class="d-flex justify-content-between align-items-center mt-3">
             <div class="text-muted">
                 Menampilkan {{ $arsips->firstItem() }} - {{ $arsips->lastItem() }} dari {{ $arsips->total() }} arsip
@@ -834,12 +850,6 @@
     }
     
     /* Body modal */
-    /* .modal-body {
-        padding: 1.5rem;
-        overflow-y: auto;
-        flex: 1;
-    } */
-
     .modal-body {
     padding: 1.5rem;
     overflow-y: auto;
@@ -1097,6 +1107,16 @@
 }
 .editable:hover, .editable-select:hover {
     background-color: #fff3cd !important;
+}
+
+/* Style untuk arsip yang tidak bisa diedit */
+td:not(.editable):not(.editable-select) {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+.text-muted i.bi-lock-fill {
+    font-size: 0.8rem;
 }
 
 </style>
@@ -1387,9 +1407,6 @@ checkAll.addEventListener('change', function () {
         });
 
         // Tambahkan di bagian script yang sudah ada
-
-// Update Status Bulk
-// HAPUS semua kode updateStatusBtn yang lama dan GANTI dengan ini:
 
 // Update Status Bulk - SATU event listener SAJA
 const updateStatusBtn = document.getElementById('updateStatusBtn');
