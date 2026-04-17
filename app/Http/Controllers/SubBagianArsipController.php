@@ -80,29 +80,37 @@ DB::table('arsips')
     ]);
 
 // DETEKSI DUPLIKAT (judul + tahun + sub bagian)
-$duplicateGroups = DB::table('arsips')
-    ->select(
-        DB::raw('LOWER(TRIM(REPLACE(uraian_arsip, "  ", " "))) as uraian_arsip'),
-        'tahun_arsip'
-    )
-    ->where('status_arsip', '!=', 'NON_ARSIP')
-    ->where('sub_bagian_id', $user->sub_bagian_id)
-    ->groupBy(
-        DB::raw('LOWER(TRIM(REPLACE(uraian_arsip, "  ", " ")))'),
-        'tahun_arsip'
-    )
-    ->havingRaw('COUNT(*) > 1')
-    ->get();
-
+$duplicateGroups = DB::table(DB::raw("
+    (
+        SELECT 
+            LOWER(
+                REPLACE(
+                    REPLACE(
+                        REPLACE(
+                            REPLACE(
+                                REPLACE(uraian_arsip, CHAR(160), ''),
+                            ' ', ''),
+                        '\n', ''),
+                    '\r', ''),
+                '\t', '')
+            ) as cleaned_uraian,
+            tahun_arsip,
+            COUNT(*) as total
+        FROM arsips
+        WHERE sub_bagian_id = {$user->sub_bagian_id}
+        GROUP BY cleaned_uraian, tahun_arsip
+        HAVING total > 1
+    ) as dup
+"))->get();
 // UPDATE FLAG
 foreach ($duplicateGroups as $group) {
     DB::table('arsips')
         ->where('sub_bagian_id', $user->sub_bagian_id)
         ->where('tahun_arsip', $group->tahun_arsip)
         ->whereRaw(
-            'LOWER(TRIM(REPLACE(uraian_arsip, "  ", " "))) = ?',
-            [$group->uraian_arsip]
-        )
+    'LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(uraian_arsip, CHAR(160), ""), " ", ""), "\n", ""), "\r", ""), "\t", "")) = ?',
+    [$group->cleaned_uraian]
+)
         ->update([
             'is_duplicate' => 1,
             'duplicate_reason' => 'Duplikat otomatis'
