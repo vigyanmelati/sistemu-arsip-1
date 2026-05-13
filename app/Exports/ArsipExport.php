@@ -244,7 +244,6 @@ class ArsipExport implements
                     }
                 }
 
-                // ===== 4. Tulis baris total =====
                 $totalRow = $lastRow + 2;
                 $startCell = "A{$totalRow}";
                 $endCell = "{$lastColumn}{$totalRow}";
@@ -259,13 +258,11 @@ class ArsipExport implements
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT]
                 ]);
 
-                // ===== 5. Atur lebar kolom otomatis (auto size) =====
                 foreach (range(1, $columnCount) as $i) {
                     $col = Coordinate::stringFromColumnIndex($i);
                     $sheet->getColumnDimension($col)->setAutoSize(true);
                 }
 
-                // ===== 6. Orientasi landscape dan fit to width =====
                 $sheet->getPageSetup()
                     ->setOrientation(PageSetup::ORIENTATION_LANDSCAPE)
                     ->setFitToWidth(1);
