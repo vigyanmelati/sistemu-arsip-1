@@ -72,6 +72,27 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         @endif
+        @if(session('warning'))
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    {{ session('warning') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+@endif
+
+@if(session('import_errors'))
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <strong>❌ Data gagal diimport:</strong>
+    <ul class="mb-0 mt-2">
+        @foreach(session('import_errors') as $fail)
+            <li>
+                <strong>Baris {{ $fail->row() }}</strong> :
+                {{ implode(', ', $fail->errors()) }}
+            </li>
+        @endforeach
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+@endif
           @if(request('show_duplicates'))
 <div class="alert alert-info mb-3 d-flex align-items-center">
     <i class="bi bi-info-circle-fill me-2"></i>
@@ -140,6 +161,27 @@
                                 @endif
                             </a>
                         </th>
+                        <th style="min-width: 100px;" class="sortable-header">
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'nomor_rak', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
+                                <span style="text-align: center">Nama/No Rak</span>
+                                @if(request('sort') == 'nomor_rak')
+                                    <i class="bi bi-caret-{{ request('direction') == 'asc' ? 'up' : 'down' }}-fill text-dark"></i>
+                                @else
+                                    <i class="bi bi-caret-up-down text-secondary"></i>
+                                @endif
+                            </a>
+                        </th>
+                        <th style="min-width: 100px;" class="sortable-header">
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'nomor_box', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
+                                <span style="text-align: center">Nama/No Box</span>
+                                @if(request('sort') == 'nomor_box')
+                                    <i class="bi bi-caret-{{ request('direction') == 'asc' ? 'up' : 'down' }}-fill text-dark"></i>
+                                @else
+                                    <i class="bi bi-caret-up-down text-secondary"></i>
+                                @endif
+                            </a>
+                        </th>
+                         
                         <th style="min-width: 120px;" class="sortable-header">
                             <a href="{{ request()->fullUrlWithQuery(['sort' => 'status_pindah', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
                                 <span>Status Pindah</span>
@@ -165,6 +207,8 @@
                         <td>{{ Str::limit($arsip->uraian_arsip, 200) }}</td>
                         <td>{{ $arsip->tahun_arsip }}</td>
                         <td>{{ $arsip->jumlah_berkas }} {{ $arsip->satuan_arsip }}</td>
+                        <td>{{ $arsip->nomor_rak ?? '-' }}</td>
+                        <td>{{ $arsip->nomor_box ?? '-' }}</td>
                         <td>
                             @if($arsip->status_pindah)
                                 @php
@@ -267,25 +311,14 @@
             <form method="POST" action="{{ route('subbagian.arsip.ajukanPindahMultiple') }}" enctype="multipart/form-data" id="ajukanPindahForm">
                 @csrf
                 <div class="modal-body p-4">
-                    <!-- Nomor Berita Acara -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Nomor Berita Acara <span class="text-danger">*</span></label>
-                        <input type="text" name="nomor_bap" class="form-control" placeholder="Contoh: BAP/001/III/2025" required>
-                        <small class="text-muted">Isi nomor berita acara sesuai dokumen fisik.</small>
-                    </div>
-
-                    <!-- Tanggal Berita Acara -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Tanggal Berita Acara <span class="text-danger">*</span></label>
-                        <input type="date" name="tanggal_bap" class="form-control" value="{{ date('Y-m-d') }}" required>
-                    </div>
-
-                    <!-- File Berita Acara -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">File Berita Acara (PDF/JPG/PNG) <span class="text-danger">*</span></label>
-                        <input type="file" name="file_berita_acara" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                        <small class="text-muted">Maksimal 2MB</small>
-                    </div>
+                   <select name="bap_id" class="form-select" required>
+    <option value="">-- Pilih Berita Acara --</option>
+    @foreach($bapOptions as $bap)
+        <option value="{{ $bap->id }}">
+            {{ $bap->nomor_bap }} - {{ $bap->tanggal_bap }}
+        </option>
+    @endforeach
+</select>
 
                     <!-- Daftar arsip yang dipilih -->
                     <div class="mb-3">

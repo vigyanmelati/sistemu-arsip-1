@@ -198,6 +198,9 @@
                             <option value="">-- Pilih --</option>
                             <option value="musnah" {{ $detail->keputusan=='musnah'?'selected':'' }}>Musnah</option>
                             <option value="inaktif" {{ $detail->keputusan=='inaktif'?'selected':'' }}>Inaktif</option>
+                            <option value="permanen" {{ $detail->keputusan=='permanen'?'selected':'' }}>
+                                Permanen
+                            </option>
                         </select>
                     </td>
 
@@ -234,25 +237,43 @@
     </div>
 
     {{-- ================= FINALISASI ================= --}}
-    <form action="{{ route('pemusnahan.anri.setujui', $pemusnahan->id) }}" method="POST">
+<form action="{{ route('pemusnahan.anri.setujui', $pemusnahan->id) }}" 
+      method="POST" 
+      enctype="multipart/form-data">
 
     @csrf
-    <div class="text-end">
-        <button class="btn btn-danger"
-               onclick="return confirm(
-                'Tetapkan hasil sidang dan setujui pemusnahan arsip?\n\n' +
-                'Pastikan:\n' +
-                '- Revisi ANRI sudah dilakukan (jika ada)\n' +
-                '- Surat Persetujuan Pemusnahan dari ANRI sudah diterima'
-            )"
-            >
-            ✔ Tetapkan & Setujui Pemusnahan (ANRI)
-        </button>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <div class="mb-3">
+                <label class="form-label">
+                    Upload Surat Persetujuan ANRI <span class="text-danger">*</span>
+                </label>
+                <input type="file" 
+                       name="file_persetujuan_anri" 
+                       class="form-control"
+                       accept="application/pdf"
+                       required>
+                <small class="text-muted">Format PDF, maksimal 2MB</small>
+            </div>
+
+            <div class="text-end">
+                <button type="submit"
+                    class="btn btn-danger"
+                    onclick="return confirm(
+                        'Tetapkan hasil sidang dan setujui pemusnahan arsip?\n\n' +
+                        'Pastikan:\n' +
+                        '- Revisi ANRI sudah dilakukan\n' +
+                        '- Surat persetujuan sudah diupload'
+                    )">
+                    ✔ Tetapkan & Setujui Pemusnahan (ANRI)
+                </button>
+            </div>
+
+        </div>
     </div>
-    </form>
-
-
-</div>
+</form>
 @endsection
 @push('scripts')
 <script>

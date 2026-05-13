@@ -14,6 +14,13 @@ class Pemusnahan extends Model
         'tanggal_usulan',
         'status',
         'keterangan',
+         'file_persetujuan_anri', // ✅ WAJIB ADA
+    'tanggal_persetujuan_anri',
+    'file_persetujuan_kpu',
+    'file_berita_acara',
+    'file_sk_pemusnahan',
+    'tanggal_pemusnahan',
+
     ];
 
     protected $casts = [

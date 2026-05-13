@@ -61,6 +61,20 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         @endif
+        @if(session('import_errors'))
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <strong>❌ Data gagal diimport:</strong>
+    <ul class="mb-0 mt-2">
+        @foreach(session('import_errors') as $fail)
+            <li>
+                <strong>Baris {{ $fail->row() }}</strong> :
+                {{ implode(', ', $fail->errors()) }}
+            </li>
+        @endforeach
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+@endif
         @if(request('show_duplicates'))
 <div class="alert alert-info mb-3 d-flex align-items-center">
     <i class="bi bi-info-circle-fill me-2"></i>
@@ -151,6 +165,38 @@
                                 @endif
                             </a>
                         </th>
+                        <th style="min-width: 100px;" class="sortable-header">
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'aktif_tahun', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
+                                <span>Aktif Tahun</span>
+                                @if(request('sort') == 'aktif_tahun')
+                                    <i class="bi bi-caret-{{ request('direction') == 'asc' ? 'up' : 'down' }}-fill text-dark"></i>
+                                @else
+                                    <i class="bi bi-caret-up-down text-secondary"></i>
+                                @endif
+                            </a>
+                        </th>
+
+                        <th style="min-width: 120px;" class="sortable-header">
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'inaktif_tahun', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
+                                <span>Inaktif Tahun</span>
+                                @if(request('sort') == 'inaktif_tahun')
+                                    <i class="bi bi-caret-{{ request('direction') == 'asc' ? 'up' : 'down' }}-fill text-dark"></i>
+                                @else
+                                    <i class="bi bi-caret-up-down text-secondary"></i>
+                                @endif
+                            </a>
+                        </th>
+
+                        <th style="min-width: 150px;" class="sortable-header">
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'keterangan_jra', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
+                                <span>Keterangan JRA</span>
+                                @if(request('sort') == 'keterangan_jra')
+                                    <i class="bi bi-caret-{{ request('direction') == 'asc' ? 'up' : 'down' }}-fill text-dark"></i>
+                                @else
+                                    <i class="bi bi-caret-up-down text-secondary"></i>
+                                @endif
+                            </a>
+                        </th>
                         <th style="min-width: 120px;" class="sortable-header">
                             <a href="{{ request()->fullUrlWithQuery(['sort' => 'aktif_sampai', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
                                 <span>Aktif Sampai</span>
@@ -184,112 +230,132 @@
                         <th style="min-width: 150px;" class="text-center">Aksi</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @forelse($arsips as $arsip)
-                    <tr>
-                        <td>{{ $loop->iteration + ($arsips->currentPage() - 1) * $arsips->perPage() }}</td>
-                        <td><strong>{{ $arsip->kodeKlasifikasi->kode ?? 'N/A' }}</strong></td>
-                        <td>{{ Str::limit($arsip->uraian_arsip, 200) }}</td>
-                        <td>{{ $arsip->tahun_arsip }}</td>
-                        <td>{{ $arsip->nomor_rak }}</td>
-                        <td>{{ $arsip->nomor_box }}</td>
-                       <td>
-                            {{ $arsip->lokasi_arsip 
-                                ? ucwords(str_replace('_', ' ', $arsip->lokasi_arsip)) 
-                                : '-' 
-                            }}
-                        </td>
-                        {{-- <td>{{ $arsip->no_sampul ?? '-' }}</td> --}}
-                        <td>
-                            @if($arsip->aktif_sampai)
-                                {{ \Carbon\Carbon::parse($arsip->aktif_sampai)->format('d/m/Y') }}
-                            @else
-                                -
-                            @endif
-                        </td>
-                        <td>
-                            @if($arsip->inaktif_sampai)
-                                {{ \Carbon\Carbon::parse($arsip->inaktif_sampai)->format('d/m/Y') }}
-                            @else
-                                -
-                            @endif
-                        </td>
-                        <td>
-                            @php
-                                $statusColors = [
-                                    'AKTIF' => 'success',
-                                    'INAKTIF' => 'warning',
-                                    'HABIS_RETENSI' => 'danger',
-                                    'PERMANEN' => 'info',
-                                    'NON_ARSIP' => 'secondary'
-                                ];
-                                $color = $statusColors[$arsip->status_arsip] ?? 'secondary';
-                            @endphp
-
-                            <div class="d-flex flex-wrap gap-1">
-
-                                <!-- Status utama -->
-                                <span class="badge bg-{{ $color }}">
-                                    @if($arsip->status_arsip == 'HABIS_RETENSI')
-                                        HABIS RETENSI
-                                    @elseif($arsip->status_arsip == 'NON_ARSIP')
-                                        NON ARSIP
-                                    @else
-                                        {{ $arsip->status_arsip }}
-                                    @endif
-                                </span>
-
-                                <!-- Label DUPLIKAT -->
-                                @if($arsip->is_duplicate == 1)
-                                    <span class="badge bg-danger">DUPLIKAT</span>
-                                @endif
-
-                            </div>
-                        </td>
-                        <td class="text-center">
-                            <div class="btn-group btn-group-sm" style="gap: 6px;">
-                                <a href="{{ route('arsip.show', $arsip->id) }}" class="btn btn-info" title="Detail" style="padding: 0.25rem 0.5rem;">
-                                    <i class="bi bi-eye"></i>
-                                </a> 
-                                <a href="{{ route('arsip.edit', $arsip->id) }}" class="btn btn-warning" title="Edit" style="padding: 0.25rem 0.5rem;">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                               <form action="{{ route('arsip.destroy', $arsip->id) }}"
-                                method="POST"
-                                data-confirm="delete"
-                                class="d-inline">
-
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger" title="Hapus" style="padding: 0.25rem 0.5rem;">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="11" class="text-center py-4">
-                            <i class="bi bi-folder-x fa-2x text-muted mb-2"></i>
-                            <p class="text-muted">Belum ada data arsip</p>
-                            <a href="{{ route('arsip.create') }}" class="btn btn-primary">
-                                <i class="bi bi-plus-circle"></i> Tambah Arsip Pertama
-                            </a>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
+              <tbody>
+    @forelse($arsips as $arsip)
+    @php
+        // Cek apakah arsip sudah disetujui untuk dimusnahkan
+        $isApprovedForDestruction = in_array($arsip->status_arsip, ['DISETUJUI_MUSNAH','MUSNAH']);
+    @endphp
+    <tr data-id="{{ $arsip->id }}"
+        data-tanggal-arsip="{{ $arsip->tanggal_arsip }}"
+        data-aktif-tahun="{{ $arsip->aktif_tahun }}"
+        data-inaktif-tahun="{{ $arsip->inaktif_tahun }}"
+        data-keterangan-jra="{{ $arsip->keterangan_jra }}">
+        
+        <!-- Kolom biasa -->
+        <td>{{ $loop->iteration + ($arsips->currentPage() - 1) * $arsips->perPage() }}</td>
+        <td><strong>{{ $arsip->kodeKlasifikasi->kode ?? 'N/A' }}</strong></td>
+        
+        <!-- Editable: Judul Arsip - disabled jika sudah disetujui musnah -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="uraian_arsip">
+            {{ Str::limit($arsip->uraian_arsip, 200) }}
+        </td>
+        
+        <td>{{ $arsip->tahun_arsip }}</td>
+        
+        <!-- Editable: Rak - disabled jika sudah disetujui musnah -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="nomor_rak">
+            {{ $arsip->nomor_rak }}
+        </td>
+        
+        <!-- Editable: Box - disabled jika sudah disetujui musnah -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="nomor_box">
+            {{ $arsip->nomor_box }}
+        </td>
+        
+        <!-- Editable: Lokasi Arsip (dropdown) - disabled jika sudah disetujui musnah -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable-select' : '' }}" data-field="lokasi_arsip" data-value="{{ $arsip->lokasi_arsip }}">
+            @php
+                $lokasiLabel = [
+                    'RECORD_CENTER_PERMANEN' => 'Record Center (Arsip Permanen)',
+                    'RECORD_CENTER_INAKTIF' => 'Record Center (Arsip Inaktif)',
+                ][$arsip->lokasi_arsip] ?? '-';
+            @endphp
+            {{ $lokasiLabel }}
+        </td>
+        
+        <!-- Editable: Aktif Tahun - disabled jika sudah disetujui musnah -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="aktif_tahun">
+            {{ $arsip->aktif_tahun ?? '-' }}
+        </td>
+        
+        <!-- Editable: Inaktif Tahun - disabled jika sudah disetujui musnah -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="inaktif_tahun">
+            {{ $arsip->inaktif_tahun ?? '-' }}
+        </td>
+        
+        <!-- Editable: Keterangan JRA (dropdown) - disabled jika sudah disetujui musnah -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable-select' : '' }}" data-field="keterangan_jra" data-value="{{ $arsip->keterangan_jra }}">
+            @php
+                $jraLabel = [
+                    'PERMANEN' => 'Permanen',
+                    'MUSNAH' => 'Musnah',
+                ][$arsip->keterangan_jra] ?? '-';
+            @endphp
+            {{ $jraLabel }}
+        </td>
+        
+        <!-- Otomatis diupdate -->
+        <td class="aktif-sampai-cell">{{ $arsip->aktif_sampai ? \Carbon\Carbon::parse($arsip->aktif_sampai)->format('d/m/Y') : '-' }}</td>
+        <td class="inaktif-sampai-cell">{{ $arsip->inaktif_sampai ? \Carbon\Carbon::parse($arsip->inaktif_sampai)->format('d/m/Y') : '-' }}</td>
+        
+        <!-- Status + badge -->
+        <td class="status-cell">
+            @php
+                $statusColors = [
+                    'AKTIF' => 'success',
+                    'INAKTIF' => 'warning',
+                    'HABIS_RETENSI' => 'danger',
+                    'PERMANEN' => 'info',
+                    'DISETUJUI_MUSNAH' => 'danger'
+                ];
+                $color = $statusColors[$arsip->status_arsip] ?? 'secondary';
+                $label = ($arsip->status_arsip == 'HABIS_RETENSI') ? 'HABIS RETENSI' : $arsip->status_arsip;
+                $label = ($label == 'DISETUJUI_MUSNAH') ? 'DISETUJUI MUSNAH' : $label;
+            @endphp
+            <span class="badge bg-{{ $color }}">{{ $label }}</span>
+        </td>
+        
+        <td class="text-center">
+            <div class="btn-group btn-group-sm" style="gap: 6px;">
+                <a href="{{ route('arsip.show', $arsip->id) }}" class="btn btn-info" title="Detail">
+                    <i class="bi bi-eye"></i>
+                </a>
+                @if(!$isApprovedForDestruction)
+                <a href="{{ route('arsip.edit', $arsip->id) }}" class="btn btn-warning" title="Edit">
+                    <i class="bi bi-pencil"></i>
+                </a>
+                <form action="{{ route('arsip.destroy', $arsip->id) }}" method="POST" data-confirm="delete" class="d-inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger" title="Hapus">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+                @else
+                <span class="text-muted small" style="font-size: 0.7rem;">
+                    <i class="bi bi-lock-fill"></i> Tidak bisa diedit
+                </span>
+                @endif
+            </div>
+        </td>
+    </tr>
+    @empty
+        <tr>
+            <td colspan="14" class="text-center py-4">
+                <i class="bi bi-folder-x fa-2x text-muted mb-2"></i>
+                <p class="text-muted">Belum ada data arsip</p>
+                <a href="{{ route('arsip.create') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Tambah Arsip Pertama
+                </a>
+            </td>
+        </tr>
+    @endforelse
+</tbody>
             </table>
         </div>
         
         <!-- Pagination -->
-        <!-- <div class="d-flex justify-content-between align-items-center mt-3">
-            <div class="text-muted">
-                Menampilkan {{ $arsips->firstItem() }} - {{ $arsips->lastItem() }} dari {{ $arsips->total() }} arsip
-            </div>
-            {{ $arsips->withQueryString()->links() }}
-        </div> -->
         <div class="d-flex justify-content-between align-items-center mt-3">
             <div class="text-muted">
                 Menampilkan {{ $arsips->firstItem() }} - {{ $arsips->lastItem() }} dari {{ $arsips->total() }} arsip
@@ -784,12 +850,6 @@
     }
     
     /* Body modal */
-    /* .modal-body {
-        padding: 1.5rem;
-        overflow-y: auto;
-        flex: 1;
-    } */
-
     .modal-body {
     padding: 1.5rem;
     overflow-y: auto;
@@ -1041,6 +1101,23 @@
     .action-buttons .btn i {
         font-size: 1.1em;
     }
+    .editable, .editable-select {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.editable:hover, .editable-select:hover {
+    background-color: #fff3cd !important;
+}
+
+/* Style untuk arsip yang tidak bisa diedit */
+td:not(.editable):not(.editable-select) {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+.text-muted i.bi-lock-fill {
+    font-size: 0.8rem;
+}
 
 </style>
 
@@ -1331,9 +1408,6 @@ checkAll.addEventListener('change', function () {
 
         // Tambahkan di bagian script yang sudah ada
 
-// Update Status Bulk
-// HAPUS semua kode updateStatusBtn yang lama dan GANTI dengan ini:
-
 // Update Status Bulk - SATU event listener SAJA
 const updateStatusBtn = document.getElementById('updateStatusBtn');
 if (updateStatusBtn) {
@@ -1439,5 +1513,168 @@ function showNotification(type, message) {
             });
         }
     });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ========== INLINE EDITING UNTUK TEXT BIASA ==========
+    document.querySelectorAll('.editable').forEach(cell => {
+        cell.addEventListener('dblclick', function(e) {
+            const currentText = this.innerText.trim();
+            const field = this.dataset.field;
+            const rowId = this.closest('tr').dataset.id;
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentText === '-' ? '' : currentText;
+            input.classList.add('form-control', 'form-control-sm');
+            input.style.width = '100%';
+            
+            this.innerHTML = '';
+            this.appendChild(input);
+            input.focus();
+            
+            const save = () => {
+                const newValue = input.value.trim();
+                this.innerText = newValue === '' ? '-' : newValue;
+                if (newValue !== currentText) {
+                    sendUpdate(rowId, field, newValue, this);
+                }
+            };
+            
+            input.addEventListener('blur', save);
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') input.blur();
+            });
+        });
+    });
+    
+    // ========== INLINE EDITING UNTUK DROPDOWN (LOKASI & JRA) ==========
+    document.querySelectorAll('.editable-select').forEach(cell => {
+        cell.addEventListener('dblclick', function(e) {
+            const currentValue = this.dataset.value || '';
+            const field = this.dataset.field;
+            const rowId = this.closest('tr').dataset.id;
+            const currentLabel = this.innerText.trim();
+            
+            // Tentukan pilihan dropdown berdasarkan field
+            let options = [];
+            if (field === 'lokasi_arsip') {
+                options = [
+                    { value: '', label: 'Pilih Lokasi' },
+                    { value: 'RECORD_CENTER_PERMANEN', label: 'Record Center (Arsip Permanen)' },
+                    { value: 'RECORD_CENTER_INAKTIF', label: 'Record Center (Arsip Inaktif)' }
+                ];
+            } else if (field === 'keterangan_jra') {
+                options = [
+                    { value: '', label: 'Pilih Keterangan' },
+                    { value: 'PERMANEN', label: 'Permanen' },
+                    { value: 'MUSNAH', label: 'Musnah' }
+                ];
+            } else {
+                return; // Jika bukan kedua field, abaikan
+            }
+            
+            // Buat elemen select
+            const select = document.createElement('select');
+            select.classList.add('form-select', 'form-select-sm');
+            options.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = opt.label;
+                if (opt.value === currentValue) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+            
+            // Kosongkan cell dan tampilkan select
+            this.innerHTML = '';
+            this.appendChild(select);
+            select.focus();
+            
+            const save = () => {
+                const newValue = select.value;
+                const selectedOption = select.options[select.selectedIndex];
+                const newLabel = selectedOption ? selectedOption.textContent : '-';
+                
+                // Update tampilan cell dengan label yang dipilih
+                this.innerText = newLabel;
+                this.dataset.value = newValue;
+                
+                // Jika nilai berubah, kirim ke server
+                if (newValue !== currentValue) {
+                    sendUpdate(rowId, field, newValue, this);
+                } else if (newValue === '' && currentValue !== '') {
+                    // Jika memilih opsi kosong (Pilih Lokasi/Keterangan) maka kirim nilai kosong
+                    sendUpdate(rowId, field, '', this);
+                }
+            };
+            
+            select.addEventListener('blur', save);
+            select.addEventListener('change', () => select.blur());
+        });
+    });
+    
+    // ========== FUNGSI AJAX UNTUK UPDATE ==========
+    function sendUpdate(id, field, value, cellElement) {
+        fetch(`/arsip/${id}/inline-update`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ field: field, value: value })
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || `HTTP ${response.status}`);
+            }
+            return data;
+        })
+        .then(data => {
+            if (data.success) {
+                const row = cellElement.closest('tr');
+                if (data.new_values.aktif_sampai) {
+                    row.querySelector('.aktif-sampai-cell').innerText = data.new_values.aktif_sampai;
+                }
+                if (data.new_values.inaktif_sampai) {
+                    row.querySelector('.inaktif-sampai-cell').innerText = data.new_values.inaktif_sampai;
+                }
+                if (data.new_values.status_arsip) {
+                    row.querySelector('.status-cell').innerHTML = data.new_values.status_arsip;
+                }
+                showNotification('✅ Data berhasil diupdate', 'success');
+            } else {
+                showNotification('❌ Gagal: ' + (data.error || 'Unknown error'), 'danger');
+                // Kembalikan tampilan ke nilai semula
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            showNotification('❌ ' + error.message, 'danger');
+            location.reload();
+        });
+    }
+    
+    // Notifikasi sementara
+    function showNotification(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+        alertDiv.style.zIndex = '9999';
+        alertDiv.style.minWidth = '250px';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.innerHTML = `
+            <div class="d-flex align-items-center gap-2">
+                <span>${message}</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        document.body.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 2000);
+    }
+});
 </script>
 @endsection

@@ -13,10 +13,16 @@ use App\Http\Controllers\SubBagianArsipController;
 use App\Http\Controllers\SubBagianRiwayatPemindahanController;
 use App\Http\Controllers\AdminArsipMasukController;
 use App\Http\Controllers\LokasiController;
+use App\Http\Controllers\LokasiSubBagianController;
+use App\Http\Controllers\BeritaAcaraPindahController;
+
 
 require __DIR__.'/auth.php';
 
 Route::middleware(['auth'])->group(function () {
+    Route::patch('/arsip/{id}/inline-update', [ArsipController::class, 'updateInline'])
+    ->name('arsip.inline-update');
+    Route::resource('berita-acara', BeritaAcaraPindahController::class);
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -40,9 +46,15 @@ Route::middleware(['auth'])->group(function () {
         /* =====================================
         |  P E M U S N A H A N  A R S I P
         ===================================== */
+
         Route::prefix('pemusnahan')
         ->name('pemusnahan.')
         ->group(function () {
+            Route::get('/{pemusnahan}/kpu', [PemusnahanController::class, 'kpu'])
+    ->name('kpu');
+
+Route::post('/{pemusnahan}/kpu', [PemusnahanController::class, 'simpanKpu'])
+    ->name('kpu.simpan');
 
             // ===============================
             // USULAN PEMUSNAHAN
@@ -206,6 +218,14 @@ Route::middleware(['auth', 'subbagian'])->prefix('subbagian')->name('subbagian.'
             [SubBagianRiwayatPemindahanController::class, 'ajukanKembali'])
             ->name('ajukan-kembali');
         });
+
+        Route::prefix('manajemen-lokasi')->name('manajemen-lokasi.')->group(function () {
+        Route::get('/', [LokasiSubBagianController::class, 'index'])->name('index');                  // card ruangan
+        Route::get('/ruangan/{ruangan}', [LokasiSubBagianController::class, 'listRak'])->name('rak'); // card rak
+        Route::get('/ruangan/{ruangan}/rak/{rak}', [LokasiSubBagianController::class, 'listBox'])->name('box'); // card box
+        Route::get('/ruangan/{ruangan}/rak/{rak}/box/{box}', [LokasiSubBagianController::class, 'listArsip'])->name('arsip'); // list arsip
+    });
+
 
     
 });

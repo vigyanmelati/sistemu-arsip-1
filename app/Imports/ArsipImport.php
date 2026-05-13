@@ -13,9 +13,54 @@ use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Concerns\SkipsOnFailure;
+use Maatwebsite\Excel\Concerns\SkipsFailures;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 
-class ArsipImport implements ToModel, WithHeadingRow
+class ArsipImport implements 
+    ToModel, 
+    WithHeadingRow, 
+    WithValidation, 
+    SkipsOnFailure, 
+    SkipsEmptyRows
 {
+    use SkipsFailures;
+
+    public function rules(): array
+{
+    return [
+        'kode_klasifikasi' => [
+            'required',
+            function ($attribute, $value, $fail) {
+                $kode = \App\Models\KodeKlasifikasi::whereRaw('REPLACE(kode, " ", "") = ?', [str_replace(' ', '', strtoupper($value))])->first();
+
+                if (!$kode) {
+                    $fail('Kode klasifikasi tidak ditemukan');
+                }
+            }
+        ],
+        'uraian_arsip' => 'required',
+        'tahun_arsip'  => 'required|numeric',
+    ];
+}
+
+public function isEmptyWhen(array $row): bool
+{
+    return
+        empty(trim($row['kode_klasifikasi'] ?? '')) &&
+        empty(trim($row['jenis_arsip'] ?? '')) &&
+        empty(trim($row['kurun_waktu'] ?? ''));
+}
+
+
+public function customValidationMessages()
+{
+    return [
+        'kode_klasifikasi.required' => 'Kode klasifikasi kosong',
+        'uraian_arsip.required'     => 'Jenis arsip kosong',
+        'tahun_arsip.required'      => 'Tahun arsip kosong',
+    ];
+}
 
     public function headingRow(): int
     {
@@ -24,6 +69,13 @@ class ArsipImport implements ToModel, WithHeadingRow
 
     public function model(array $row)
     {
+        if (
+    empty(trim($row['kode_klasifikasi'] ?? '')) &&
+    empty(trim($row['uraian_arsip'] ?? '')) &&
+    empty(trim($row['tahun_arsip'] ?? ''))
+) {
+    return null;
+}
         try {
             Log::info('ROW:', $row);
 
@@ -35,7 +87,7 @@ class ArsipImport implements ToModel, WithHeadingRow
 
             // if (!$kodeInput) return null;
             if (!$kodeInput) {
-                throw new \Exception('Kode klasifikasi kosong di Excel');
+                return null;
             }
 
             $kode = KodeKlasifikasi::whereRaw('REPLACE(kode, " ", "") = ?', [$kodeInput])->first();
@@ -45,7 +97,7 @@ class ArsipImport implements ToModel, WithHeadingRow
             //     return null;
             // }
             if (!$kode) {
-                throw new \Exception('Kode klasifikasi tidak ditemukan: ' . $kodeInput);
+               return null;
             }
 
             // =======================
@@ -59,14 +111,14 @@ class ArsipImport implements ToModel, WithHeadingRow
                 $subBagian = SubBagian::where('nama_sub_bagian', $namaSubBagian)->first();
             }
 
-            // if (!$subBagian) {
-            //     Log::warning('Sub bagian tidak ditemukan: ' . $namaSubBagian);
-            //     return null;
-            // }
-
             if (!$subBagian) {
-                throw new \Exception('Sub bagian tidak ditemukan untuk user');
+                Log::warning('Sub bagian tidak ditemukan: ' . $namaSubBagian);
+                return null;
             }
+
+            // if (!$subBagian) {
+            //     throw new \Exception('Sub bagian tidak ditemukan untuk user');
+            // }
             // =======================
             // MAPPING EXCEL
             // =======================
@@ -74,7 +126,7 @@ class ArsipImport implements ToModel, WithHeadingRow
             if (empty($uraianArsip)) {
                 Log::warning('Uraian arsip kosong');
                 return null;
-                   throw new \Exception('Uraian Arsip Kosong');
+                //    throw new \Exception('Uraian Arsip Kosong');
             }
 
             $tahunArsip = $row['tahun_arsip'] ?? date('Y');
@@ -231,8 +283,8 @@ if ($isAfterCondition) {
         } catch (\Exception $e) {
             Log::error('Import Error: ' . $e->getMessage());
             Log::error($e->getTraceAsString());
-            // return null;
-               throw new \Exception('Import Error: ' . $e->getMessage());
+            return null;
+            //    throw new \Exception('Import Error: ' . $e->getMessage());
         }
     }
 

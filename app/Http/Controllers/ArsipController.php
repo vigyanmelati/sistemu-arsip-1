@@ -905,32 +905,34 @@ private function extractNumberFromText($text)
     //         return back()->with('error', 'Gagal import: ' . $e->getMessage());
     //     }
     // }
-
-    public function import(Request $request)
+public function import(Request $request)
 {
     $request->validate([
         'file_excel' => 'required|file|mimes:xlsx,xls'
     ]);
 
     try {
-        $import = new ArsipImport;
+        $import = new ArsipImport();
+
         Excel::import($import, $request->file('file_excel'));
 
-        // Jika import class bisa mengembalikan jumlah baris sukses, lakukan pengecekan.
-        // Cara sederhana: hitung manual setelah import
-        $rows = Excel::toArray($import, $request->file('file_excel'));
-        $totalRows = count($rows[0]) - 1; // kurangi header
-        $insertedCount = Arsip::where('tanggal_masuk', now()->format('Y-m-d'))
-                            ->count();
-        
-        if ($insertedCount == 0 && $totalRows > 0) {
-            return back()->with('error', 'Import gagal: Tidak ada data yang tersimpan. Periksa format Excel dan log.');
+        // Ambil data error (baris yang gagal)
+        $failures = $import->failures();
+
+        // Jika ada error
+        if ($failures->isNotEmpty()) {
+            return back()->with([
+                'warning' => '⚠️ Import selesai, tapi ada data yang gagal.',
+                'import_errors' => $failures
+            ]);
         }
 
+        // Jika semua sukses
         return redirect()->route('arsip.index')
-            ->with('success', "Berhasil import {$insertedCount} dari {$totalRows} baris data.");
+            ->with('success', '✅ Semua data berhasil diimport.');
+
     } catch (\Exception $e) {
-        return back()->with('error', 'Gagal import: ' . $e->getMessage());
+        return back()->with('error', '❌ Import gagal: ' . $e->getMessage());
     }
 }
     public function export(Request $request)
@@ -1044,6 +1046,226 @@ public function updateStatusBulk()
     }
 }
 
+
+public function updateInline(Request $request, $id)
+{
+    try {
+        $arsip = Arsip::findOrFail($id);
+
+        $field = $request->field;
+        $value = $request->value;
+
+        $allowedFields = [
+            'uraian_arsip', 'nomor_rak', 'nomor_box', 'lokasi_arsip',
+            'aktif_tahun', 'inaktif_tahun', 'keterangan_jra', 'tanggal_arsip'
+        ];
+
+        if (!in_array($field, $allowedFields)) {
+            return response()->json(['error' => 'Field tidak diizinkan'], 403);
+        }
+
+        // =========================
+        // VALIDASI KHUSUS
+        // =========================
+        if (in_array($field, ['aktif_tahun', 'inaktif_tahun'])) {
+
+            if ($value === '' || $value === null || $value === '-') {
+                $value = null;
+            } else {
+                if (!preg_match('/\d+/', $value)) {
+                    return response()->json([
+                        'error' => 'Format tahun harus mengandung angka'
+                    ], 422);
+                }
+            }
+        }
+
+        if ($field === 'keterangan_jra') {
+            $value = strtoupper(trim($value)); // normalisasi
+        }
+
+        // =========================
+        // UPDATE FIELD
+        // =========================
+        $arsip->$field = $value;
+
+        // =========================
+        // RECALCULATE RETENSI
+        // =========================
+        $retensiFields = ['aktif_tahun', 'inaktif_tahun', 'keterangan_jra', 'tanggal_arsip'];
+
+        if (in_array($field, $retensiFields)) {
+            $this->recalculateRetensi($arsip);
+        }
+
+        $arsip->save();
+
+        // =========================
+        // RETURN JSON AMAN
+        // =========================
+        return response()->json([
+            'success' => true,
+            'new_values' => [
+                'aktif_sampai' => !empty($arsip->aktif_sampai)
+                    ? Carbon::parse($arsip->aktif_sampai)->format('d/m/Y')
+                    : '-',
+
+                'inaktif_sampai' => !empty($arsip->inaktif_sampai)
+                    ? Carbon::parse($arsip->inaktif_sampai)->format('d/m/Y')
+                    : '-',
+
+                'status_arsip' => $this->getStatusBadge($arsip->status_arsip),
+
+                'aktif_tahun' => $arsip->aktif_tahun ?? '-',
+                'inaktif_tahun' => $arsip->inaktif_tahun ?? '-',
+            ]
+        ]);
+
+    } catch (\Throwable $e) {
+
+        Log::error('INLINE UPDATE ERROR', [
+            'id' => $id,
+            'field' => $request->field,
+            'value' => $request->value,
+            'error' => $e->getMessage(),
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+private function recalculateRetensi($arsip)
+{
+    try {
+
+        // =========================
+        // VALIDASI TANGGAL
+        // =========================
+        if (!$arsip->tanggal_arsip) {
+            $arsip->aktif_sampai = null;
+            $arsip->inaktif_sampai = null;
+            $arsip->status_arsip = 'AKTIF';
+            return;
+        }
+
+        $aktifVal = strtoupper(trim((string) $arsip->aktif_tahun));
+        $inaktifVal = strtoupper(trim((string) $arsip->inaktif_tahun));
+        $keterangan = strtoupper(trim((string) $arsip->keterangan_jra));
+
+        // =========================
+        // JIKA KOSONG
+        // =========================
+        if (empty($aktifVal) || empty($inaktifVal)) {
+            $arsip->aktif_sampai = null;
+            $arsip->inaktif_sampai = null;
+            $arsip->status_arsip = 'AKTIF';
+            return;
+        }
+
+        // =========================
+        // AMBIL ANGKA
+        // =========================
+        $aktifTahun = $this->extractNumber($aktifVal);
+        $inaktifTahun = $this->extractNumber($inaktifVal);
+
+        if (!is_numeric($aktifTahun) || !is_numeric($inaktifTahun)) {
+            return; // jangan lanjut kalau format salah
+        }
+
+        // =========================
+        // HITUNG TANGGAL
+        // =========================
+        $tanggalDasar = $arsip->tanggal_arsip;
+
+        try {
+            $aktifSampai = Carbon::parse($tanggalDasar)
+                ->addYears((int)$aktifTahun)
+                ->toDateString();
+
+            $inaktifSampai = Carbon::parse($aktifSampai)
+                ->addYears((int)$inaktifTahun)
+                ->toDateString();
+
+        } catch (\Exception $e) {
+            Log::error('Tanggal error', [
+                'tanggal' => $tanggalDasar
+            ]);
+            return;
+        }
+
+        $arsip->aktif_sampai = $aktifSampai;
+        $arsip->inaktif_sampai = $inaktifSampai;
+
+        // =========================
+        // STATUS
+        // =========================
+        $now = Carbon::now();
+
+        try {
+            $aktifDate = Carbon::parse($aktifSampai);
+            $inaktifDate = Carbon::parse($inaktifSampai);
+        } catch (\Exception $e) {
+            return;
+        }
+
+        if ($keterangan === 'PERMANEN') {
+            $arsip->status_arsip = 'PERMANEN';
+
+        } elseif ($keterangan === 'MUSNAH') {
+
+            if ($now <= $aktifDate) {
+                $arsip->status_arsip = 'AKTIF';
+            } elseif ($now <= $inaktifDate) {
+                $arsip->status_arsip = 'INAKTIF';
+            } else {
+                $arsip->status_arsip = 'HABIS_RETENSI';
+            }
+
+        } else {
+
+            if ($now <= $aktifDate) {
+                $arsip->status_arsip = 'AKTIF';
+            } else {
+                $arsip->status_arsip = 'INAKTIF';
+            }
+        }
+
+    } catch (\Throwable $e) {
+
+        Log::error('RECALCULATE ERROR', [
+            'id' => $arsip->id,
+            'error' => $e->getMessage()
+        ]);
+    }
+}
+private function extractNumber($text)
+{
+    preg_match('/\d+/', $text, $matches);
+    return $matches[0] ?? null;
+}
+
+private function addYears($date, $years)
+{
+    return Carbon::parse($date)->addYears($years)->toDateString();
+}
+
+private function getStatusBadge($status)
+{
+    $colors = [
+        'AKTIF' => 'success',
+        'INAKTIF' => 'warning',
+        'HABIS_RETENSI' => 'danger',
+        'PERMANEN' => 'info'
+    ];
+
+    $color = $colors[$status] ?? 'secondary';
+    $label = ($status == 'HABIS_RETENSI') ? 'HABIS RETENSI' : $status;
+
+    return "<span class='badge bg-{$color}'>{$label}</span>";
+}
 
 
 }

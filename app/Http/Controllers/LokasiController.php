@@ -18,8 +18,10 @@ class LokasiController extends Controller
     {
         // Ambil ruangan yang tidak null dan tidak kosong
         $ruangans = Arsip::select('lokasi_arsip')
-            ->whereNotNull('lokasi_arsip')
-            ->where('lokasi_arsip', '!=', '')
+            ->whereIn('lokasi_arsip', [
+                'RECORD_CENTER_PERMANEN',
+                'RECORD_CENTER_INAKTIF'
+            ])
             ->distinct()
             ->pluck('lokasi_arsip')
             ->toArray();
@@ -30,12 +32,6 @@ class LokasiController extends Controller
             ->count();
 
         $ruanganLabels = [
-            'RUANG_SUBBAGIAN_UMUM_LOGISTIK' => 'Subbagian Umum & Logistik',
-            'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM' => 'Subbagian Parmas & SDM',
-            'RUANG_SUBBAGIAN_KEUANGAN' => 'Subbagian Keuangan',
-            'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI' => 'Subbagian Perencanaan, Data & Informasi',
-            'RUANG_SUBBAGIAN_TEKNIS' => 'Subbagian Teknis',
-            'RUANG_SUBBAGIAN_HUKUM' => 'Subbagian Hukum',
             'RECORD_CENTER_PERMANEN' => 'Record Center Permanen',
             'RECORD_CENTER_INAKTIF' => 'Record Center Inaktif',
         ];
