@@ -15,6 +15,7 @@ use App\Http\Controllers\AdminArsipMasukController;
 use App\Http\Controllers\LokasiController;
 use App\Http\Controllers\LokasiSubBagianController;
 use App\Http\Controllers\BeritaAcaraPindahController;
+use App\Http\Controllers\LintasUnitController;
 
 
 require __DIR__.'/auth.php';
@@ -241,6 +242,17 @@ Route::prefix('manajemen-lokasi')->name('manajemen-lokasi.')->group(function () 
     Route::get('/ruangan/{ruangan}', [LokasiController::class, 'listRak'])->name('rak'); // card rak
     Route::get('/ruangan/{ruangan}/rak/{rak}', [LokasiController::class, 'listBox'])->name('box'); // card box
     Route::get('/ruangan/{ruangan}/rak/{rak}/box/{box}', [LokasiController::class, 'listArsip'])->name('arsip'); // list arsip
+});
+
+
+Route::prefix('lintas-unit')->name('lintas-unit.')->group(function () {
+
+    Route::get('/', [LintasUnitController::class, 'index'])
+        ->name('index');
+
+    Route::get('/{unit}', [LintasUnitController::class, 'daftar'])
+        ->name('daftar');
+
 });
 
 
