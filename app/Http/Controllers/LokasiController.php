@@ -27,9 +27,12 @@ class LokasiController extends Controller
             ->toArray();
 
         // Hitung arsip yang belum punya ruangan
-        $arsipTanpaRuangan = Arsip::whereNull('lokasi_arsip')
-            ->orWhere('lokasi_arsip', '')
-            ->count();
+        $arsipTanpaRuangan = Arsip::where(function ($query) {
+            $query->whereNull('lokasi_arsip')
+                ->orWhere('lokasi_arsip', '');
+        })
+        ->whereIn('status_pindah', ['LANGSUNG', 'DIPINDAHKAN'])
+        ->count();
 
         $ruanganLabels = [
             'RECORD_CENTER_PERMANEN' => 'Record Center Permanen',
