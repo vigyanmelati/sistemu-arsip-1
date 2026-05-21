@@ -131,7 +131,7 @@
 
                             @if(!empty($arsip->file_dokumen))
 
-                                <a href="{{ asset('storage/' . $arsip->file_dokumen) }}"
+                                <a href="{{ asset('storage/arsip/' . $arsip->file_dokumen) }}"
    target="_blank"
    class="btn btn-sm btn-primary">
 
