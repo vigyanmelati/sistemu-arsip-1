@@ -5,6 +5,13 @@
 
 @section('content')
 
+<div class="mb-3">
+    <a href="{{ url()->previous() }}" class="btn btn-light border back-btn">
+        <i class="bi bi-arrow-left me-1"></i>
+        Kembali
+    </a>
+</div>
+
 <div class="card border-0 shadow-sm main-card">
 
     <div class="card-header bg-white border-0 py-4 px-4">
@@ -61,7 +68,7 @@
                         <th>Rak</th>
                         <th>Box</th>
                         <th>Lokasi Arsip</th>
-                        <th width="140" class="text-center">Aksi</th>
+                        <th width="160" class="text-center">Aksi</th>
                     </tr>
                 </thead>
 
@@ -87,10 +94,6 @@
                                 {{ Str::limit($arsip->uraian_arsip, 120) }}
                             </div>
 
-                            <!-- <small class="text-muted">
-                                Arsip digital unit kerja
-                            </small> -->
-
                         </td>
 
                         <td>
@@ -99,15 +102,15 @@
                             </span>
                         </td>
 
-                        <td>
-                            <span class="soft-badge">
-                                {{ $arsip->nomor_rak ?? '-' }}
+                       <td>
+                            <span class="plain-text">
+                                {{ !empty($arsip->nomor_rak) ? $arsip->nomor_rak : '-' }}
                             </span>
                         </td>
 
                         <td>
-                            <span class="soft-badge">
-                                {{ $arsip->nomor_box ?? '-' }}
+                            <span class="plain-text">
+                                {{ !empty($arsip->nomor_box) ? $arsip->nomor_box : '-' }}
                             </span>
                         </td>
 
@@ -132,13 +135,13 @@
                             @if(!empty($arsip->file_dokumen))
 
                                 <a href="{{ asset('storage/arsip/' . $arsip->file_dokumen) }}"
-   target="_blank"
-   class="btn btn-sm btn-primary">
+                                   target="_blank"
+                                   class="pdf-btn">
 
-    <i class="bi bi-file-earmark-pdf-fill me-1"></i>
-    Lihat PDF
+                                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                                    <span>Lihat PDF</span>
 
-</a>
+                                </a>
 
                             @else
 
@@ -209,17 +212,22 @@
 <style>
 
 .main-card{
-    border-radius: 22px;
+    border-radius: 24px;
     overflow: hidden;
+    border: 1px solid #eef2f7;
+}
+
+.card-header{
+    background: linear-gradient(to right, #ffffff, #f8fbff);
 }
 
 .table thead th{
     background: #f8fafc;
     color: #64748b;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: .5px;
+    letter-spacing: .6px;
     border-bottom: 1px solid #eef2f7;
     padding: 18px 16px;
     white-space: nowrap;
@@ -232,7 +240,7 @@
 }
 
 .table-hover tbody tr{
-    transition: all .2s ease;
+    transition: all .25s ease;
 }
 
 .table-hover tbody tr:hover{
@@ -242,32 +250,27 @@
 .kode-badge{
     background: #eef4ff;
     color: #2563eb;
-    padding: 7px 12px;
-    border-radius: 10px;
+    padding: 7px 13px;
+    border-radius: 11px;
     font-weight: 700;
     font-size: 13px;
-    display: inline-block;
-}
-
-.soft-badge{
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    padding: 7px 12px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #475569;
     display: inline-block;
 }
 
 .tahun-badge{
     background: #ecfeff;
     color: #0891b2;
-    padding: 7px 12px;
-    border-radius: 10px;
+    padding: 7px 13px;
+    border-radius: 11px;
     font-weight: 700;
     font-size: 13px;
     display: inline-block;
+}
+
+.plain-text{
+    font-weight: 600;
+    color: #334155;
+    font-size: 14px;
 }
 
 .lokasi-badge{
@@ -283,24 +286,75 @@
 
 .search-box .form-control{
     min-width: 260px;
-    border-radius: 12px !important;
+    border-radius: 14px !important;
     height: 46px;
     box-shadow: none;
+    border-color: #e2e8f0;
+}
+
+.search-box .form-control:focus{
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.08);
 }
 
 .search-box .input-group-text{
-    border-radius: 12px 0 0 12px;
+    border-radius: 14px 0 0 14px;
+    border-color: #e2e8f0;
 }
 
 .search-box .btn{
-    border-radius: 12px;
+    border-radius: 14px;
     height: 46px;
     font-weight: 600;
 }
 
 .btn-primary{
-    border-radius: 10px;
+    border-radius: 12px;
     font-weight: 600;
+    padding: 8px 16px;
+}
+
+.back-btn{
+    border-radius: 12px;
+    padding: 9px 16px;
+    font-weight: 600;
+    transition: .2s ease;
+}
+
+.back-btn:hover{
+    background: #f8fafc;
+    transform: translateX(-2px);
+}
+
+.pdf-btn{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .25s ease;
+    box-shadow: 0 4px 12px rgba(220,38,38,.18);
+}
+
+.pdf-btn i{
+    font-size: 15px;
+}
+
+.pdf-btn:hover{
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(220,38,38,.28);
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+}
+
+.pdf-btn:active{
+    transform: scale(.97);
 }
 
 .empty-state i{
@@ -317,6 +371,7 @@
     margin: 0 2px;
     border: none;
     color: #475569;
+    padding: 8px 14px;
 }
 
 .page-item.active .page-link{
@@ -335,6 +390,11 @@
 
     .search-box .form-control{
         min-width: 100%;
+    }
+
+    .pdf-btn{
+        padding: 8px 12px;
+        font-size: 12px;
     }
 
 }
