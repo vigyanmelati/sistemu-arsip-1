@@ -664,6 +664,16 @@
                     </ul>
                 </div>
             </li>
+
+         <li class="nav-item">
+    <a class="nav-link {{ request()->routeIs('lintas-unit.*') ? 'active' : '' }}"
+       href="{{ route('lintas-unit.index') }}">
+
+        <i class="bi bi-diagram-3-fill"></i>
+
+        <span>Arsip Lintas Unit</span>
+    </a>
+</li>
             @endif
             
             @if(auth()->user()->role === 'super_admin')

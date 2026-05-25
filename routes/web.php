@@ -16,6 +16,7 @@ use App\Http\Controllers\LokasiController;
 use App\Http\Controllers\LokasiSubBagianController;
 use App\Http\Controllers\BeritaAcaraPindahController;
 use App\Http\Controllers\SuratMasukController;
+use App\Http\Controllers\LintasUnitController;
 
 
 require __DIR__.'/auth.php';
@@ -250,6 +251,17 @@ Route::get(
     'surat-masuk/{id}/disposisi',
     [SuratMasukController::class, 'disposisi']
 )->name('surat-masuk.disposisi');
+
+
+Route::prefix('lintas-unit')->name('lintas-unit.')->group(function () {
+
+    Route::get('/', [LintasUnitController::class, 'index'])
+        ->name('index');
+
+    Route::get('/{unit}', [LintasUnitController::class, 'daftar'])
+        ->name('daftar');
+
+});
 
 
 
