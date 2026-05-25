@@ -155,7 +155,7 @@ class PemusnahanController extends Controller
 {
     // VALIDASI
     $request->validate([
-        'file_persetujuan_anri' => 'required|file|mimes:pdf|max:2048',
+        'file_persetujuan_anri' => 'required|file|mimes:pdf|max:10240',
     ]);
 
     // minimal 1 musnah
@@ -304,8 +304,8 @@ class PemusnahanController extends Controller
  public function simpanEksekusi(Request $request, Pemusnahan $pemusnahan)
 {
     $request->validate([
-        'file_berita_acara' => 'required|file|mimes:pdf|max:2048',
-        'file_sk_pemusnahan' => 'required|file|mimes:pdf|max:2048',
+        'file_berita_acara' => 'required|file|mimes:pdf|max:10240',
+        'file_sk_pemusnahan' => 'required|file|mimes:pdf|max:10240',
     ]);
 
     // PERBAIKAN
@@ -416,7 +416,7 @@ public function kpu(Pemusnahan $pemusnahan)
 public function simpanKpu(Request $request, Pemusnahan $pemusnahan)
 {
     $request->validate([
-        'file_persetujuan_kpu' => 'required|file|mimes:pdf|max:2048',
+        'file_persetujuan_kpu' => 'required|file|mimes:pdf|max:10240',
     ]);
 
     // PERBAIKAN

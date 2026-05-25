@@ -186,6 +186,42 @@
             text-decoration: none;
             position: relative;
         }
+
+        /* ===== SUBMENU ===== */
+        .submenu-list{
+            margin: 0;
+            padding: 4px 0 4px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px !important;
+        }
+
+        .submenu-list .nav-item{
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .submenu-list .nav-link{
+            margin: 0 !important;
+            padding: 10px 14px !important;
+            min-height: unset !important;
+            line-height: 1.2;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            background: transparent;
+        }
+
+        .submenu-list .nav-link i{
+            width: 20px;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+
+        /* Hilangkan jarak collapse bootstrap */
+        .collapse{
+            margin: 0 !important;
+            padding: 0 !important;
+        }
         
         .nav-link:hover {
             color: white;
@@ -477,6 +513,8 @@
             max-height: calc(100vh - 100px);
             overflow-y: auto;
         }
+
+        
     </style>
     @push('styles')
     <style>
@@ -530,11 +568,53 @@
                 </a>
             </li>
           
-            <li class="nav-item">
+            {{-- <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('arsip.*') ? 'active' : '' }}" href="{{ route('arsip.index') }}">
                     <i class="bi bi-folder"></i> <span>Kelola Arsip</span>
                 </a>
-            </li>
+            </li> --}}
+            <li class="nav-item">
+
+    <a class="nav-link d-flex align-items-center
+        {{ request()->routeIs('arsip.*') || request()->routeIs('surat-masuk.*') ? 'active' : '' }}"
+        data-bs-toggle="collapse"
+        href="#menuArsip"
+        role="button">
+
+        <i class="bi bi-folder"></i>
+        <span>Kelola Arsip</span>
+        <i class="bi bi-chevron-down ms-auto"></i>
+    </a>
+
+    <div class="collapse
+    {{ request()->routeIs('arsip.*') || request()->routeIs('surat-masuk.*') ? 'show' : '' }}"
+    id="menuArsip">
+
+    <ul class="submenu-list">
+
+        <li class="nav-item">
+            <a class="nav-link
+                {{ request()->routeIs('surat-masuk.*') ? 'active' : '' }}"
+                href="{{ route('surat-masuk.index') }}">
+
+                <i class="bi bi-envelope-paper"></i>
+                <span>Surat Masuk</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link
+                {{ request()->routeIs('arsip.*') ? 'active' : '' }}"
+                href="{{ route('arsip.index') }}">
+
+                <i class="bi bi-folder2-open"></i>
+                <span>Arsip Internal</span>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('arsip-masuk.*') ? 'active' : '' }}" href="{{ route('arsip-masuk.index') }}">
                     <i class="bi bi-inbox-fill"></i> 

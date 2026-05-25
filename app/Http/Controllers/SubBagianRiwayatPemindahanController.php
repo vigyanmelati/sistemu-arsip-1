@@ -202,7 +202,7 @@ class SubBagianRiwayatPemindahanController extends Controller
             'media_arsip' => 'required|string|max:50',
             
             // Berita acara baru (opsional)
-            'file_berita_acara_baru' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048', // ← perbaikan typo
+            'file_berita_acara_baru' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240', // ← perbaikan typo
             
             // Catatan perbaikan 
             // 'catatan_perbaikan' => 'required|string|max:1000',

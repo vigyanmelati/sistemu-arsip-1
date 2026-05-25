@@ -13,9 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class AdminArsipMasukController extends Controller
 {
-    /**
-     * Display a listing of arsip masuk.
-     */
+
     public function index(Request $request)
     {
         $query = Arsip::with(['kodeKlasifikasi', 'subBagian', 'creator'])

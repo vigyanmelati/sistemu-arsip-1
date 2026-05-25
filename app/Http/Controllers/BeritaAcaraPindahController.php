@@ -39,7 +39,7 @@ class BeritaAcaraPindahController extends Controller
         $request->validate([
             'nomor_bap' => 'required|string|max:100|unique:berita_acara_pindah,nomor_bap',
             'tanggal_bap' => 'required|date',
-            'file_bap' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048'
+            'file_bap' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240'
         ]);
 
         $file = $request->file('file_bap');
@@ -89,7 +89,7 @@ class BeritaAcaraPindahController extends Controller
         $request->validate([
             'nomor_bap' => 'required|string|max:100|unique:berita_acara_pindah,nomor_bap,' . $berita_acara->id,
             'tanggal_bap' => 'required|date',
-            'file_bap' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048'
+            'file_bap' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240'
         ]);
 
         // Update file jika ada

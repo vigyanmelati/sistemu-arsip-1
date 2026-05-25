@@ -360,7 +360,7 @@ public function store(Request $request)
         'tingkat_perkembangan' => 'nullable|in:ASLI,COPY,SALINAN',
         'keterangan' => 'nullable|in:BAIK,RUSAK,HILANG',
         'media_arsip' => 'nullable|string|max:255',
-        'file_dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+        'file_dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
     ]);
 
     // ====================================
@@ -707,7 +707,7 @@ private function extractNumberFromText($text)
         'media_arsip'         => 'nullable|string|max:255',
 
         // File
-        'file_dokumen'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+        'file_dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
         'hapus_file'          => 'nullable|in:0,1',
         'tangani_duplikat' => 'nullable|in:1',
         'duplicate_reason' => 'nullable|string|max:1000',

@@ -15,6 +15,7 @@ use App\Http\Controllers\AdminArsipMasukController;
 use App\Http\Controllers\LokasiController;
 use App\Http\Controllers\LokasiSubBagianController;
 use App\Http\Controllers\BeritaAcaraPindahController;
+use App\Http\Controllers\SuratMasukController;
 
 
 require __DIR__.'/auth.php';
@@ -242,6 +243,13 @@ Route::prefix('manajemen-lokasi')->name('manajemen-lokasi.')->group(function () 
     Route::get('/ruangan/{ruangan}/rak/{rak}', [LokasiController::class, 'listBox'])->name('box'); // card box
     Route::get('/ruangan/{ruangan}/rak/{rak}/box/{box}', [LokasiController::class, 'listArsip'])->name('arsip'); // list arsip
 });
+
+Route::resource('surat-masuk', SuratMasukController::class);
+
+Route::get(
+    'surat-masuk/{id}/disposisi',
+    [SuratMasukController::class, 'disposisi']
+)->name('surat-masuk.disposisi');
 
 
 
