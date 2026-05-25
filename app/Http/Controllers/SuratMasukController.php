@@ -6,27 +6,24 @@ use App\Models\SuratMasuk;
 use App\Models\SubBagian;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SuratMasukController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        if (auth()->user()->role == 'user') {
-
-            $surat = SuratMasuk::with('subBagian')
-                ->where('sub_bagian_id', auth()->user()->sub_bagian_id)
-                ->latest()
-                ->get();
-
-        } else {
-
-            $surat = SuratMasuk::with('subBagian')
-                ->latest()
-                ->get();
-        }
+        $search = $request->input('search');
+        $surat = SuratMasuk::when($search, function ($query) use ($search) {
+            return $query->where('nomor_dokumen', 'like', "%{$search}%")
+                        ->orWhere('perihal', 'like', "%{$search}%")
+                        ->orWhere('instansi_satker', 'like', "%{$search}%");
+        })
+        ->orderBy('created_at', 'desc')
+        ->paginate(10);
 
         return view('surat_masuk.index', compact('surat'));
     }
@@ -46,44 +43,61 @@ class SuratMasukController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'nomor_surat'     => 'required',
-            'tanggal_surat'   => 'required|date',
-            'pengirim'        => 'required',
-            'perihal'         => 'required',
-            'file_surat'      => 'nullable|mimes:pdf,jpg,jpeg,png|max:2048',
-            'sub_bagian_id'   => 'nullable',
-        ]);
+        try {
 
-        $fileName = null;
+            $request->validate([
+                'instansi_satker'      => 'required',
+                'tanggal_dokumen'      => 'required|date',
+                'tanggal_penyelesaian' => 'required|date',
+                'nomor_dokumen'        => 'required',
+                'nomor_agenda'         => 'required',
+                'kepada'               => 'required',
+                'perihal'              => 'required',
+                'file_input'           => 'nullable|mimes:pdf,jpg,jpeg,png|max:2048',
+                'sub_bagian_id'        => 'required',
+            ]);
 
-        if ($request->hasFile('file_surat')) {
-            $fileName = time() . '_' . $request->file('file_surat')->getClientOriginalName();
+            $fileName = null;
 
-            $request->file('file_surat')->storeAs(
-                'public/surat_masuk',
-                $fileName
-            );
+            if ($request->hasFile('file_input')) {
+
+                $fileName = time() . '_' .
+                    $request->file('file_input')->getClientOriginalName();
+
+                $request->file('file_input')->storeAs(
+                    'surat_masuk',
+                    $fileName
+                );
+            }
+
+            SuratMasuk::create([
+                'sub_bagian_id' => auth()->user()->role == 'user'
+                    ? auth()->user()->sub_bagian_id
+                    : $request->sub_bagian_id,
+
+                'instansi_satker'      => $request->instansi_satker,
+                'tanggal_dokumen'      => $request->tanggal_dokumen,
+                'tanggal_penyelesaian' => $request->tanggal_penyelesaian,
+                'nomor_dokumen'        => $request->nomor_dokumen,
+                'nomor_agenda'         => $request->nomor_agenda,
+                'kepada'               => $request->kepada,
+                'perihal'              => $request->perihal,
+                'catatan'              => $request->catatan,
+                'file_input'           => $fileName,
+            ]);
+
+            return redirect()
+                ->route('surat-masuk.index')
+                ->with('success', 'Surat masuk berhasil ditambahkan.');
+
+        } catch (\Exception $e) {
+
+            Log::error('Gagal simpan surat masuk: ' . $e->getMessage());
+
+            return back()
+                ->withInput()
+                ->with('error', 'Data gagal disimpan!');
         }
-
-        SuratMasuk::create([
-            'nomor_surat'   => $request->nomor_surat,
-            'tanggal_surat' => $request->tanggal_surat,
-            'pengirim'      => $request->pengirim,
-            'perihal'       => $request->perihal,
-            'keterangan'    => $request->keterangan,
-
-            // AUTO SUB BAGIAN
-            'sub_bagian_id' => auth()->user()->role == 'user'
-                ? auth()->user()->sub_bagian_id
-                : $request->sub_bagian_id,
-
-            'file_surat'    => $fileName,
-        ]);
-
-        return redirect()
-            ->route('surat-masuk.index')
-            ->with('success', 'Surat masuk berhasil ditambahkan.');
     }
 
     /**
@@ -122,44 +136,48 @@ class SuratMasukController extends Controller
         $this->checkAccess($surat);
 
         $request->validate([
-            'nomor_surat'     => 'required',
-            'tanggal_surat'   => 'required|date',
-            'pengirim'        => 'required',
-            'perihal'         => 'required',
-            'file_surat'      => 'nullable|mimes:pdf,jpg,jpeg,png|max:2048',
-            'sub_bagian_id'   => 'nullable',
+            'instansi_satker'      => 'required',
+            'tanggal_dokumen'      => 'required|date',
+            'tanggal_penyelesaian' => 'required|date',
+            'nomor_dokumen'        => 'required',
+            'nomor_agenda'         => 'required',
+            'kepada'               => 'required',
+            'perihal'              => 'required',
+            'file_input'           => 'nullable|mimes:pdf,jpg,jpeg,png|max:2048',
+            'sub_bagian_id'        => 'required',
         ]);
 
-        $fileName = $surat->file_surat;
+        $fileName = $surat->file_input;
 
-        if ($request->hasFile('file_surat')) {
+        if ($request->hasFile('file_input')) {
 
-            // hapus file lama
-            if ($surat->file_surat) {
-                Storage::delete('public/surat_masuk/' . $surat->file_surat);
+            if ($surat->file_input) {
+                Storage::delete('public/surat_masuk/' . $surat->file_input);
             }
 
-            $fileName = time() . '_' . $request->file('file_surat')->getClientOriginalName();
+            $fileName = time() . '_' .
+                $request->file('file_input')->getClientOriginalName();
 
-            $request->file('file_surat')->storeAs(
+            $request->file('file_input')->storeAs(
                 'public/surat_masuk',
                 $fileName
             );
         }
 
         $surat->update([
-            'nomor_surat'   => $request->nomor_surat,
-            'tanggal_surat' => $request->tanggal_surat,
-            'pengirim'      => $request->pengirim,
-            'perihal'       => $request->perihal,
-            'keterangan'    => $request->keterangan,
-
-            // AUTO SUB BAGIAN
             'sub_bagian_id' => auth()->user()->role == 'user'
                 ? auth()->user()->sub_bagian_id
                 : $request->sub_bagian_id,
 
-            'file_surat'    => $fileName,
+            'instansi_satker'      => $request->instansi_satker,
+            'tanggal_dokumen'      => $request->tanggal_dokumen,
+            'tanggal_penyelesaian' => $request->tanggal_penyelesaian,
+            'nomor_dokumen'        => $request->nomor_dokumen,
+            'nomor_agenda'         => $request->nomor_agenda,
+            'kepada'               => $request->kepada,
+            'perihal'              => $request->perihal,
+            'catatan'              => $request->catatan,
+            'file_input'           => $fileName,
         ]);
 
         return redirect()
@@ -176,8 +194,8 @@ class SuratMasukController extends Controller
 
         $this->checkAccess($surat);
 
-        if ($surat->file_surat) {
-            Storage::delete('public/surat_masuk/' . $surat->file_surat);
+        if ($surat->file_input) {
+            Storage::delete('public/surat_masuk/' . $surat->file_input);
         }
 
         $surat->delete();
@@ -190,13 +208,15 @@ class SuratMasukController extends Controller
     /**
      * Disposisi surat
      */
-    public function disposisi($id)
+   public function disposisi($id)
     {
         $surat = SuratMasuk::findOrFail($id);
 
         $this->checkAccess($surat);
 
-        return view('surat_masuk.disposisi', compact('surat'));
+        $pdf = Pdf::loadView('surat_masuk.disposisi', compact('surat'));
+
+        return $pdf->stream('disposisi.pdf');
     }
 
     /**
