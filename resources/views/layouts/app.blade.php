@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>SINAR KPU BALI V2 - {{ config('app.name', 'Sistem Informasi Arsip') }}</title>
+    <title>SINAR KPU BALI V2 </title>
+<link rel="icon" type="image/png" href="{{ asset('LOGO.png') }}?v=1">
 
     <!-- Bootstrap 5 + Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -455,7 +456,20 @@
 
             @if(auth()->user()->role === 'user')
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('subbagian.dashboard') ? 'active' : '' }}" href="{{ route('subbagian.dashboard') }}"><i class="bi bi-speedometer2"></i> <span>Dashboard</span></a></li>
-                <li class="nav-item"><a class="nav-link {{ request()->routeIs('subbagian.arsip.index') ? 'active' : '' }}" href="{{ route('subbagian.arsip.index') }}"><i class="bi bi-search"></i> <span>Kelola Arsip</span></a></li>
+                <!-- <li class="nav-item"><a class="nav-link {{ request()->routeIs('subbagian.arsip.index') ? 'active' : '' }}" href="{{ route('subbagian.arsip.index') }}"><i class="bi bi-search"></i> <span>Kelola Arsip</span></a></li> -->
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center {{ request()->routeIs('subbagian.arsip.*') || request()->routeIs('subbagian.surat-masuk.*') ? 'active' : '' }}"
+                       data-bs-toggle="collapse" href="#menuArsip" role="button" aria-expanded="{{ request()->routeIs('subbagian.arsip.*') || request()->routeIs('subbagian.surat-masuk.*') ? 'true' : 'false' }}">
+                        <i class="bi bi-folder"></i> <span>Kelola Arsip</span>
+                        <i class="bi bi-chevron-down ms-auto"></i>
+                    </a>
+                    <div class="collapse {{ request()->routeIs('subbagian.arsip.*') || request()->routeIs('subbagian.surat-masuk.*') ? 'show' : '' }}" id="menuArsip">
+                        <ul class="submenu-list">
+                            <li><a class="nav-link {{ request()->routeIs('subbagian.surat-masuk.*') ? 'active' : '' }}" href="{{ route('subbagian.surat-masuk.index') }}"><i class="bi bi-envelope-paper"></i> Surat Masuk</a></li>
+                            <li><a class="nav-link {{ request()->routeIs('subbagian.arsip.*') ? 'active' : '' }}" href="{{ route('subbagian.arsip.index') }}"><i class="bi bi-folder2-open"></i> Arsip Internal</a></li>
+                        </ul>
+                    </div>
+                </li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('subbagian.manajemen-lokasi.*') ? 'active' : '' }}" href="{{ route('subbagian.manajemen-lokasi.index') }}"><i class="bi bi-geo-alt-fill"></i> <span>Manajemen Lokasi</span></a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('subbagian.riwayat-pemindahan.*') ? 'active' : '' }}" href="{{ route('subbagian.riwayat-pemindahan.index') }}"><i class="bi bi-download"></i> <span>Riwayat Pemindahan</span></a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('berita-acara.*') ? 'active' : '' }}" href="{{ route('berita-acara.index') }}"><i class="bi bi-file-earmark-text"></i> <span>Berita Acara Pemindahan</span></a></li>
