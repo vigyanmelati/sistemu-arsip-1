@@ -57,8 +57,8 @@
         <div>
             <h6 class="fw-bold mb-1">Informasi Menu Arsip Internal</h6>
             <p class="mb-0">
-                Menu Arsip Internal digunakan untuk mengelola seluruh arsip yang dibuat oleh 
-                KPU Provinsi Bali, mulai dari surat dinas, berita acara, laporan, 
+                Menu Arsip Internal digunakan untuk mengelola seluruh arsip yang <b> dibuat oleh 
+                KPU Provinsi Bali </b>, mulai dari surat dinas, berita acara, laporan, 
                 dokumentasi kegiatan, hingga dokumen administrasi lainnya
             </p>
         </div>

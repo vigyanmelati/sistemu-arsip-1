@@ -25,7 +25,7 @@
                             </h6>
 
                             <p class="mb-0 text-muted">
-                               Menu ini digunakan untuk menginput dan mengelola seluruh surat masuk 
+                               Menu ini digunakan untuk menginput dan mengelola seluruh <b> surat masuk </b>
                                 yang berasal dari instansi luar, lembaga, maupun satuan kerja lainnya, 
                                 serta melakukan pencetakan lembar disposisi surat untuk tindak lanjut.
                             </p>
