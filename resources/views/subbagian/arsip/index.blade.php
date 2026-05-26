@@ -7,7 +7,9 @@
 <div class="card">
     <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Daftar Arsip</h5>
+           <h4 class="mb-2 mb-md-0 fw-bold text-primary">
+                <i class="bi bi-archive-fill me-2"></i> Arsip Internal
+            </h4>
             <div class="action-buttons d-flex gap-2">
                 <button class="btn btn-gradient-purple d-flex align-items-center gap-2 shadow-sm" id="openExportModal">
                     <i class="bi bi-file-earmark-excel-fill"></i>
@@ -48,6 +50,20 @@
                 <i class="bi bi-x-circle"></i> Batalkan Pilihan
             </button>
         </div>
+
+        <div class="alert alert-info border-0 shadow-sm mb-4">
+    <div class="d-flex align-items-start">
+        <i class="bi bi-info-circle-fill fs-4 me-3 text-primary"></i>
+        <div>
+            <h6 class="fw-bold mb-1">Informasi Menu Arsip Internal</h6>
+            <p class="mb-0">
+                Menu Arsip Internal digunakan untuk mengelola seluruh arsip yang dibuat oleh 
+                KPU Provinsi Bali, mulai dari surat dinas, berita acara, laporan, 
+                dokumentasi kegiatan, hingga dokumen administrasi lainnya
+            </p>
+        </div>
+    </div>
+</div>
         
         <!-- Search Bar -->
         <form method="GET" action="{{ route('subbagian.arsip.index') }}" class="mb-4">
@@ -591,7 +607,7 @@
         </div>
     </div>
 </div>
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <style>
     /* ===== STYLE UNTUK SORTING ===== */
     .sortable-header {

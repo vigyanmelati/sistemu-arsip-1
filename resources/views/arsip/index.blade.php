@@ -7,7 +7,9 @@
 <div class="card">
     <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Daftar Arsip</h5>
+            <h4 class="mb-2 mb-md-0 fw-bold text-primary">
+                <i class="bi bi-archive-fill me-2"></i> Arsip Internal
+            </h4>
            <div class="action-buttons d-flex gap-2">
                <button type="button" class="btn btn-warning d-flex align-items-center gap-2 shadow-sm" id="updateStatusBtn">
                     <i class="bi bi-arrow-repeat"></i>
@@ -84,6 +86,20 @@
     </a>
 </div>
 @endif
+
+        <div class="alert alert-info border-0 shadow-sm mb-4">
+    <div class="d-flex align-items-start">
+        <i class="bi bi-info-circle-fill fs-4 me-3 text-primary"></i>
+        <div>
+            <h6 class="fw-bold mb-1">Informasi Menu Arsip Internal</h6>
+            <p class="mb-0">
+                Menu Arsip Internal digunakan untuk mengelola seluruh arsip yang dibuat oleh 
+                KPU Provinsi Bali, mulai dari surat dinas, berita acara, laporan, 
+                dokumentasi kegiatan, hingga dokumen administrasi lainnya
+            </p>
+        </div>
+    </div>
+</div>
         <!-- Table dengan horizontal scroll -->
         <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
             <table class="table table-hover" style="min-width: 1200px;">

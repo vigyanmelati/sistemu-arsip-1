@@ -15,6 +15,24 @@
                     </a>
                 </div>
 
+                <div class="alert alert-info border-0 rounded-4 shadow-sm mx-3 mt-3 mb-4">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-info-circle fa-lg me-3 mt-1 text-primary"></i>
+
+                        <div>
+                            <h6 class="fw-bold mb-1">
+                                Informasi Menu Surat Masuk
+                            </h6>
+
+                            <p class="mb-0 text-muted">
+                               Menu ini digunakan untuk menginput dan mengelola seluruh surat masuk 
+                                yang berasal dari instansi luar, lembaga, maupun satuan kerja lainnya, 
+                                serta melakukan pencetakan lembar disposisi surat untuk tindak lanjut.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card-body pt-0">
                     {{-- Form pencarian yang lebih responsif --}}
                     <div class="row mb-4">
