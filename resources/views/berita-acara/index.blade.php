@@ -7,14 +7,27 @@
 <div class="card">
     <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Daftar Berita Acara</h5>
+            <h5 class="mb-0">Daftar Berita Acara Pemindahan Arsip</h5>
             <a href="{{ route('berita-acara.create') }}" class="btn btn-primary d-flex align-items-center gap-2">
                 <i class="bi bi-plus-circle"></i>
-                <span>Tambah BAP</span>
+                <span>Tambah Berita Acara</span>
             </a>
         </div>
     </div>
-
+<div class="alert alert-info border-0 shadow-sm mb-4">
+    <div class="d-flex align-items-start">
+        <i class="bi bi-info-circle-fill fs-4 me-3 text-primary"></i>
+        <div>
+            <h6 class="fw-bold mb-1">Informasi Menu Berita Acara</h6>
+            <p class="mb-0">
+                Menu ini digunakan untuk menambahkan dan mengelola berita acara 
+                pemindahan arsip sebelum proses pemindahan arsip dilakukan ke 
+                Unit Kearsipan. Berita acara digunakan sebagai dokumen resmi 
+                dalam proses pengajuan dan pencatatan pemindahan arsip.
+            </p>
+        </div>
+    </div>
+</div>
     <div class="card-body">
 
         {{-- ALERT --}}

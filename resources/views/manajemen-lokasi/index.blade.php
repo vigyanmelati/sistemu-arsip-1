@@ -41,6 +41,19 @@
         </div>
     </div>
 
+     <div class="alert alert-info border-0 shadow-sm mb-4">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-info-circle-fill fs-4 me-3 text-primary"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1">Informasi Menu Manajemen Lokasi</h6>
+                                <p class="mb-0">
+                                     Menu ini digunakan untuk melihat arsip berdasarkan lokasi keberadaannya. 
+            Pengguna dapat memilih ruangan untuk menampilkan daftar rak, box  serta arsip yang tersimpan pada lokasi tersebut.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
     {{-- Grid kartu ruangan --}}
     <div class="row g-4" id="ruanganGrid">
         @php

@@ -13,6 +13,7 @@
                         <i class="fas fa-history mr-2"></i>Daftar Riwayat Pemindahan Arsip
                     </h3>
                 </div>
+                
                 <div class="card-body">
                     <!-- Filter Section -->
                     <div class="row mb-3">
@@ -46,6 +47,20 @@
                                     </div>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info border-0 shadow-sm mb-4">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-info-circle-fill fs-4 me-3 text-primary"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1">Informasi Menu Riwayat Pemindahan</h6>
+                                <p class="mb-0">
+                                    Menu ini berisi informasi riwayat pemindahan arsip ke Unit Kearsipan, 
+                                    termasuk arsip yang sedang dalam proses pemindahan maupun arsip yang telah berhasil dipindahkan.
+                                    Pengguna dapat memantau status terbaru dari setiap proses pemindahan arsip.
+                                </p>
+                            </div>
                         </div>
                     </div>
 
@@ -276,9 +291,9 @@
                             </small>
                         </div>
                         <div class="col-md-6 text-right">
-                            <small class="text-muted">
+                            <!-- <small class="text-muted">
                                 © {{ date('Y') }} SINAR - KPU Provinsi Bali v1.0.0
-                            </small>
+                            </small> -->
                         </div>
                     </div>
                 </div>
