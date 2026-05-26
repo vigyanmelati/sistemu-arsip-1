@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Exports\SuratMasukExport;
+use App\Imports\SuratMasukImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SuratMasukController extends Controller
 {
@@ -152,14 +155,14 @@ class SuratMasukController extends Controller
         if ($request->hasFile('file_input')) {
 
             if ($surat->file_input) {
-                Storage::delete('public/surat_masuk/' . $surat->file_input);
+                Storage::delete('surat_masuk/' . $surat->file_input);
             }
 
             $fileName = time() . '_' .
                 $request->file('file_input')->getClientOriginalName();
 
             $request->file('file_input')->storeAs(
-                'public/surat_masuk',
+                'surat_masuk',
                 $fileName
             );
         }
@@ -195,7 +198,7 @@ class SuratMasukController extends Controller
         $this->checkAccess($surat);
 
         if ($surat->file_input) {
-            Storage::delete('public/surat_masuk/' . $surat->file_input);
+            Storage::delete('surat_masuk/' . $surat->file_input);
         }
 
         $surat->delete();
@@ -231,4 +234,30 @@ class SuratMasukController extends Controller
             abort(403);
         }
     }
+
+    public function export()
+{
+    return Excel::download(
+        new SuratMasukExport,
+        'surat_masuk.xlsx'
+    );
+}
+
+public function import(Request $request)
+{
+    $request->validate([
+        'file' => 'required|mimes:xlsx,xls,csv'
+    ]);
+
+    Excel::import(
+        new SuratMasukImport,
+        $request->file('file')
+    );
+
+    return redirect()
+        ->route('surat-masuk.index')
+        ->with('success', 'Data berhasil diimport.');
+}
+
+
 }

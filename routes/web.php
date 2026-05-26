@@ -246,12 +246,25 @@ Route::prefix('manajemen-lokasi')->name('manajemen-lokasi.')->group(function () 
     Route::get('/ruangan/{ruangan}/rak/{rak}/box/{box}', [LokasiController::class, 'listArsip'])->name('arsip'); // list arsip
 });
 
+Route::get('/surat-masuk/template', function () {
+    return response()->download(
+        public_path('template/template_import_surat_masuk.xlsx')
+    );
+})->name('surat-masuk.template');
+
+Route::get('/surat-masuk/export', [SuratMasukController::class, 'export'])
+    ->name('surat-masuk.export');
+
+Route::post('/surat-masuk/import', [SuratMasukController::class, 'import'])
+    ->name('surat-masuk.import');
+
 Route::resource('surat-masuk', SuratMasukController::class);
 
 Route::get(
     'surat-masuk/{id}/disposisi',
     [SuratMasukController::class, 'disposisi']
 )->name('surat-masuk.disposisi');
+
 
 
 Route::prefix('lintas-unit')->name('lintas-unit.')->group(function () {
@@ -266,6 +279,17 @@ Route::prefix('lintas-unit')->name('lintas-unit.')->group(function () {
 
 
 Route::middleware(['auth'])->prefix('subbagian')->name('subbagian.')->group(function () {
+Route::get('/surat-masuk/template', function () {
+    return response()->download(
+        public_path('template/template_import_surat_masuk.xlsx')
+    );
+})->name('surat-masuk.template');
+
+Route::get('/surat-masuk/export', [SuratMasukController::class, 'export'])
+    ->name('surat-masuk.export');
+
+Route::post('/surat-masuk/import', [SuratMasukController::class, 'import'])
+    ->name('surat-masuk.import');
 
     Route::get(
         '/surat-masuk/{id}/disposisi',
