@@ -38,6 +38,20 @@
             </div>
         </div>
     </div>
+
+     <div class="alert alert-info border-0 shadow-sm mb-4">
+    <div class="d-flex align-items-start">
+        <i class="bi bi-info-circle-fill fs-4 me-3 text-primary"></i>
+        <div>
+            <h6 class="fw-bold mb-1">Informasi Menu Arsip Internal</h6>
+            <p class="mb-0">
+                Menu Arsip Internal digunakan untuk mengelola seluruh arsip yang dibuat oleh 
+                KPU Provinsi Bali, mulai dari surat dinas, berita acara, laporan, 
+                dokumentasi kegiatan, hingga dokumen administrasi lainnya
+            </p>
+        </div>
+    </div>
+</div>
     
     <div class="card-body">
         <!-- Search Bar -->
@@ -87,19 +101,7 @@
 </div>
 @endif
 
-        <div class="alert alert-info border-0 shadow-sm mb-4">
-    <div class="d-flex align-items-start">
-        <i class="bi bi-info-circle-fill fs-4 me-3 text-primary"></i>
-        <div>
-            <h6 class="fw-bold mb-1">Informasi Menu Arsip Internal</h6>
-            <p class="mb-0">
-                Menu Arsip Internal digunakan untuk mengelola seluruh arsip yang dibuat oleh 
-                KPU Provinsi Bali, mulai dari surat dinas, berita acara, laporan, 
-                dokumentasi kegiatan, hingga dokumen administrasi lainnya
-            </p>
-        </div>
-    </div>
-</div>
+       
         <!-- Table dengan horizontal scroll -->
         <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
             <table class="table table-hover" style="min-width: 1200px;">
