@@ -217,6 +217,26 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
+
+                  <!-- LINK FOTO -->
+    <div class="col-md-6 mb-3">
+        <label for="link_foto" class="form-label">Link Foto / URL Dokumen</label>
+
+        <input type="url"
+               class="form-control @error('link_foto') is-invalid @enderror"
+               id="link_foto"
+               name="link_foto"
+               value="{{ old('link_foto') }}"
+               placeholder="https://drive.google.com/file/d/...">
+
+        <small class="text-muted">
+            Opsional. Isi jika file disimpan di Google Drive, OneDrive, Dropbox, dll.
+        </small>
+
+        @error('link_foto')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
             </div>
             
             <!-- TOMBOL SIMPAN -->

@@ -360,7 +360,8 @@ public function store(Request $request)
         'tingkat_perkembangan' => 'nullable|in:ASLI,COPY,SALINAN',
         'keterangan' => 'nullable|in:BAIK,RUSAK,HILANG',
         'media_arsip' => 'nullable|string|max:255',
-        'file_dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+        'file_dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240|required_without:link_foto',
+        'link_foto'    => 'nullable|url|max:1000|required_without:file_dokumen',
     ]);
 
     // ====================================
@@ -387,6 +388,7 @@ public function store(Request $request)
         }
 
         $validated['tanggal_masuk'] = now()->format('Y-m-d');
+        $validated['link_foto'] = $request->link_foto;
 
         // default field
         $defaults = [
@@ -708,6 +710,7 @@ private function extractNumberFromText($text)
 
         // File
         'file_dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+        'link_foto' => 'nullable|url|max:1000',
         'hapus_file'          => 'nullable|in:0,1',
         'tangani_duplikat' => 'nullable|in:1',
         'duplicate_reason' => 'nullable|string|max:1000',
@@ -719,6 +722,7 @@ private function extractNumberFromText($text)
         // NORMALISASI DATA
         // =========================
         $validated['tahun_arsip'] = (string) $validated['tahun_arsip'];
+         $validated['link_foto'] = $request->link_foto;
 
         // Default value jika kosong
         $defaults = [

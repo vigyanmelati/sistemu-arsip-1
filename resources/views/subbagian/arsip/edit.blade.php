@@ -246,6 +246,31 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
+
+                 <!-- LINK FOTO -->
+    <div class="col-md-6 mb-3">
+        <label for="link_foto" class="form-label">Link Foto / Google Drive</label>
+
+        <input type="url"
+            class="form-control @error('link_foto') is-invalid @enderror"
+            id="link_foto"
+            name="link_foto"
+            value="{{ old('link_foto', $arsip->link_foto) }}"
+            placeholder="https://drive.google.com/file/d/...">
+
+        @if($arsip->link_foto)
+            <small class="d-block mt-2">
+                Link saat ini:
+                <a href="{{ $arsip->link_foto }}" target="_blank">
+                    Lihat Foto
+                </a>
+            </small>
+        @endif
+
+        @error('link_foto')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
             </div>
               <hr class="my-4">
 

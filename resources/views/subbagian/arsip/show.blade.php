@@ -148,19 +148,25 @@
                         </td>
                     </tr>
 
-                    <tr>
+                     <tr>
                         <td><strong>File Dokumen</strong></td>
                         <td>: 
-                            @if($arsip->file_dokumen)
-                                <div>
-                                    <a href="{{ Storage::url('arsip/' . $arsip->file_dokumen) }}" 
-                                    target="_blank" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i> Lihat File
+                            @if($arsip->file_dokumen || $arsip->link_foto)
+
+                            <div>
+                                @if($arsip->view_file_url)
+                                    <a href="{{ $arsip->view_file_url }}"
+                                    target="_blank"
+                                    class="btn btn-primary">
+                                        Lihat Dokumen
                                     </a>
-                                    <small class="text-muted d-block mt-1">
-                                        {{ $arsip->file_dokumen }}
-                                    </small>
-                                </div>
+                                @endif
+
+                                <small class="text-muted d-block mt-1">
+                                    {{ $arsip->file_dokumen ?? $arsip->link_foto }}
+                                </small>
+                            </div>
+
                             @else
                                 <span class="text-muted">Tidak ada file</span>
                             @endif

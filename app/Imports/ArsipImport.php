@@ -70,12 +70,12 @@ public function customValidationMessages()
     public function model(array $row)
     {
         if (
-    empty(trim($row['kode_klasifikasi'] ?? '')) &&
-    empty(trim($row['uraian_arsip'] ?? '')) &&
-    empty(trim($row['tahun_arsip'] ?? ''))
-) {
-    return null;
-}
+            empty(trim($row['kode_klasifikasi'] ?? '')) &&
+            empty(trim($row['uraian_arsip'] ?? '')) &&
+            empty(trim($row['tahun_arsip'] ?? ''))
+        ) {
+            return null;
+        }
         try {
             Log::info('ROW:', $row);
 
@@ -129,6 +129,18 @@ public function customValidationMessages()
                 //    throw new \Exception('Uraian Arsip Kosong');
             }
 
+            $tingkatPerkembangan = strtoupper(trim($row['tingkat_perkembangan'] ?? 'ASLI'));
+
+            $allowedTingkatPerkembangan = [
+                'ASLI',
+                'COPY',
+                'SALINAN',
+            ];
+
+            if (!in_array($tingkatPerkembangan, $allowedTingkatPerkembangan)) {
+                $tingkatPerkembangan = 'ASLI';
+            }
+
             $tahunArsip = $row['tahun_arsip'] ?? date('Y');
 
             // $tanggalArsip = !empty($row['tanggal_arsip'])
@@ -138,16 +150,16 @@ public function customValidationMessages()
             //     : Carbon::createFromDate((int)$tahunArsip, 1, 1);
 
             if (!empty($row['tanggal_arsip'])) {
-    if (is_numeric($row['tanggal_arsip'])) {
-        $tanggalArsip = Carbon::instance(
-            Date::excelToDateTimeObject($row['tanggal_arsip'])
-        );
-    } else {
-        $tanggalArsip = Carbon::parse($row['tanggal_arsip']);
-    }
-} else {
-    $tanggalArsip = Carbon::createFromDate((int)$tahunArsip, 1, 1);
-}
+                if (is_numeric($row['tanggal_arsip'])) {
+                    $tanggalArsip = Carbon::instance(
+                        Date::excelToDateTimeObject($row['tanggal_arsip'])
+                    );
+                } else {
+                    $tanggalArsip = Carbon::parse($row['tanggal_arsip']);
+                }
+            } else {
+                $tanggalArsip = Carbon::createFromDate((int)$tahunArsip, 1, 1);
+            }
 
             $nomorRak = $row['nomor_rak'] ?? null;
             $nomorBox = $row['nomor_box'] ?? null;
@@ -201,15 +213,15 @@ public function customValidationMessages()
             // $aktifSampai = $aktifTahun ? (clone $tanggalArsip)->addYears($aktifTahun) : null;
             $isAfterCondition = str_contains($aktifText, 'SETELAH');
 
-if ($isAfterCondition) {
-    $aktifSampai = null;
-    $inaktifSampai = null;
-} else {
-    $aktifSampai = $aktifTahun ? (clone $tanggalArsip)->addYears($aktifTahun) : null;
-    $inaktifSampai = ($aktifSampai && $inaktifTahun)
-        ? (clone $aktifSampai)->addYears($inaktifTahun)
-        : null;
-}
+            if ($isAfterCondition) {
+                $aktifSampai = null;
+                $inaktifSampai = null;
+            } else {
+                $aktifSampai = $aktifTahun ? (clone $tanggalArsip)->addYears($aktifTahun) : null;
+                $inaktifSampai = ($aktifSampai && $inaktifTahun)
+                    ? (clone $aktifSampai)->addYears($inaktifTahun)
+                    : null;
+            }
             $inaktifSampai = ($aktifSampai && $inaktifTahun) ? (clone $aktifSampai)->addYears($inaktifTahun) : null;
 
             // Status
@@ -227,19 +239,19 @@ if ($isAfterCondition) {
             // }
 
             if ($keteranganJRA === 'PERMANEN') {
-    $status = 'PERMANEN';
-} elseif ($isAfterCondition) {
-    $status = 'AKTIF'; // 🔥 paksa aktif
-} elseif ($aktifSampai && $now <= $aktifSampai) {
-    $status = 'AKTIF';
-} elseif ($inaktifSampai && $now <= $inaktifSampai) {
-    $status = 'INAKTIF';
-} elseif ($inaktifSampai) {
-    $status = 'HABIS_RETENSI';
-} else {
-    $status = 'AKTIF';
-}
-
+                $status = 'PERMANEN';
+            } elseif ($isAfterCondition) {
+                $status = 'AKTIF'; // 🔥 paksa aktif
+            } elseif ($aktifSampai && $now <= $aktifSampai) {
+                $status = 'AKTIF';
+            } elseif ($inaktifSampai && $now <= $inaktifSampai) {
+                $status = 'INAKTIF';
+            } elseif ($inaktifSampai) {
+                $status = 'HABIS_RETENSI';
+            } else {
+                $status = 'AKTIF';
+            }
+            $linkFoto = trim($row['link_foto'] ?? '');
             // =======================
             // SIMPAN DATA - PAKAI DB TRANSACTION
             // =======================
@@ -260,7 +272,9 @@ if ($isAfterCondition) {
                     'aktif_sampai' => $aktifSampai ? $aktifSampai->format('Y-m-d') : null,
                     'inaktif_sampai' => $inaktifSampai ? $inaktifSampai->format('Y-m-d') : null,
                     'status_arsip' => $status,
+                    'tingkat_perkembangan' => $tingkatPerkembangan,
                     'status_pindah' => 'LANGSUNG',
+                    'link_foto' => $linkFoto ?: null,
                     'nomor_rak' => $nomorRak,
                     'nomor_box' => $nomorBox,
                     'media_arsip' => $mediaArsip,

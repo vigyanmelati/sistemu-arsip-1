@@ -296,21 +296,47 @@
                 
             </div>
             
-            <div class="row">
-                <!-- FILE UPLOAD -->
-                <div class="col-md-6 mb-3">
-                    <label for="file_dokumen" class="form-label">File Dokumen</label>
-                    <input type="file" class="form-control @error('file_dokumen') is-invalid @enderror" 
-                           id="file_dokumen" name="file_dokumen" 
-                           accept=".pdf,.jpg,.jpeg,.png">
-                    <small class="text-muted">
-                        Format: PDF, JPG, JPEG, PNG (Maks: 2MB) - Opsional
-                    </small>
-                    @error('file_dokumen')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
+           <div class="row">
+
+    <!-- FILE UPLOAD -->
+    <div class="col-md-6 mb-3">
+        <label for="file_dokumen" class="form-label">File Dokumen</label>
+        <input type="file"
+               class="form-control @error('file_dokumen') is-invalid @enderror"
+               id="file_dokumen"
+               name="file_dokumen"
+               accept=".pdf,.jpg,.jpeg,.png">
+
+        <small class="text-muted">
+            Format: PDF, JPG, JPEG, PNG (Maks: 2MB) - Opsional
+        </small>
+
+        @error('file_dokumen')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+
+    <!-- LINK FOTO -->
+    <div class="col-md-6 mb-3">
+        <label for="link_foto" class="form-label">Link Foto / URL Dokumen</label>
+
+        <input type="url"
+               class="form-control @error('link_foto') is-invalid @enderror"
+               id="link_foto"
+               name="link_foto"
+               value="{{ old('link_foto') }}"
+               placeholder="https://drive.google.com/file/d/...">
+
+        <small class="text-muted">
+            Opsional. Isi jika file disimpan di Google Drive, OneDrive, Dropbox, dll.
+        </small>
+
+        @error('link_foto')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+
+</div>
             
             <!-- TOMBOL SIMPAN -->
             <div class="d-flex justify-content-between mt-4">

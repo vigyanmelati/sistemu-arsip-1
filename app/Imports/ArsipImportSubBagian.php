@@ -508,6 +508,9 @@ public function customValidationMessages()
     $uraianArsip = $row['jenis_arsip'] ?? $row['JENIS ARSIP'] ?? '';
     $tahunArsip = $row['kurun_waktu'] ?? $row['KURUN WAKTU'] ?? date('Y');
     $tingkatPerkembangan = $row['tingkat_perkembangan'] ?? $row['TINGKAT PERKEMBANGAN'] ?? 'ASLI';
+    $linkFoto = trim(
+    $row['link_foto'] ?? $row['LINK FOTO'] ?? ''
+);
     
     // =======================
     // PARSING JUMLAH (format: "1 BENDEL")
@@ -607,6 +610,7 @@ if (!$lokasiArsip) {
         'nomor_rak'           => (string) $nomorRak,
         'lokasi_arsip' => $lokasiArsip,
         'tingkat_perkembangan' => $tingkatPerkembangan,
+         'link_foto'            => $linkFoto,
         'media_arsip'         => $mediaArsip,
         'keterangan'          => $kondisiFisik,
         'tanggal_masuk'       => now()->format('Y-m-d'),

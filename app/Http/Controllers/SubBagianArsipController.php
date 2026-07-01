@@ -170,6 +170,7 @@ foreach ($duplicateGroups as $group) {
             'keterangan'=>'nullable|in:BAIK,RUSAK,HILANG',
             'media_arsip'=>'nullable|string|max:255',
             'file_dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'link_foto'    => 'nullable|url|max:1000|required_without:file_dokumen',
         ]);
 
         $validated['sub_bagian_id'] = $user->sub_bagian_id;
@@ -192,6 +193,7 @@ foreach ($duplicateGroups as $group) {
         ];
 
         $validated['lokasi_arsip'] = $mapLokasi[$namaSub] ?? null;
+        $validated['link_foto'] = $request->link_foto;
 
         if($request->hasFile('file_dokumen')){
             $file=$request->file('file_dokumen');
@@ -262,8 +264,10 @@ foreach ($duplicateGroups as $group) {
             'hapus_file'=>'nullable|in:0,1',
             'tangani_duplikat' => 'nullable|in:1',
             'duplicate_reason' => 'nullable|string|max:1000',
+               'link_foto' => 'nullable|url|max:1000',
         ]);
         $validated['lokasi_arsip'] = $this->getLokasiArsip($user);
+         $validated['link_foto'] = $request->link_foto;
         if(($request->hapus_file??'0')=='1' && $arsip->file_dokumen){
             Storage::disk('public')->delete('arsip/'.$arsip->file_dokumen);
             $validated['file_dokumen']=null;

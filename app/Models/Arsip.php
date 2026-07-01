@@ -47,16 +47,17 @@ class Arsip extends Model
         'keterangan',
         'media_arsip',
         'file_dokumen',
+        'link_foto',
         'created_by',
         'file_berita_acara',
         'status_pindah',
         'catatan_verifikasi',
         'diverifikasi_oleh',
-    'tanggal_diverifikasi',
+        'tanggal_diverifikasi',
 
-    'catatan_perbaikan',
-     'duplicate_reason',
-    'is_duplicate',
+        'catatan_perbaikan',
+        'duplicate_reason',
+        'is_duplicate',
     ];
      protected $guarded = ['skipHistory'];
 
@@ -390,6 +391,19 @@ class Arsip extends Model
     public function getLatestBeritaAcaraAttribute()
     {
         return $this->beritaAcaraPindah()->latest()->first();
+    }
+
+    public function getViewFileUrlAttribute()
+    {
+        if (!empty($this->link_foto)) {
+            return $this->link_foto;
+        }
+
+        if (!empty($this->file_dokumen)) {
+            return asset('storage/arsip/' . $this->file_dokumen);
+        }
+
+        return null;
     }
 
 }

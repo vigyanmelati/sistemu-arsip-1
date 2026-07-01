@@ -334,33 +334,64 @@
                 </div>
             </div>
             
-            <div class="row">
-                <!-- FILE UPLOAD -->
-                <div class="col-md-6 mb-3">
-                    <label for="file_dokumen" class="form-label">File Dokumen</label>
-                    @if($arsip->file_dokumen)
-                        <div class="mb-2">
-                            <span class="badge bg-info">File saat ini:</span>
-                            <a href="{{ Storage::url('arsip/' . $arsip->file_dokumen) }}" target="_blank" class="text-decoration-none">
-                                {{ $arsip->file_dokumen }}
-                            </a>
-                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="hapusFile()">
-                                <i class="bi bi-trash"></i> Hapus
-                            </button>
-                            <input type="hidden" name="hapus_file" id="hapus_file" value="0">
-                        </div>
-                    @endif
-                    <input type="file" class="form-control @error('file_dokumen') is-invalid @enderror" 
-                           id="file_dokumen" name="file_dokumen" 
-                           accept=".pdf,.jpg,.jpeg,.png">
-                    <small class="text-muted">
-                        Format: PDF, JPG, JPEG, PNG (Maks: 2MB) - Kosongkan jika tidak ingin mengubah
-                    </small>
-                    @error('file_dokumen')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+           <div class="row">
+    <!-- FILE UPLOAD -->
+    <div class="col-md-6 mb-3">
+        <label for="file_dokumen" class="form-label">File Dokumen</label>
+
+        @if($arsip->file_dokumen)
+            <div class="mb-2">
+                <span class="badge bg-info">File saat ini:</span>
+                <a href="{{ Storage::url('arsip/' . $arsip->file_dokumen) }}" target="_blank">
+                    {{ $arsip->file_dokumen }}
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="hapusFile()">
+                    <i class="bi bi-trash"></i> Hapus
+                </button>
+                <input type="hidden" name="hapus_file" id="hapus_file" value="0">
             </div>
+        @endif
+
+        <input type="file"
+            class="form-control @error('file_dokumen') is-invalid @enderror"
+            id="file_dokumen"
+            name="file_dokumen"
+            accept=".pdf,.jpg,.jpeg,.png">
+
+        <small class="text-muted">
+            Format: PDF, JPG, JPEG, PNG (Maks: 2MB)
+        </small>
+
+        @error('file_dokumen')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+
+    <!-- LINK FOTO -->
+    <div class="col-md-6 mb-3">
+        <label for="link_foto" class="form-label">Link Foto / Google Drive</label>
+
+        <input type="url"
+            class="form-control @error('link_foto') is-invalid @enderror"
+            id="link_foto"
+            name="link_foto"
+            value="{{ old('link_foto', $arsip->link_foto) }}"
+            placeholder="https://drive.google.com/file/d/...">
+
+        @if($arsip->link_foto)
+            <small class="d-block mt-2">
+                Link saat ini:
+                <a href="{{ $arsip->link_foto }}" target="_blank">
+                    Lihat Foto
+                </a>
+            </small>
+        @endif
+
+        @error('link_foto')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+</div>
 
             <hr class="my-4">
 
