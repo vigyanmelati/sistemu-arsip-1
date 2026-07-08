@@ -100,7 +100,8 @@
                 <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i> Distribusi Arsip per Tahun</h5>
             </div>
             <div class="card-body">
-                <div style="height: 300px;">
+                 <div class="overflow-auto">
+    <div style="min-width: 700px; height:300px;">
                     <div class="row align-items-end h-100">
                         @php
                             $maxArsip = $arsipPerTahun->max('total') ?? 1;
@@ -118,6 +119,7 @@
                         </div>
                         @endforeach
                     </div>
+</div>
                 </div>
             </div>
         </div>

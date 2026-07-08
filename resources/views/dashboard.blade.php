@@ -169,7 +169,8 @@
             </div>
             <div class="card-body">
                 @if($arsipPerTahun->count() > 0)
-                <div style="height: 300px;">
+                <div class="overflow-auto">
+    <div style="min-width: 700px; height:300px;">
                     <!-- Simple Bar Chart dengan Bootstrap -->
                     <div class="row align-items-end h-100">
                         @php
@@ -188,6 +189,7 @@
                         </div>
                         @endforeach
                     </div>
+</div>
                 </div>
                 @else
                 <div class="text-center py-5">
