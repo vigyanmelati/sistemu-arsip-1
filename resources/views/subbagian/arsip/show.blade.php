@@ -27,9 +27,11 @@
                         <td width="40%"><strong>Kode Klasifikasi</strong></td>
                         <td>: {{ $arsip->kodeKlasifikasi->kode ?? 'N/A' }} - {{ $arsip->kodeKlasifikasi->uraian ?? '' }}</td>
                     </tr>
-                    <tr>
+                   <tr>
                         <td><strong>Judul Arsip</strong></td>
-                        <td>: {{ $arsip->uraian_arsip }}</td>
+                        <td class="detail-text">
+                            : {{ $arsip->uraian_arsip }}
+                        </td>
                     </tr>
                     <tr>
                         <td><strong>Sub Bagian</strong></td>
@@ -317,7 +319,14 @@
     </div>
 </div>
 
+<style>
+    .detail-text {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
 
+</style>
 
 @endsection
 

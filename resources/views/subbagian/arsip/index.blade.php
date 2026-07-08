@@ -220,7 +220,7 @@
                         </td>
                         <td>{{ $loop->iteration + ($arsips->currentPage() - 1) * $arsips->perPage() }}</td>
                         <td><strong>{{ $arsip->kodeKlasifikasi->kode ?? 'N/A' }}</strong></td>
-                        <td>{{ Str::limit($arsip->uraian_arsip, 200) }}</td>
+                        <td>{{ Str::limit($arsip->uraian_arsip, 100) }}</td>
                         <td>{{ $arsip->tahun_arsip }}</td>
                         <td>{{ $arsip->jumlah_berkas }} {{ $arsip->satuan_arsip }}</td>
                         <td>{{ $arsip->nomor_rak ?? '-' }}</td>

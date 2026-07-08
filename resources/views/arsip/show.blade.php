@@ -29,7 +29,9 @@
                     </tr>
                     <tr>
                         <td><strong>Judul Arsip</strong></td>
-                        <td>: {{ $arsip->uraian_arsip }}</td>
+                        <td class="detail-text">
+                            : {{ $arsip->uraian_arsip }}
+                        </td>
                     </tr>
                     <tr>
                         <td><strong>Sub Bagian</strong></td>
@@ -571,6 +573,12 @@
     color: #fff;
     border-color: #0d6efd #0d6efd #fff;
     font-weight: 600;
+}
+
+.detail-text {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 </style>

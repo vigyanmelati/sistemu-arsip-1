@@ -266,7 +266,7 @@
         
         <!-- Editable: Judul Arsip - disabled jika sudah disetujui musnah -->
         <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="uraian_arsip">
-            {{ Str::limit($arsip->uraian_arsip, 200) }}
+            {{ Str::limit($arsip->uraian_arsip, 100) }}
         </td>
         
         <td>{{ $arsip->tahun_arsip }}</td>
