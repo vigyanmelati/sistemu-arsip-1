@@ -130,7 +130,7 @@
 
                         </td>
 
-                        <td class="text-center">
+                        <!-- <td class="text-center">
 
                             @if(!empty($arsip->file_dokumen))
 
@@ -149,7 +149,29 @@
 
                             @endif
 
-                        </td>
+                        </td> -->
+
+                        <td class="text-center">
+
+    <div class="d-flex justify-content-center gap-2 flex-wrap">
+
+        <a href="{{ route('arsip.show', $arsip->id) }}"
+           class="btn btn-info btn-sm">
+            <i class="bi bi-eye"></i> Detail
+        </a>
+
+        @if(!empty($arsip->file_dokumen))
+            <a href="{{ asset('storage/arsip/' . $arsip->file_dokumen) }}"
+               target="_blank"
+               class="pdf-btn">
+                <i class="bi bi-file-earmark-pdf-fill"></i>
+                PDF
+            </a>
+        @endif
+
+    </div>
+
+</td>
 
                     </tr>
 

@@ -12,20 +12,32 @@ class LintasUnitController extends Controller
         return view('lintas-unit.index');
     }
 
-    public function daftar($unit)
+    public function daftar(Request $request, $unit)
     {
         // UNIT KEARSIPAN
         if ($unit == 'unit-kearsipan') {
 
-            $arsips = Arsip::whereIn('status_pindah', [
-                    'LANGSUNG',
-                    'DIPINDAHKAN'
-                ])
-                ->latest()
-                ->paginate(20);
+        $query = Arsip::whereIn('status_pindah', [
+            'LANGSUNG',
+            'DIPINDAHKAN'
+        ]);
 
-            $title = 'Daftar Arsip Unit Kearsipan';
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->where('uraian_arsip', 'like', "%{$search}%")
+                  ->orWhere('tahun_arsip', 'like', "%{$search}%")
+                  ->orWhereHas('kodeKlasifikasi', function ($k) use ($search) {
+                      $k->where('kode', 'like', "%{$search}%");
+                  });
+            });
         }
+
+        $arsips = $query->latest()->paginate(20)->withQueryString();
+
+        $title = 'Daftar Arsip Unit Kearsipan';
+    }
 
         // SUB BAGIAN UMUM DAN LOGISTIK
         elseif ($unit == 'subbag-umum-logistik') {
