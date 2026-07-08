@@ -112,33 +112,48 @@
                                         @endif
                                     </td>
                                     <td>{{ Str::limit($item->catatan, 30, '...') ?? '-' }}</td>
-                                    <td>
-                                        <div class="d-flex gap-2 justify-content-center">
-                                            <a href="{{ route('surat-masuk.edit', $item->id) }}" 
-                                               class="btn btn-sm btn-outline-warning rounded-pill px-3" 
-                                               data-bs-toggle="tooltip" title="Edit">
-                                                <i class="fas fa-edit me-1"></i> Edit
-                                            </a>
-                                            <a href="{{ route('surat-masuk.disposisi', $item->id) }}" 
-                                               target="_blank" 
-                                               class="btn btn-sm btn-outline-info rounded-pill px-3"
-                                               data-bs-toggle="tooltip" title="Cetak Disposisi">
-                                                <i class="fas fa-print me-1"></i> Disposisi
-                                            </a>
-                                            <form action="{{ route('surat-masuk.destroy', $item->id) }}" 
-                                                  method="POST" 
-                                                  style="display:inline-block">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" 
-                                                        class="btn btn-sm btn-outline-danger rounded-pill px-3"
-                                                        data-bs-toggle="tooltip" title="Hapus"
-                                                        onclick="return confirm('Yakin ingin menghapus surat ini?')">
-                                                    <i class="fas fa-trash-alt me-1"></i> Hapus
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
+                                        <td>
+    <div class="d-flex gap-2 justify-content-center">
+
+        <a href="{{ route('surat-masuk.show', $item->id) }}"
+           class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+           data-bs-toggle="tooltip"
+           title="Detail">
+            <i class="fas fa-eye me-1"></i> Detail
+        </a>
+
+        <a href="{{ route('surat-masuk.edit', $item->id) }}"
+           class="btn btn-sm btn-outline-warning rounded-pill px-3"
+           data-bs-toggle="tooltip"
+           title="Edit">
+            <i class="fas fa-edit me-1"></i> Edit
+        </a>
+
+        <a href="{{ route('surat-masuk.disposisi', $item->id) }}"
+           target="_blank"
+           class="btn btn-sm btn-outline-info rounded-pill px-3"
+           data-bs-toggle="tooltip"
+           title="Cetak Disposisi">
+            <i class="fas fa-print me-1"></i> Disposisi
+        </a>
+
+        <form action="{{ route('surat-masuk.destroy', $item->id) }}"
+              method="POST"
+              style="display:inline-block">
+            @csrf
+            @method('DELETE')
+
+            <button type="submit"
+                    class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                    data-bs-toggle="tooltip"
+                    title="Hapus"
+                    onclick="return confirm('Yakin ingin menghapus surat ini?')">
+                <i class="fas fa-trash-alt me-1"></i> Hapus
+            </button>
+        </form>
+
+    </div>
+</td>
                                 </tr>
                                 @empty
                                 <tr>
