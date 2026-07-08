@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'superadmin' => \App\Http\Middleware\CheckSuperAdmin::class,
             'admin' => \App\Http\Middleware\CheckAdmin::class,
             'subbagian' => \App\Http\Middleware\SubBagianMiddleware::class,
+            'nocache' => \App\Http\Middleware\NoCache::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

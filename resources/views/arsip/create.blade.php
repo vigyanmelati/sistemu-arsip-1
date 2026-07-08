@@ -553,23 +553,23 @@ tanggalArsipInput.addEventListener('change', function() {
 
     // VALIDASI FILE SAJA
     const fileInput = document.getElementById('file_dokumen');
-    if (fileInput && fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const fileSize = (file.size / 1024 / 1024).toFixed(2);
-        const ext = file.name.split('.').pop().toLowerCase();
+if (fileInput && fileInput.files.length > 0) {
+    const file = fileInput.files[0];
+    const fileSize = (file.size / 1024 / 1024).toFixed(2);
+    const ext = file.name.split('.').pop().toLowerCase();
 
-        if (fileSize > 2) {
-            e.preventDefault();
-            alert('Ukuran file melebihi 2MB');
-            return;
-        }
-
-        if (!['pdf','jpg','jpeg','png'].includes(ext)) {
-            e.preventDefault();
-            alert('Format file tidak didukung');
-            return;
-        }
+    if (fileSize > 10) {
+        e.preventDefault();
+        alert('Ukuran file melebihi 10MB');
+        return;
     }
+
+    if (!['pdf', 'jpg', 'jpeg', 'png'].includes(ext)) {
+        e.preventDefault();
+        alert('Format file tidak didukung');
+        return;
+    }
+}
 });
 // AUTO SYNC TAHUN DARI TANGGAL
 tanggalArsipInput.addEventListener('change', function() {
