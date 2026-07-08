@@ -365,22 +365,34 @@ class AdminArsipMasukController extends Controller
                     if (!$request->nomor_rak || !$request->nomor_box) {
                         throw new \Exception('Nomor rak dan box wajib diisi.');
                     }
+                    // $arsip->skipHistory = true;
+                    // $arsip->update([
+                    //     'nomor_rak' => $request->nomor_rak,
+                    //     'nomor_box' => $request->nomor_box,
+                    // ]);
+
+                    $dariRak = $arsip->nomor_rak;
+                    $dariBox = $arsip->nomor_box;
+
                     $arsip->skipHistory = true;
                     $arsip->update([
-                        'nomor_rak' => $request->nomor_rak,
-                        'nomor_box' => $request->nomor_box,
+                        'nomor_rak'            => $request->nomor_rak,
+                        'nomor_box'            => $request->nomor_box,
+                        'tanggal_diverifikasi' => now(),
+                        'diverifikasi_oleh'    => auth()->id(),
+                        'catatan_verifikasi'   => $request->catatan,
                     ]);
 
                     HistoryPindah::create([
                         'arsip_id' => $arsip->id,
-                        'aksi'     => 'SET_LOKASI',
-                        'dari_rak' => $arsip->getOriginal('nomor_rak'),
-                        'dari_box' => $arsip->getOriginal('nomor_box'),
-                        'ke_rak'   => $request->nomor_rak,
-                        'ke_box'   => $request->nomor_box,
+                        'aksi' => 'SET_LOKASI',
+                        'dari_rak' => $dariRak,
+                        'dari_box' => $dariBox,
+                        'ke_rak' => $request->nomor_rak,
+                        'ke_box' => $request->nomor_box,
                         'tanggal_pindah' => now(),
-                        'alasan_pindah'  => $request->catatan ?? 'Verifikasi lokasi arsip',
-                        'user_id'  => auth()->id(),
+                        'alasan_pindah' => $request->catatan ?? 'Verifikasi lokasi arsip',
+                        'user_id' => auth()->id(),
                     ]);
                 }
 

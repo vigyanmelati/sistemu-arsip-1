@@ -444,9 +444,9 @@
             
             <!-- TOMBOL SIMPAN -->
             <div class="d-flex justify-content-between mt-4">
-                <a href="{{ route('arsip.show', $arsip->id) }}" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left"></i> Kembali ke Detail
-                </a>
+                <a href="{{ url()->previous() != url()->current() ? url()->previous() : route('arsip.index') }}" class="btn btn-secondary">
+    <i class="bi bi-arrow-left"></i> Kembali
+</a>
                 <button type="submit" class="btn btn-primary">
                     <i class="bi bi-save"></i> Update Arsip
                 </button>
