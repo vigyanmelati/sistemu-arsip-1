@@ -909,6 +909,37 @@ private function extractNumberFromText($text)
     //         return back()->with('error', 'Gagal import: ' . $e->getMessage());
     //     }
     // }
+// public function import(Request $request)
+// {
+//     $request->validate([
+//         'file_excel' => 'required|file|mimes:xlsx,xls'
+//     ]);
+
+//     try {
+//         $import = new ArsipImport();
+
+//         Excel::import($import, $request->file('file_excel'));
+
+//         // Ambil data error (baris yang gagal)
+//         $failures = $import->failures();
+
+//         // Jika ada error
+//         if ($failures->isNotEmpty()) {
+//             return back()->with([
+//                 'warning' => '⚠️ Import selesai, tapi ada data yang gagal.',
+//                 'import_errors' => $failures
+//             ]);
+//         }
+
+//         // Jika semua sukses
+//         return redirect()->route('arsip.index')
+//             ->with('success', '✅ Semua data berhasil diimport.');
+
+//     } catch (\Exception $e) {
+//         return back()->with('error', '❌ Import gagal: ' . $e->getMessage());
+//     }
+// }
+
 public function import(Request $request)
 {
     $request->validate([
@@ -920,24 +951,35 @@ public function import(Request $request)
 
         Excel::import($import, $request->file('file_excel'));
 
-        // Ambil data error (baris yang gagal)
+        // Tidak ada satupun data yang berhasil diproses
+        if ($import->importedRows === 0) {
+            return back()->with('error', 'Tidak ada data untuk diimport.');
+        }
+
+        // Ambil data yang gagal
         $failures = $import->failures();
 
-        // Jika ada error
         if ($failures->isNotEmpty()) {
             return back()->with([
-                'warning' => '⚠️ Import selesai, tapi ada data yang gagal.',
+                'warning' => '⚠️ Import selesai, tetapi ada beberapa data yang gagal.',
                 'import_errors' => $failures
             ]);
         }
 
-        // Jika semua sukses
-        return redirect()->route('arsip.index')
-            ->with('success', '✅ Semua data berhasil diimport.');
+        return redirect()
+            ->route('arsip.index')
+            ->with('success', "✅ Berhasil mengimpor {$import->importedRows} data arsip.");
 
     } catch (\Exception $e) {
-        return back()->with('error', '❌ Import gagal: ' . $e->getMessage());
-    }
+
+    \Log::error($e->getMessage());
+    \Log::error(get_class($e));
+
+    return back()->with(
+        'error',
+        'Import gagal: '.$e->getMessage()
+    );
+}
 }
     public function export(Request $request)
     {

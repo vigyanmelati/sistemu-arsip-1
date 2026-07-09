@@ -18,6 +18,7 @@ use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 class ArsipImportSubBagian implements ToModel, WithHeadingRow, WithValidation, SkipsOnFailure, SkipsEmptyRows
 {
       use SkipsFailures;
+      public $importedRows = 0;
     /**
      * Parse nilai retensi dari Excel - handle multiline text
      */
@@ -618,7 +619,7 @@ if (!$lokasiArsip) {
     ];
     
     \Log::info('Data untuk disimpan:', $data);
-    
+    $this->importedRows++;
     return new Arsip($data);
 }
 

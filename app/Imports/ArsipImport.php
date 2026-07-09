@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\SkipsFailures;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use Maatwebsite\Excel\Validators\ValidationException;
+use PhpOffice\PhpSpreadsheet\Reader\Exception as SpreadsheetException;
 
 class ArsipImport implements 
     ToModel, 
@@ -25,6 +27,7 @@ class ArsipImport implements
     SkipsEmptyRows
 {
     use SkipsFailures;
+    public int $importedRows = 0;
 
     public function rules(): array
 {
@@ -282,7 +285,7 @@ public function customValidationMessages()
                     'tanggal_masuk' => now()->format('Y-m-d'),
                     'created_by' => Auth::id(),
                 ]);
-                
+                $this->importedRows++;
                 DB::commit();
                 Log::info('SUCCESS: Data saved with ID: ' . $arsip->id);
                 
