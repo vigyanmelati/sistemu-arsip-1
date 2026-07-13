@@ -37,9 +37,9 @@
         .logo img {
             width: 55px;
         }
-        .wrapper{
+        /* .wrapper{
     width:100%;
-}
+} */
 
         .header {
             text-align: center;
