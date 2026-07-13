@@ -37,7 +37,7 @@
         .logo img {
             width: 55px;
         }
-        \.wrapper{
+        .wrapper{
     width:100%;
 }
 
@@ -53,7 +53,7 @@
         .judul {
             text-align: center;
             margin: 15px 0;
-            font-size: 1px;
+            font-size: 13px;
             /* font-weight: bold; */
         }
 
