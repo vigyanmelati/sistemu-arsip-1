@@ -25,11 +25,11 @@
             <i class="fas fa-file-excel me-1"></i> Export
         </a>
 
-        {{-- Tambah --}}
+        <!-- {{-- Tambah --}}
         <a href="{{ route('surat-masuk.create') }}"
            class="btn btn-primary rounded-pill px-4 shadow-sm">
             <i class="fas fa-plus me-1"></i> Tambah Surat
-        </a>
+        </a> -->
     </div>
 </div>
 
@@ -122,7 +122,7 @@
             <i class="fas fa-eye me-1"></i> Detail
         </a>
 
-        <a href="{{ route('subbagian.surat-masuk.edit', $item->id) }}"
+        <!-- <a href="{{ route('subbagian.surat-masuk.edit', $item->id) }}"
            class="btn btn-sm btn-outline-warning rounded-pill px-3"
            data-bs-toggle="tooltip"
            title="Edit">
@@ -150,7 +150,7 @@
                     onclick="return confirm('Yakin ingin menghapus surat ini?')">
                 <i class="fas fa-trash-alt me-1"></i> Hapus
             </button>
-        </form>
+        </form> -->
 
     </div>
 </td>

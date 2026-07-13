@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Arsip;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SubBagianDashboardController extends Controller
 {
@@ -61,12 +62,17 @@ class SubBagianDashboardController extends Controller
         }
 
         // Data untuk chart distribusi per tahun (opsional)
-        $arsipPerTahun = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
-            ->selectRaw('YEAR(tanggal_arsip) as tahun, COUNT(*) as total')
-            ->groupBy('tahun')
-            ->orderBy('tahun')
-            ->get();
-
+        // $arsipPerTahun = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
+        //     ->selectRaw('YEAR(tanggal_arsip) as tahun, COUNT(*) as total')
+        //     ->groupBy('tahun')
+        //     ->orderBy('tahun')
+        //     ->get();
+       $arsipPerTahun = Arsip::where('sub_bagian_id', Auth::user()->sub_bagian_id)
+    ->where('status_pindah', 'belum')
+    ->select('tahun_arsip', DB::raw('COUNT(*) as total'))
+    ->groupBy('tahun_arsip')
+    ->orderBy('tahun_arsip', 'asc')
+    ->get();
         // Arsip terbaru untuk tabel (opsional)
         $arsipTerbaru = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
             ->orderBy('created_at', 'desc')
