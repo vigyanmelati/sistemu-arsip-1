@@ -68,57 +68,132 @@ class SubBagianArsipController extends Controller
             });
         }
  // Filter duplikat
+ // Filter duplikat
 if ($request->show_duplicates == 1) {
 
-            // RESET hanya yang BUKAN NON_ARSIP
-            // RESET (hanya sub bagian user)
-DB::table('arsips')
-    ->where('sub_bagian_id', $user->sub_bagian_id)
-    ->update([
-        'is_duplicate' => 0,
-        'duplicate_reason' => null
-    ]);
+    // Reset flag duplikat
+    DB::table('arsips')
+        ->where('sub_bagian_id', $user->sub_bagian_id)
+        ->update([
+            'is_duplicate' => 0,
+            'duplicate_reason' => null
+        ]);
 
-// DETEKSI DUPLIKAT (judul + tahun + sub bagian)
-$duplicateGroups = DB::table(DB::raw("
-    (
-        SELECT 
+    // Cari kelompok data duplikat
+    $duplicateGroups = DB::table('arsips')
+        ->selectRaw("
             LOWER(
                 REPLACE(
                     REPLACE(
                         REPLACE(
                             REPLACE(
-                                REPLACE(uraian_arsip, CHAR(160), ''),
+                                TRIM(uraian_arsip),
                             ' ', ''),
                         '\n', ''),
                     '\r', ''),
                 '\t', '')
-            ) as cleaned_uraian,
+            ) AS cleaned_uraian,
             tahun_arsip,
-            COUNT(*) as total
-        FROM arsips
-        WHERE sub_bagian_id = {$user->sub_bagian_id}
-        GROUP BY cleaned_uraian, tahun_arsip
-        HAVING total > 1
-    ) as dup
-"))->get();
-// UPDATE FLAG
-foreach ($duplicateGroups as $group) {
-    DB::table('arsips')
+            COUNT(*) AS total
+        ")
         ->where('sub_bagian_id', $user->sub_bagian_id)
-        ->where('tahun_arsip', $group->tahun_arsip)
-        ->whereRaw(
-    'LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(uraian_arsip, CHAR(160), ""), " ", ""), "\n", ""), "\r", ""), "\t", "")) = ?',
-    [$group->cleaned_uraian]
-)
-        ->update([
-            'is_duplicate' => 1,
-            'duplicate_reason' => 'Duplikat otomatis'
-        ]);
-}
+        ->where('status_pindah', '!=', 'NON_ARSIP')
+        ->groupByRaw("
+            LOWER(
+                REPLACE(
+                    REPLACE(
+                        REPLACE(
+                            REPLACE(
+                                TRIM(uraian_arsip),
+                            ' ', ''),
+                        '\n', ''),
+                    '\r', ''),
+                '\t', '')
+            ),
+            tahun_arsip
+        ")
+        ->having('total', '>', 1)
+        ->get();
 
-            $query->where('is_duplicate', 1);
-        }
+    // Tandai semua arsip yang termasuk duplikat
+    foreach ($duplicateGroups as $group) {
+
+        DB::table('arsips')
+            ->where('sub_bagian_id', $user->sub_bagian_id)
+            ->where('status_pindah', '!=', 'NON_ARSIP')
+            ->where('tahun_arsip', $group->tahun_arsip)
+            ->whereRaw("
+                LOWER(
+                    REPLACE(
+                        REPLACE(
+                            REPLACE(
+                                REPLACE(
+                                    TRIM(uraian_arsip),
+                                ' ', ''),
+                            '\n', ''),
+                        '\r', ''),
+                    '\t', '')
+                ) = ?
+            ", [$group->cleaned_uraian])
+            ->update([
+                'is_duplicate' => 1,
+                'duplicate_reason' => 'Duplikat otomatis'
+            ]);
+    }
+
+    $query->where('is_duplicate', 1);
+}
+// if ($request->show_duplicates == 1) {
+
+//             // RESET hanya yang BUKAN NON_ARSIP
+//             // RESET (hanya sub bagian user)
+// DB::table('arsips')
+//     ->where('sub_bagian_id', $user->sub_bagian_id)
+//     ->update([
+//         'is_duplicate' => 0,
+//         'duplicate_reason' => null
+//     ]);
+
+// // DETEKSI DUPLIKAT (judul + tahun + sub bagian)
+// $duplicateGroups = DB::table(DB::raw("
+//     (
+//         SELECT 
+//             LOWER(
+//                 REPLACE(
+//                     REPLACE(
+//                         REPLACE(
+//                             REPLACE(
+//                                 REPLACE(uraian_arsip, CHAR(160), ''),
+//                             ' ', ''),
+//                         '\n', ''),
+//                     '\r', ''),
+//                 '\t', '')
+//             ) as cleaned_uraian,
+//             tahun_arsip,
+//             COUNT(*) as total
+//         FROM arsips
+//         WHERE sub_bagian_id = {$user->sub_bagian_id}
+//         GROUP BY cleaned_uraian, tahun_arsip
+//         HAVING total > 1
+//     ) as dup
+// "))->get();
+// // UPDATE FLAG
+// foreach ($duplicateGroups as $group) {
+//     DB::table('arsips')
+//         ->where('sub_bagian_id', $user->sub_bagian_id)
+//         ->where('tahun_arsip', $group->tahun_arsip)
+//         ->whereRaw(
+//     'LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(uraian_arsip, CHAR(160), ""), " ", ""), "\n", ""), "\r", ""), "\t", "")) = ?',
+//     [$group->cleaned_uraian]
+// )
+//         ->update([
+//             'is_duplicate' => 1,
+//             'duplicate_reason' => 'Duplikat otomatis'
+//         ]);
+// }
+
+//             $query->where('is_duplicate', 1);
+//         }
         $arsips = $query->orderBy('id','desc')->paginate(15);
 
         // Filter dropdown options
