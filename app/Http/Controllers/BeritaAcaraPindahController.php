@@ -40,6 +40,12 @@ class BeritaAcaraPindahController extends Controller
             'nomor_bap' => 'required|string|max:100|unique:berita_acara_pindah,nomor_bap',
             'tanggal_bap' => 'required|date',
             'file_bap' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240'
+        ], [
+            'file_bap.required' => 'File Berita Acara wajib diunggah.',
+            'file_bap.mimes' => 'File harus berformat PDF, JPG, JPEG, atau PNG.',
+            'file_bap.max' => 'Ukuran file maksimal 10 MB.',
+            'nomor_bap.required' => 'Nomor BAP wajib diisi.',
+            'tanggal_bap.required' => 'Tanggal BAP wajib diisi.',
         ]);
 
         $file = $request->file('file_bap');
@@ -90,6 +96,11 @@ class BeritaAcaraPindahController extends Controller
             'nomor_bap' => 'required|string|max:100|unique:berita_acara_pindah,nomor_bap,' . $berita_acara->id,
             'tanggal_bap' => 'required|date',
             'file_bap' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240'
+        ], [
+            'nomor_bap.required' => 'Nomor BAP wajib diisi.',
+            'tanggal_bap.required' => 'Tanggal BAP wajib diisi.',
+            'file_bap.mimes' => 'File harus berformat PDF, JPG, JPEG, atau PNG.',
+            'file_bap.max' => 'Ukuran file maksimal 10 MB.',
         ]);
 
         // Update file jika ada
