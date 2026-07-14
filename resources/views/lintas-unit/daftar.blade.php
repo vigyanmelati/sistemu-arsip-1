@@ -124,7 +124,7 @@
                             @endphp
 
                             <span class="lokasi-badge">
-                                <i class="bi bi-geo-alt-fill me-1"></i>
+                                <!-- <i class="bi bi-geo-alt-fill me-1"></i> -->
                                 {{ $lokasi[$arsip->lokasi_arsip] ?? '-' }}
                             </span>
 
@@ -299,8 +299,8 @@
 }
 
 .lokasi-badge{
-    background: #eff6ff;
-    color: #2563eb;
+    /* background: #eff6ff;
+    color: #2563eb; */
     padding: 8px 13px;
     border-radius: 12px;
     font-size: 13px;
