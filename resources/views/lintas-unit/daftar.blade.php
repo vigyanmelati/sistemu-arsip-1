@@ -160,15 +160,18 @@
             <i class="bi bi-eye"></i> Detail
         </a>
 
-        @if(!empty($arsip->file_dokumen))
-            <a href="{{ asset('storage/arsip/' . $arsip->file_dokumen) }}"
-               target="_blank"
-               class="pdf-btn">
-                <i class="bi bi-file-earmark-pdf-fill"></i>
-                PDF
-            </a>
-        @endif
+      @php
+    $url = $arsip->file_dokumen
+        ? asset('storage/arsip/'.$arsip->file_dokumen)
+        : $arsip->link_foto;
+@endphp
 
+@if($url)
+    <a href="{{ $url }}" target="_blank" class="pdf-btn">
+        <i class="bi bi-file-earmark-fill"></i>
+        Lihat File
+    </a>
+@endif
     </div>
 
 </td>
