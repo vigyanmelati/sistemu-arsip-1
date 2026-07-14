@@ -140,6 +140,39 @@
                     </select>
                 </div>
 
+                <!-- Klasifikasi Keamanan -->
+                <div class="col-md-6 mb-3">
+                    <label for="klasifikasi_keamanan" class="form-label">
+                        Klasifikasi Keamanan <span class="text-danger">*</span>
+                    </label>
+
+                    <select class="form-control @error('klasifikasi_keamanan') is-invalid @enderror"
+                            id="klasifikasi_keamanan"
+                            name="klasifikasi_keamanan"
+                            required>
+                        <option value="">Pilih Klasifikasi Keamanan</option>
+
+                        <option value="Biasa/Terbuka"
+                            {{ old('klasifikasi_keamanan','Biasa/Terbuka') == 'Biasa/Terbuka' ? 'selected' : '' }}>
+                            Biasa/Terbuka
+                        </option>
+
+                        <option value="Terbatas"
+                            {{ old('klasifikasi_keamanan') == 'Terbatas' ? 'selected' : '' }}>
+                            Terbatas
+                        </option>
+
+                        <option value="Rahasia"
+                            {{ old('klasifikasi_keamanan') == 'Rahasia' ? 'selected' : '' }}>
+                            Rahasia
+                        </option>
+                    </select>
+
+                    @error('klasifikasi_keamanan')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
                  <!-- Tingkat Perkembangan -->
                 <div class="col-md-6 mb-3">
                     <label for="tingkat_perkembangan" class="form-label">Tingkat Perkembangan <span class="text-danger">*</span></label>

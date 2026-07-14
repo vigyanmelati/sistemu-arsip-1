@@ -233,6 +233,8 @@ if ($request->show_duplicates == 1) {
             'tanggal_arsip'=>'required|date',
             'jumlah_berkas'=>'required|integer|min:1',
             'satuan_arsip'=>'required|in:BENDEL,LEMBAR',
+            'klasifikasi_keamanan' => 'required|in:Biasa/Terbuka,Terbatas,Rahasia',
+
             // 'aktif_tahun'=>'nullable|string|max:100',
             // 'inaktif_tahun'=>'nullable|string|max:100',
             // 'tanggal_referensi'=>'nullable|date',
@@ -324,6 +326,8 @@ if ($request->show_duplicates == 1) {
             'tanggal_arsip'=>'required|date',
             'jumlah_berkas'=>'required|integer|min:1',
             'satuan_arsip'=>'required|in:BENDEL,LEMBAR',
+            'klasifikasi_keamanan' => 'required|in:Biasa/Terbuka,Terbatas,Rahasia',
+
             // 'aktif_tahun'=>'required|string|max:100',
             // 'inaktif_tahun'=>'required|string|max:100',
             // 'tanggal_referensi'=>'nullable|date',

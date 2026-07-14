@@ -58,6 +58,7 @@ class Arsip extends Model
         'catatan_perbaikan',
         'duplicate_reason',
         'is_duplicate',
+        'klasifikasi_keamanan'
     ];
      protected $guarded = ['skipHistory'];
 

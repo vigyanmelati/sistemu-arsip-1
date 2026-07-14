@@ -150,6 +150,29 @@
                         </td>
                     </tr>
 
+                    <tr>
+    <td><strong>Klasifikasi Keamanan</strong></td>
+    <td>:
+        @php
+            $keamananColors = [
+                'Biasa/Terbuka' => 'success',
+                'Terbatas'      => 'warning',
+                'Rahasia'       => 'danger',
+            ];
+
+            $keamananColor = $keamananColors[$arsip->klasifikasi_keamanan] ?? 'secondary';
+        @endphp
+
+        @if($arsip->klasifikasi_keamanan)
+            <span class="badge bg-{{ $keamananColor }}">
+                {{ ucwords(strtolower($arsip->klasifikasi_keamanan)) }}
+            </span>
+        @else
+            <span class="text-muted">-</span>
+        @endif
+    </td>
+</tr>
+
                      <tr>
                         <td><strong>File Dokumen</strong></td>
                         <td>: 

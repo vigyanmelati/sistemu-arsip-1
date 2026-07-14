@@ -340,6 +340,7 @@ public function store(Request $request)
         'tanggal_arsip' => 'required|date',
         'jumlah_berkas' => 'required|integer|min:1',
         'satuan_arsip' => 'required|in:BENDEL,LEMBAR',
+        'klasifikasi_keamanan' => 'required|in:Biasa/Terbuka,Terbatas,Rahasia',
 
         // OPTIONAL RETENSI
         'aktif_tahun' => 'nullable|string|max:100',
@@ -687,6 +688,7 @@ private function extractNumberFromText($text)
         'tanggal_arsip'       => 'required|date',
         'jumlah_berkas'       => 'required|integer|min:1',
         'satuan_arsip'        => 'required|in:BENDEL,LEMBAR',
+        'klasifikasi_keamanan' => 'required|in:Biasa/Terbuka,Terbatas,Rahasia',
 
         // Masa Retensi
         'aktif_tahun'   => 'nullable|string|max:100',
