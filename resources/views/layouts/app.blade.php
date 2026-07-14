@@ -473,6 +473,11 @@
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('subbagian.manajemen-lokasi.*') ? 'active' : '' }}" href="{{ route('subbagian.manajemen-lokasi.index') }}"><i class="bi bi-geo-alt-fill"></i> <span>Manajemen Lokasi</span></a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('subbagian.riwayat-pemindahan.*') ? 'active' : '' }}" href="{{ route('subbagian.riwayat-pemindahan.index') }}"><i class="bi bi-download"></i> <span>Riwayat Pemindahan</span></a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('berita-acara.*') ? 'active' : '' }}" href="{{ route('berita-acara.index') }}"><i class="bi bi-file-earmark-text"></i> <span>Berita Acara Pemindahan</span></a></li>
+                  <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('lintas-unit.*') ? 'active' : '' }}" href="{{ route('lintas-unit.index') }}">
+                        <i class="bi bi-diagram-3-fill"></i> <span>Arsip Lintas Unit</span>
+                    </a>
+                </li>
             @endif
 
             @if(auth()->user()->role === 'TU')

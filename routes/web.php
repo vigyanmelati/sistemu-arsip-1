@@ -23,6 +23,7 @@ use App\Http\Controllers\TUDashboardController;
 
 require __DIR__.'/auth.php';
 
+
 Route::middleware(['auth', 'nocache'])->group(function () {
     Route::patch('/arsip/{id}/inline-update', [ArsipController::class, 'updateInline'])
     ->name('arsip.inline-update');
@@ -35,11 +36,11 @@ Route::middleware(['auth', 'nocache'])->group(function () {
 
     Route::post('/arsip/export', [ArsipController::class, 'export'])->name('arsip.export');
 
-             Route::get('/arsip/check-duplicates', [ArsipController::class, 'checkDuplicates'])->name('arsip.check-duplicates');
+    Route::get('/arsip/check-duplicates', [ArsipController::class, 'checkDuplicates'])->name('arsip.check-duplicates');
     Route::post('/arsip/update-status-bulk', [ArsipController::class, 'updateStatusBulk'])->name('arsip.update-status-bulk');
     // Arsip (untuk Admin dan Super Admin)
     Route::middleware(['admin'])->group(function () {
-        Route::resource('arsip', ArsipController::class);
+       
         Route::post('/arsip/import', [ArsipController::class, 'import'])
             ->name('arsip.import');
 
@@ -206,6 +207,19 @@ Route::get(
 
 
 
+
+
+});
+
+
+
+Route::middleware(['auth', 'nocache'])->group(function () {
+     Route::resource('arsip', ArsipController::class);
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    
 Route::prefix('lintas-unit')->name('lintas-unit.')->group(function () {
 
     Route::get('/', [LintasUnitController::class, 'index'])
@@ -215,16 +229,6 @@ Route::prefix('lintas-unit')->name('lintas-unit.')->group(function () {
         ->name('daftar');
 
 });
-
-});
-
-
-
-Route::middleware(['auth', 'nocache'])->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::get('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
-    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
 });
 
 Route::middleware(['auth', 'subbagian'])->prefix('subbagian')->name('subbagian.')->group(function () {
