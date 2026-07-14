@@ -131,7 +131,7 @@
                         <td>: 
                             @if($arsip->file_dokumen)
                                 <div>
-                                    <a href="{{ Storage::url('arsip/' . $arsip->file_dokumen) }}" 
+                                    <a href="{{ asset('storage/arsip/'.$arsip->file_dokumen) }}" 
                                     target="_blank" class="btn btn-sm btn-outline-primary">
                                         <i class="bi bi-eye"></i> Lihat File
                                     </a>
@@ -297,7 +297,7 @@
                     <strong>Berita Acara:</strong><br>
 
                     @if(isset($beritaAcara) && $beritaAcara->file_bap)
-                        <a href="{{ Storage::url('berita_acara/' . $beritaAcara->file_bap) }}"
+                        <a href="{{ asset('storage/berita_acara/'.$beritaAcara->file_bap) }}"
                            target="_blank"
                            class="btn btn-sm btn-outline-primary mt-1">
                             <i class="bi bi-download"></i> Download BA
