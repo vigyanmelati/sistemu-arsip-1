@@ -32,20 +32,41 @@ class AuthenticatedSessionController extends Controller
     // }
 
     public function store(LoginRequest $request): RedirectResponse
-    {
-        $request->authenticate();
-        $request->session()->regenerate();
+{
+    $request->authenticate();
+    $request->session()->regenerate();
 
-        $user = Auth::user();
+    $user = Auth::user();
 
-        // kalau role user
-        if ($user->role === 'user') {
-            return redirect()->route('subbagian.dashboard');
-        }
-
-        // selain user (admin, dll)
-        return redirect()->route('dashboard');
+    // Role User
+    if ($user->role === 'user') {
+        return redirect()->route('subbagian.dashboard');
     }
+
+    // Role TU
+    if ($user->role === 'TU') {
+        return redirect()->route('tu.dashboard');
+    }
+
+    // Selain user dan TU (admin, super admin, dll)
+    return redirect()->route('dashboard');
+}
+
+    // public function store(LoginRequest $request): RedirectResponse
+    // {
+    //     $request->authenticate();
+    //     $request->session()->regenerate();
+
+    //     $user = Auth::user();
+
+    //     // kalau role user
+    //     if ($user->role === 'user') {
+    //         return redirect()->route('subbagian.dashboard');
+    //     }
+
+    //     // selain user (admin, dll)
+    //     return redirect()->route('dashboard');
+    // }
 
     /**
      * Destroy an authenticated session.

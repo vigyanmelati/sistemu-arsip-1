@@ -23,7 +23,7 @@ class UserController extends Controller
             'name' => 'required|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8',
-            'role' => 'required|in:admin,superadmin,user',
+            'role' => 'required|in:admin,superadmin,user,tu',
             'sub_bagian_id' => 'nullable|required_if:role,user|exists:sub_bagians,id',
         ]);
 
@@ -45,7 +45,7 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'role' => 'required|in:admin,superadmin,user',
+            'role' => 'required|in:admin,superadmin,user,tu',
             'sub_bagian_id' => 'nullable|required_if:role,user|exists:sub_bagians,id',
         ]);
 

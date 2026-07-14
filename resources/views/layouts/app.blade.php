@@ -474,6 +474,26 @@
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('subbagian.riwayat-pemindahan.*') ? 'active' : '' }}" href="{{ route('subbagian.riwayat-pemindahan.index') }}"><i class="bi bi-download"></i> <span>Riwayat Pemindahan</span></a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('berita-acara.*') ? 'active' : '' }}" href="{{ route('berita-acara.index') }}"><i class="bi bi-file-earmark-text"></i> <span>Berita Acara Pemindahan</span></a></li>
             @endif
+
+            @if(auth()->user()->role === 'TU')
+
+    <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('tu.dashboard') ? 'active' : '' }}"
+           href="{{ route('tu.dashboard') }}">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('surat-masuk.*') ? 'active' : '' }}"
+           href="{{ route('surat-masuk.index') }}">
+            <i class="bi bi-envelope-paper"></i>
+            <span>Surat Masuk</span>
+        </a>
+    </li>
+
+@endif
         @endauth
     </ul>
 </div>
@@ -496,11 +516,25 @@
             </div>
         </div>
 
-        @php
-            $role = auth()->user()->role ?? 'user';
-            $roleLabel = match ($role) { 'super_admin' => 'Super Admin', 'admin' => 'Admin', default => 'User' };
-            $badgeColor = match ($role) { 'super_admin' => 'danger', 'admin' => 'primary', default => 'secondary' };
-        @endphp
+     @php
+    $role = auth()->user()->role ?? 'user';
+
+    $roleLabel = match ($role) {
+        'super_admin' => 'Super Admin',
+        'admin'       => 'Admin',
+        'tu'          => 'Tata Usaha',
+        'user'        => 'Sub Bagian',
+        default       => 'User',
+    };
+
+    $badgeColor = match ($role) {
+        'super_admin' => 'danger',
+        'admin'       => 'primary',
+        'tu'          => 'warning',
+        'user'        => 'secondary',
+        default       => 'secondary',
+    };
+@endphp
 
         <div class="dropdown user-info">
             <button class="btn p-0 d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">

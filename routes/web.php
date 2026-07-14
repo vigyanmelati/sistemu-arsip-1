@@ -18,6 +18,7 @@ use App\Http\Controllers\BeritaAcaraPindahController;
 use App\Http\Controllers\SuratMasukController;
 use App\Http\Controllers\LintasUnitController;
 use App\Http\Controllers\SubBagianSuratMasukController;
+use App\Http\Controllers\TUDashboardController;
 
 
 require __DIR__.'/auth.php';
@@ -279,7 +280,10 @@ Route::post('/subbagian/arsip/{arsip}/duplicate', [SubBagianArsipController::cla
 
 
 
-
+Route::middleware(['auth'])->group(function () {
+    Route::get('/tu/dashboard', [TuDashboardController::class, 'index'])
+        ->name('tu.dashboard');
+});
 
 Route::middleware(['auth'])->prefix('subbagian')->name('subbagian.')->group(function () {
     Route::get('/surat-masuk/template', function () {

@@ -13,11 +13,11 @@
 
     <div class="d-flex gap-2 flex-wrap">
         {{-- Import --}}
-        <button class="btn btn-success rounded-pill px-4 shadow-sm"
+        <!-- <button class="btn btn-success rounded-pill px-4 shadow-sm"
                 data-bs-toggle="modal"
                 data-bs-target="#importModal">
             <i class="fas fa-file-import me-1"></i> Import
-        </button>
+        </button> -->
 
         {{-- Export --}}
         <a href="{{ route('surat-masuk.export') }}"

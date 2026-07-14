@@ -38,9 +38,27 @@
                             <td>{{ $user->name }}</td>
                             <td>{{ $user->email }}</td>
                             <td>
-                                <span class="badge bg-{{ $user->role === 'superadmin' ? 'danger' : 'secondary' }}">
-                                    {{ ucfirst($user->role) }}
-                                </span>
+                              @php
+                                $badge = match($user->role){
+                                    'super_admin' => 'danger',
+                                    'admin' => 'primary',
+                                    'tu' => 'warning',
+                                    'user' => 'secondary',
+                                    default => 'secondary',
+                                };
+
+                                $role = match($user->role){
+                                    'super_admin' => 'Super Admin',
+                                    'admin' => 'Admin',
+                                    'tu' => 'Tata Usaha',
+                                    'user' => 'User',
+                                    default => ucfirst($user->role),
+                                };
+                            @endphp
+
+                            <span class="badge bg-{{ $badge }}">
+                                {{ $role }}
+                            </span>
                             </td>
                             <td>
                                 <button class="btn btn-sm btn-warning"
@@ -98,8 +116,8 @@
                                                 <label class="form-label">Role</label>
                                                 <select name="role" class="form-select" required>
                                                     <option value="admin" {{ $user->role == 'admin' ? 'selected' : '' }}>Admin</option>
-                                                    <!-- <option value="superadmin" {{ $user->role == 'superadmin' ? 'selected' : '' }}>Superadmin</option> -->
-                                                      <option value="user" {{ $user->role == 'user' ? 'selected' : '' }}>User</option>
+                                                    <option value="tu" {{ $user->role == 'tu' ? 'selected' : '' }}>Tata Usaha</option>
+                                                    <option value="user" {{ $user->role == 'user' ? 'selected' : '' }}>User</option>
                                                 </select>
                                             </div>
 
@@ -175,13 +193,13 @@
 
                     <div class="mb-3">
                         <label class="form-label">Role</label>
-                        <select name="role" class="form-select" required>
+                       <select name="role" class="form-select" required>
                             <option value="">-- Pilih Role --</option>
                             <option value="admin">Admin</option>
-                            <!-- <option value="superadmin">Superadmin</option> -->
+                            <option value="tu">Tata Usaha</option>
                             <option value="user">User</option>
                         </select>
-                    </div>
+                                            </div>
 
                     <div class="mb-3 d-none" id="subBagianWrapper">
                         <label class="form-label">Sub Bagian</label>
