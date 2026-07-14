@@ -245,7 +245,7 @@ if ($request->show_duplicates == 1) {
             'keterangan'=>'nullable|in:BAIK,RUSAK,HILANG',
             'media_arsip'=>'nullable|string|max:255',
             'file_dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'link_foto'    => 'nullable|url|max:1000|required_without:file_dokumen',
+            'link_foto'    => 'nullable|url|max:1000',
         ]);
 
         $validated['sub_bagian_id'] = $user->sub_bagian_id;

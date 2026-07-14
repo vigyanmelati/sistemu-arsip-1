@@ -359,7 +359,7 @@
             accept=".pdf,.jpg,.jpeg,.png">
 
         <small class="text-muted">
-            Format: PDF, JPG, JPEG, PNG (Maks: 2MB)
+            Format: PDF, JPG, JPEG, PNG (Maks: 10MB)
         </small>
 
         @error('file_dokumen')
@@ -664,7 +664,7 @@ document.addEventListener('DOMContentLoaded', function () {
             
             if (fileSize > 2) {
                 e.preventDefault();
-                alert('Ukuran file melebihi 2MB');
+                alert('Ukuran file melebihi 10MB');
                 return;
             }
             

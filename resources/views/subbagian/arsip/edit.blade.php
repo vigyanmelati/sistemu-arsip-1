@@ -240,7 +240,7 @@
                            id="file_dokumen" name="file_dokumen" 
                            accept=".pdf,.jpg,.jpeg,.png">
                     <small class="text-muted">
-                        Format: PDF, JPG, JPEG, PNG (Maks: 2MB) - Kosongkan jika tidak ingin mengubah
+                        Format: PDF, JPG, JPEG, PNG (Maks: 10MB) - Kosongkan jika tidak ingin mengubah
                     </small>
                     @error('file_dokumen')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -542,7 +542,7 @@ document.addEventListener('DOMContentLoaded', function () {
             
             if (fileSize > 2) {
                 e.preventDefault();
-                alert('Ukuran file melebihi 2MB');
+                alert('Ukuran file melebihi 10MB');
                 return;
             }
             
