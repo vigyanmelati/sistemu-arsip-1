@@ -177,21 +177,29 @@
                         <td><strong>File Dokumen</strong></td>
                         <td>: 
                             @if($arsip->file_dokumen || $arsip->link_foto)
+                                @if(auth()->user()->canDownloadArsip($arsip))
+                                    <div>
+                                        @if($arsip->file_dokumen)
+                                            <a href="{{ route('subbagian.arsip.downloadFile', $arsip->id) }}"
+                                               target="_blank"
+                                               class="btn btn-primary">
+                                                Lihat/Unduh Dokumen
+                                            </a>
+                                        @elseif($arsip->link_foto)
+                                            <a href="{{ $arsip->link_foto }}"
+                                               target="_blank"
+                                               class="btn btn-primary">
+                                                Lihat Dokumen
+                                            </a>
+                                        @endif
 
-                            <div>
-                                @if($arsip->view_file_url)
-                                    <a href="{{ $arsip->view_file_url }}"
-                                    target="_blank"
-                                    class="btn btn-primary">
-                                        Lihat Dokumen
-                                    </a>
+                                        <small class="text-muted d-block mt-1">
+                                            {{ $arsip->file_dokumen ?? $arsip->link_foto }}
+                                        </small>
+                                    </div>
+                                @else
+                                    <span class="text-muted">File terbatas. Tidak dapat dilihat.</span>
                                 @endif
-
-                                <small class="text-muted d-block mt-1">
-                                    {{ $arsip->file_dokumen ?? $arsip->link_foto }}
-                                </small>
-                            </div>
-
                             @else
                                 <span class="text-muted">Tidak ada file</span>
                             @endif
@@ -319,22 +327,26 @@
                 </a>
 
 
-                <a href="{{ route('subbagian.arsip.edit', $arsip->id) }}"
-                class="btn btn-warning">
-                    <i class="bi bi-pencil"></i> Edit Arsip
-                </a>
+               @if(auth()->user()->canEditArsip($arsip))
+    <a href="{{ route('subbagian.arsip.edit', $arsip->id) }}"
+       class="btn btn-warning">
+        <i class="bi bi-pencil"></i> Edit Arsip
+    </a>
+@endif
 
-                <form action="{{ route('subbagian.arsip.destroy', $arsip->id) }}"
-                    method="POST"
-                    class="d-inline">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit"
-                            class="btn btn-danger"
-                            onclick="return confirm('Apakah Anda yakin ingin menghapus arsip ini?')">
-                        <i class="bi bi-trash"></i> Hapus Arsip
-                    </button>
-                </form>
+@if(auth()->user()->canDeleteArsip($arsip))
+    <form action="{{ route('subbagian.arsip.destroy', $arsip->id) }}"
+          method="POST"
+          class="d-inline">
+        @csrf
+        @method('DELETE')
+        <button type="submit"
+                class="btn btn-danger"
+                onclick="return confirm('Apakah Anda yakin ingin menghapus arsip ini?')">
+            <i class="bi bi-trash"></i> Hapus Arsip
+        </button>
+    </form>
+@endif
 
             </div>
         </div>

@@ -45,23 +45,144 @@ class User extends Authenticatable
     }
 
     // Cek role
+    public function roleName()
+    {
+        return strtolower($this->role ?? '');
+    }
+
     public function isSuperAdmin()
     {
-        return $this->role === 'super_admin';
+        return $this->roleName() === 'super_admin';
     }
 
     public function isAdmin()
     {
-        return $this->role === 'admin';
+        return $this->roleName() === 'admin';
     }
 
     public function isUser()
     {
-        return $this->role === 'user';
+        return $this->roleName() === 'user';
     }
+
+    public function isTu()
+    {
+        return $this->roleName() === 'tu';
+    }
+
+    // public function canViewRahasiaArsip()
+    // {
+    //     return in_array($this->roleName(), ['super_admin', 'admin', 'tu'], true);
+    // }
+
+    public function canViewRahasiaArsip()
+{
+    return in_array($this->roleName(), [
+        'super_admin',
+        'admin',
+        'tu'
+    ], true);
+}
+
+    // public function canViewArsip(Arsip $arsip)
+    // {
+    //     if ($arsip->klasifikasi_keamanan === 'Rahasia') {
+    //         return $this->canViewRahasiaArsip();
+    //     }
+
+    //     return true;
+    // }
+
+    public function canViewArsip(Arsip $arsip)
+    {
+        // Biasa/Terbuka
+        if ($arsip->klasifikasi_keamanan === 'Biasa/Terbuka') {
+            return true;
+        }
+
+        // Terbatas
+        if ($arsip->klasifikasi_keamanan === 'Terbatas') {
+            return true;
+        }
+
+        // Rahasia
+        if ($arsip->klasifikasi_keamanan === 'Rahasia') {
+
+            // Super admin, admin dan TU boleh
+            if (in_array($this->roleName(), ['super_admin', 'admin', 'tu'])) {
+                return true;
+            }
+
+            // User hanya boleh melihat arsip yang dibuatnya sendiri
+            return $arsip->created_by == $this->id;
+        }
+
+        return false;
+    }
+
+    // public function canDownloadArsip(Arsip $arsip)
+    // {
+    //     if ($arsip->klasifikasi_keamanan === 'Biasa/Terbuka') {
+    //         return true;
+    //     }
+
+    //     if ($arsip->klasifikasi_keamanan === 'Terbatas') {
+    //         return $this->isAdmin() || $this->isSuperAdmin() || $this->isTu();
+    //     }
+
+    //     return $arsip->klasifikasi_keamanan === 'Rahasia' && $this->canViewRahasiaArsip();
+    // }
+
+public function canDownloadArsip(Arsip $arsip)
+{
+    // 1. Biasa/Terbuka → semua boleh
+    if ($arsip->klasifikasi_keamanan === 'Biasa/Terbuka') {
+        return true;
+    }
+
+    // 2. Terbatas
+    if ($arsip->klasifikasi_keamanan === 'Terbatas') {
+        // Super Admin dan Admin (Unit Kearsipan) tetap bisa semua
+        if ($this->isSuperAdmin() || $this->isAdmin()) {
+            return true;
+        }
+        // Selain itu, hanya boleh jika sub-bagian user sama dengan sub-bagian arsip
+        return $this->sub_bagian_id && $this->sub_bagian_id == $arsip->sub_bagian_id;
+    }
+
+    // 3. Rahasia
+    if ($arsip->klasifikasi_keamanan === 'Rahasia') {
+        // Super Admin, Admin, dan TU bisa semua
+        if ($this->isSuperAdmin() || $this->isAdmin() || $this->isTu()) {
+            return true;
+        }
+        // User biasa hanya boleh miliknya sendiri
+        return $arsip->created_by == $this->id;
+    }
+
+    return false;
+}
+
     public function subBagian()
     {
         return $this->belongsTo(SubBagian::class);
     }
+
+    public function canEditArsip(Arsip $arsip)
+{
+    // Super admin dan admin selalu bisa
+    if ($this->isSuperAdmin() || $this->isAdmin()) {
+        return true;
+    }
+
+    // User biasa hanya bisa mengedit arsip yang dibuatnya sendiri
+    return $this->id == $arsip->created_by;
+}
+
+public function canDeleteArsip(Arsip $arsip)
+{
+    // Sama seperti edit, atau sesuaikan
+    return $this->canEditArsip($arsip);
+}
 
 }

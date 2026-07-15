@@ -136,13 +136,13 @@
             name="klasifikasi_keamanan"
             required>
         <option value="">Pilih Klasifikasi</option>
-        <option value="BIASA/TERBUKA" {{ old('klasifikasi_keamanan') == 'BIASA/TERBUKA' ? 'selected' : '' }}>
+        <option value="Biasa/Terbuka" {{ old('klasifikasi_keamanan') == 'BIASA/TERBUKA' ? 'selected' : '' }}>
             Biasa/Terbuka
         </option>
-        <option value="TERBATAS" {{ old('klasifikasi_keamanan') == 'TERBATAS' ? 'selected' : '' }}>
+        <option value="Terbatas" {{ old('klasifikasi_keamanan') == 'TERBATAS' ? 'selected' : '' }}>
             Terbatas
         </option>
-        <option value="RAHASIA" {{ old('klasifikasi_keamanan') == 'RAHASIA' ? 'selected' : '' }}>
+        <option value="Rahasia" {{ old('klasifikasi_keamanan') == 'RAHASIA' ? 'selected' : '' }}>
             Rahasia
         </option>
     </select>

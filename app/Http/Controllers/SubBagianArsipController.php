@@ -26,6 +26,35 @@ class SubBagianArsipController extends Controller
         $query = Arsip::with(['kodeKlasifikasi', 'subBagian'])
             ->where('sub_bagian_id', $user->sub_bagian_id) // scope sub bagian
             ->where('status_pindah', 'BELUM');
+
+        // if (!$user->canViewRahasiaArsip()) {
+        //     $query->where('klasifikasi_keamanan', '!=', 'Rahasia');
+        // }
+
+        $query->where(function ($q) use ($user) {
+
+    // selain rahasia
+    $q->where('klasifikasi_keamanan', '!=', 'Rahasia');
+
+    // rahasia milik sendiri
+    $q->orWhere(function ($sub) use ($user) {
+
+        $sub->where('klasifikasi_keamanan', 'Rahasia');
+
+        // admin, super admin dan TU
+        if (
+            $user->isAdmin() ||
+            $user->isSuperAdmin() ||
+            $user->isTu()
+        ) {
+            return;
+        }
+
+        // user hanya miliknya sendiri
+        $sub->where('created_by', $user->id);
+    });
+
+});
             
 
         $tahunOptions = Arsip::select('tahun_arsip')
@@ -207,6 +236,19 @@ if ($request->show_duplicates == 1) {
         ));
     }
 
+    private function authorizeSubBagianArsip(Arsip $arsip)
+    {
+        $user = Auth::user();
+
+        if ($arsip->sub_bagian_id != $user->sub_bagian_id) {
+            abort(403);
+        }
+
+        if (!$user->canViewArsip($arsip)) {
+            abort(403);
+        }
+    }
+
     public function create()
     {
         $kodeKlasifikasiOptions = KodeKlasifikasi::orderBy('kode')->get();
@@ -298,8 +340,7 @@ if ($request->show_duplicates == 1) {
 
     public function edit(Arsip $arsip)
     {
-        $user = Auth::user();
-        if($arsip->sub_bagian_id != $user->sub_bagian_id) abort(403);
+        $this->authorizeSubBagianArsip($arsip);
 
         $kodeKlasifikasiOptions = KodeKlasifikasi::orderBy('kode')->get();
         $subBagianOptions = SubBagian::orderBy('nama_sub_bagian')->get(); // tambahkan ini
@@ -308,16 +349,45 @@ if ($request->show_duplicates == 1) {
 
     public function show(Request $request, Arsip $arsip)
     {
+        $user = Auth::user();
+
+if (!$user->canViewArsip($arsip)) {
+    abort(403);
+}
+        $this->authorizeSubBagianArsip($arsip);
+
         return view('subbagian.arsip.show', [
             'arsip' => $arsip,
             'returnUrl' => $request->get('return')
         ]);
     }
 
+    public function downloadFile(Arsip $arsip)
+    {
+        $this->authorizeSubBagianArsip($arsip);
+
+        if (!$arsip->file_dokumen) {
+            abort(404, 'File dokumen tidak ditemukan.');
+        }
+
+        if (!Auth::user()->canDownloadArsip($arsip)) {
+            abort(403, 'Anda tidak memiliki akses untuk mengunduh file ini.');
+        }
+
+        $path = 'arsip/' . $arsip->file_dokumen;
+        if (!Storage::disk('public')->exists($path)) {
+            abort(404, 'File dokumen tidak ditemukan.');
+        }
+
+        return Storage::disk('public')->download($path);
+    }
+
     public function update(Request $request, Arsip $arsip)
     {
-        $user = Auth::user();
-        if($arsip->sub_bagian_id != $user->sub_bagian_id) abort(403);
+         $this->authorizeSubBagianArsip($arsip);
+
+    $user = Auth::user();
+        $this->authorizeSubBagianArsip($arsip);
 
         $validated = $request->validate([
             'kode_klasifikasi_id'=>'required|exists:kode_klasifikasis,id',
@@ -408,8 +478,7 @@ if ($request->show_duplicates == 1) {
 
     public function destroy(Arsip $arsip)
     {
-        $user = Auth::user();
-        if($arsip->sub_bagian_id != $user->sub_bagian_id) abort(403);
+        $this->authorizeSubBagianArsip($arsip);
 
         if($arsip->file_dokumen) Storage::disk('public')->delete('arsip/'.$arsip->file_dokumen);
         $arsip->delete();

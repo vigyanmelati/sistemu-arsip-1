@@ -245,6 +245,7 @@ Route::middleware(['auth', 'subbagian'])->prefix('subbagian')->name('subbagian.'
     // Import & Export
     Route::post('/arsip/import', [SubBagianArsipController::class, 'import'])->name('arsip.import');
     Route::post('/arsip/export', [SubBagianArsipController::class, 'export'])->name('arsip.export');
+    Route::get('/arsip/{arsip}/download-file', [SubBagianArsipController::class, 'downloadFile'])->name('arsip.downloadFile');
 
     // Ajukan Pindah (upload BAP)
     Route::post('/arsip/{arsip}/ajukan-pindah', [SubBagianArsipController::class, 'ajukanPindah'])->name('arsip.ajukanPindah');

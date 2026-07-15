@@ -151,31 +151,45 @@
 
                         </td> -->
 
-                        <td class="text-center">
+                       <td class="text-center">
 
-    <div class="d-flex justify-content-center gap-2 flex-wrap">
+<div class="d-flex justify-content-center gap-2 flex-wrap">
+
+    {{-- DETAIL ARSIP --}}
+    @if(Auth::user()->canViewArsip($arsip))
 
         <a href="{{ route('arsip.show', $arsip->id) }}"
            class="btn btn-info btn-sm">
             <i class="bi bi-eye"></i> Detail
         </a>
 
-      @php
-    $url = $arsip->file_dokumen
-        ? asset('storage/arsip/'.$arsip->file_dokumen)
-        : $arsip->link_foto;
-@endphp
+    @endif
 
-@if($url)
-    <a href="{{ $url }}" target="_blank" class="pdf-btn">
-        <i class="bi bi-file-earmark-fill"></i>
-        Lihat File
-    </a>
-@endif
-    </div>
+
+    {{-- FILE --}}
+    @php
+        $url = $arsip->file_dokumen
+            ? asset('storage/arsip/'.$arsip->file_dokumen)
+            : $arsip->link_foto;
+    @endphp
+
+
+    @if($url && Auth::user()->canDownloadArsip($arsip))
+
+        <a href="{{ $url }}"
+           target="_blank"
+           class="pdf-btn">
+
+            <i class="bi bi-file-earmark-fill"></i>
+            Lihat File
+
+        </a>
+
+    @endif
+
+</div>
 
 </td>
-
                     </tr>
 
                     @empty

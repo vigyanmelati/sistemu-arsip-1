@@ -157,18 +157,18 @@
 
         <option value="">Pilih Klasifikasi</option>
 
-        <option value="BIASA/TERBUKA"
-            {{ old('klasifikasi_keamanan', $arsip->klasifikasi_keamanan) == 'BIASA/TERBUKA' ? 'selected' : '' }}>
+       <option value="Biasa/Terbuka"
+            {{ old('klasifikasi_keamanan', $arsip->klasifikasi_keamanan) == 'Biasa/Terbuka' ? 'selected' : '' }}>
             Biasa/Terbuka
         </option>
 
-        <option value="TERBATAS"
-            {{ old('klasifikasi_keamanan', $arsip->klasifikasi_keamanan) == 'TERBATAS' ? 'selected' : '' }}>
+        <option value="Terbatas"
+            {{ old('klasifikasi_keamanan', $arsip->klasifikasi_keamanan) == 'Terbatas' ? 'selected' : '' }}>
             Terbatas
         </option>
 
-        <option value="RAHASIA"
-            {{ old('klasifikasi_keamanan', $arsip->klasifikasi_keamanan) == 'RAHASIA' ? 'selected' : '' }}>
+        <option value="Rahasia"
+            {{ old('klasifikasi_keamanan', $arsip->klasifikasi_keamanan) == 'Rahasia' ? 'selected' : '' }}>
             Rahasia
         </option>
     </select>
@@ -260,9 +260,13 @@
                     @if($arsip->file_dokumen)
                         <div class="mb-2">
                             <span class="badge bg-info">File saat ini:</span>
-                            <a href="{{ Storage::url('arsip/' . $arsip->file_dokumen) }}" target="_blank" class="text-decoration-none">
-                                {{ $arsip->file_dokumen }}
-                            </a>
+                            @if(auth()->user()->canDownloadArsip($arsip))
+                                <a href="{{ route('subbagian.arsip.downloadFile', $arsip->id) }}" target="_blank" class="text-decoration-none">
+                                    {{ $arsip->file_dokumen }}
+                                </a>
+                            @else
+                                <span class="text-muted">{{ $arsip->file_dokumen }}</span>
+                            @endif
                             <button type="button" class="btn btn-sm btn-outline-danger" onclick="hapusFile()">
                                 <i class="bi bi-trash"></i> Hapus
                             </button>
