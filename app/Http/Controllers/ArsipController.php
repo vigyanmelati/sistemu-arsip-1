@@ -941,7 +941,6 @@ private function extractNumberFromText($text)
 //         return back()->with('error', '❌ Import gagal: ' . $e->getMessage());
 //     }
 // }
-
 public function import(Request $request)
 {
     $request->validate([
@@ -949,40 +948,109 @@ public function import(Request $request)
     ]);
 
     try {
-        $import = new ArsipImport();
 
-        Excel::import($import, $request->file('file_excel'));
+        /*
+        |--------------------------------------------------------------------------
+        | BACA EXCEL
+        |--------------------------------------------------------------------------
+        */
 
-        // Tidak ada satupun data yang berhasil diproses
-        if ($import->importedRows === 0) {
-            return back()->with('error', 'Tidak ada data untuk diimport.');
-        }
+        $rows = Excel::toArray(
+            new ArsipImport(),
+            $request->file('file_excel')
+        );
 
-        // Ambil data yang gagal
-        $failures = $import->failures();
+        $rows = $rows[0];
 
-        if ($failures->isNotEmpty()) {
+        $validatorImport = new ArsipImport();
+
+        $validatorImport->validateExcel($rows);
+
+        /*
+        |--------------------------------------------------------------------------
+        | ADA ERROR
+        |--------------------------------------------------------------------------
+        */
+
+        if (!empty($validatorImport->errors)) {
+
             return back()->with([
-                'warning' => '⚠️ Import selesai, tetapi ada beberapa data yang gagal.',
-                'import_errors' => $failures
+                'error' => 'Import dibatalkan karena terdapat data yang tidak valid.',
+                'import_errors' => $validatorImport->errors
             ]);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | TIDAK ADA ERROR
+        |--------------------------------------------------------------------------
+        */
+
+        $import = new ArsipImport();
+
+        Excel::import(
+            $import,
+            $request->file('file_excel')
+        );
+
         return redirect()
             ->route('arsip.index')
-            ->with('success', "✅ Berhasil mengimpor {$import->importedRows} data arsip.");
+            ->with(
+                'success',
+                "Berhasil mengimpor {$import->importedRows} data arsip."
+            );
 
     } catch (\Exception $e) {
 
-    \Log::error($e->getMessage());
-    \Log::error(get_class($e));
+        \Log::error($e->getMessage());
 
-    return back()->with(
-        'error',
-        'Import gagal: '.$e->getMessage()
-    );
+        return back()->with(
+            'error',
+            'Import gagal: ' . $e->getMessage()
+        );
+    }
 }
-}
+// public function import(Request $request)
+// {
+//     $request->validate([
+//         'file_excel' => 'required|file|mimes:xlsx,xls'
+//     ]);
+
+//     try {
+//         $import = new ArsipImport();
+
+//         Excel::import($import, $request->file('file_excel'));
+
+//         // Tidak ada satupun data yang berhasil diproses
+//         if ($import->importedRows === 0) {
+//             return back()->with('error', 'Tidak ada data untuk diimport.');
+//         }
+
+//         // Ambil data yang gagal
+//         $failures = $import->failures();
+
+//         if ($failures->isNotEmpty()) {
+//             return back()->with([
+//                 'warning' => '⚠️ Import selesai, tetapi ada beberapa data yang gagal.',
+//                 'import_errors' => $failures
+//             ]);
+//         }
+
+//         return redirect()
+//             ->route('arsip.index')
+//             ->with('success', "✅ Berhasil mengimpor {$import->importedRows} data arsip.");
+
+//     } catch (\Exception $e) {
+
+//     \Log::error($e->getMessage());
+//     \Log::error(get_class($e));
+
+//     return back()->with(
+//         'error',
+//         'Import gagal: '.$e->getMessage()
+//     );
+// }
+// }
     public function export(Request $request)
     {
         $columns = $request->input('columns', []);

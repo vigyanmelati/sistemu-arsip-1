@@ -8,626 +8,534 @@ use App\Models\SubBagian;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\SkipsOnFailure;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use Maatwebsite\Excel\Concerns\SkipsFailures;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Carbon\Carbon;
-use Maatwebsite\Excel\Concerns\SkipsOnFailure;
-use Maatwebsite\Excel\Concerns\SkipsFailures;
-use Maatwebsite\Excel\Concerns\WithValidation;
-use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use Illuminate\Support\Facades\Log;
 
-class ArsipImportSubBagian implements ToModel, WithHeadingRow, WithValidation, SkipsOnFailure, SkipsEmptyRows
+class ArsipImportSubBagian implements 
+    ToModel, 
+    WithHeadingRow, 
+    WithValidation, 
+    SkipsOnFailure, 
+    SkipsEmptyRows
 {
-      use SkipsFailures;
-      public $importedRows = 0;
+    use SkipsFailures;
+
+    public int $importedRows = 0;
+    public array $errors = [];
+
     /**
-     * Parse nilai retensi dari Excel - handle multiline text
+     * Aturan validasi untuk setiap kolom
      */
-public function rules(): array
+    public function rules(): array
+    {
+        return [
+            // WAJIB
+            'kode_klasifikasi' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    $kode = str_replace(' ', '', strtoupper(trim($value)));
+                    $exists = KodeKlasifikasi::where('kode', $kode)->exists();
+                    if (!$exists) {
+                        $fail('Kode klasifikasi tidak ditemukan di database.');
+                    }
+                }
+            ],
+            'jenis_arsip' => 'required|string|max:500',
+            'kurun_waktu' => 'required|numeric|min:2000|max:' . (date('Y') + 1),
+            
+            // JUMLAH (format: "angka<spasi>satuan")
+            'jumlah' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    if (!preg_match('/^\d+\s+(BENDEL|LEMBAR)$/i', trim($value))) {
+                        $fail('Format harus "angka<spasi>satuan" dengan satuan BENDEL atau LEMBAR, .');
+                    }
+                }
+            ],
+
+            // KETERANGAN (format: "MEDIA / KONDISI")
+            'keterangan' => [
+                'nullable',
+                function ($attribute, $value, $fail) {
+                    if ($value) {
+                        $parts = array_map('trim', explode('/', $value));
+                        if (count($parts) !== 2) {
+                            $fail('Format harus "MEDIA / KONDISI" (contoh: TEKSTUAL / BAIK)');
+                        } else {
+                            $media = strtoupper($parts[0]);
+                            $kondisi = strtoupper($parts[1]);
+                            if (!in_array($media, ['TEKSTUAL', 'DIGITAL'])) {
+                                $fail('Media harus TEKSTUAL atau DIGITAL.');
+                            }
+                            if (!in_array($kondisi, ['BAIK', 'RUSAK', 'HILANG'])) {
+                                $fail('Kondisi harus BAIK, RUSAK, atau HILANG.');
+                            }
+                        }
+                    }
+                }
+            ],
+
+            // OPTIONAL
+            'tingkat_perkembangan' => 'nullable|in:ASLI,COPY,SALINAN',
+            'link_foto'            => 'nullable|url|max:1000',
+            'namanomor_box' => 'nullable',
+            'nama_raklemari' => 'nullable',
+            'aktif'                => 'nullable|string|max:100',
+            'inaktif'              => 'nullable|string|max:100',
+        ];
+    }
+
+    /**
+     * Pesan error kustom
+     */
+    // public function customValidationMessages()
+    // {
+    //     return [
+    //         'kode_klasifikasi.required' => 'Kode klasifikasi wajib diisi.',
+    //         'jenis_arsip.required'      => 'Jenis arsip wajib diisi.',
+    //         'kurun_waktu.required'      => 'Tahun arsip wajib diisi.',
+    //         'kurun_waktu.numeric'       => 'Tahun arsip harus berupa angka.',
+    //         'kurun_waktu.min'           => 'Tahun arsip minimal 2000.',
+    //         'kurun_waktu.max'           => 'Tahun arsip maksimal ' . (date('Y') + 1) . '.',
+    //         'jumlah.required'           => 'Jumlah berkas wajib diisi.',
+    //         'tingkat_perkembangan.in'   => 'Tingkat perkembangan harus ASLI, COPY, atau SALINAN.',
+    //         'link_foto.url'             => 'Link foto harus URL yang valid.',
+    //     ];
+    // }
+public function validateExcel(array $rows): void
 {
-    return [
-        'kode_klasifikasi' => 'required|exists:kode_klasifikasis,kode',
-        'jenis_arsip'      => 'required',
-        'kurun_waktu'      => 'required|numeric',
+    $rowNumber = 6;
+
+    foreach ($rows as $row) {
+
+        $this->validateRow(
+            $row,
+            $rowNumber
+        );
+
+        $rowNumber++;
+    }
+}
+    /**
+     * Lewati baris kosong
+     */
+    public function isEmptyWhen(array $row): bool
+    {
+        return empty(trim($row['kode_klasifikasi'] ?? '')) &&
+               empty(trim($row['jenis_arsip'] ?? '')) &&
+               empty(trim($row['kurun_waktu'] ?? ''));
+    }
+
+    /**
+     * Heading row (baris ke-5)
+     */
+    public function headingRow(): int
+    {
+        return 5;
+    }
+
+    private function validateRow(array $row, int $rowNumber): void
+{
+    $requiredFields = [
+        'kode_klasifikasi' => 'Kode Klasifikasi',
+        'jenis_arsip'      => 'Jenis Arsip',
+        'kurun_waktu'      => 'Kurun Waktu',
+        'jumlah'           => 'Jumlah',
     ];
-}
 
-public function isEmptyWhen(array $row): bool
-{
-    return
-        empty(trim($row['kode_klasifikasi'] ?? '')) &&
-        empty(trim($row['jenis_arsip'] ?? '')) &&
-        empty(trim($row['kurun_waktu'] ?? ''));
-}
+    foreach ($requiredFields as $field => $label) {
 
+        if (
+            !isset($row[$field]) ||
+            trim((string)$row[$field]) === ''
+        ) {
+            $this->errors[] =
+                "Baris {$rowNumber}: {$label} wajib diisi.";
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | KODE KLASIFIKASI
+    |--------------------------------------------------------------------------
+    */
+
+    if (!empty($row['kode_klasifikasi'])) {
+
+        $kodeInput = strtoupper(
+            str_replace(
+                ' ',
+                '',
+                trim($row['kode_klasifikasi'])
+            )
+        );
+
+        $kode = KodeKlasifikasi::whereRaw(
+            'REPLACE(kode," ","") = ?',
+            [$kodeInput]
+        )->first();
+
+        if (!$kode) {
+            $this->errors[] =
+                "Baris {$rowNumber}: Kode klasifikasi '{$row['kode_klasifikasi']}' tidak ditemukan.";
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | TAHUN ARSIP
+    |--------------------------------------------------------------------------
+    */
+
+    if (!empty($row['kurun_waktu'])) {
+
+        if (!is_numeric($row['kurun_waktu'])) {
+
+            $this->errors[] =
+                "Baris {$rowNumber}: Kurun waktu harus berupa angka.";
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | JUMLAH
+    |--------------------------------------------------------------------------
+    */
+
+    if (!empty($row['jumlah'])) {
+
+        $jumlah = strtoupper(
+            trim((string)$row['jumlah'])
+        );
+
+        preg_match('/[A-Z]+/', $jumlah, $match);
+
+        $satuan = $match[0] ?? '';
+
+        $allowed = [
+            'BENDEL',
+            'LEMBAR',
+        ];
+
+        if (!in_array($satuan, $allowed)) {
+
+            $this->errors[] =
+                "Baris {$rowNumber}: Satuan hanya boleh BENDEL atau  LEMBAR.";
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | TINGKAT PERKEMBANGAN
+    |--------------------------------------------------------------------------
+    */
+
+    if (!empty($row['tingkat_perkembangan'])) {
+
+        $allowed = [
+            'ASLI',
+            'COPY',
+            'SALINAN'
+        ];
+
+        $value = strtoupper(
+            trim($row['tingkat_perkembangan'])
+        );
+
+        if (!in_array($value, $allowed)) {
+
+            $this->errors[] =
+                "Baris {$rowNumber}: Tingkat perkembangan hanya boleh ASLI, COPY atau SALINAN.";
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | LINK FOTO
+    |--------------------------------------------------------------------------
+    */
+
+    if (!empty($row['link_foto'])) {
+
+        if (!filter_var($row['link_foto'], FILTER_VALIDATE_URL)) {
+
+            $this->errors[] =
+                "Baris {$rowNumber}: Link foto tidak valid.";
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | KETERANGAN
+    |--------------------------------------------------------------------------
+    */
+
+    if (!empty($row['keterangan'])) {
+
+        $parts = array_map(
+            'trim',
+            explode('/', $row['keterangan'])
+        );
+
+        if (count($parts) !== 2) {
+
+            $this->errors[] =
+                "Baris {$rowNumber}: Keterangan harus berformat MEDIA / KONDISI.";
+
+        } else {
+
+            $media = strtoupper($parts[0]);
+            $kondisi = strtoupper($parts[1]);
+
+            if (
+                !in_array(
+                    $media,
+                    ['TEKSTUAL', 'DIGITAL']
+                )
+            ) {
+
+                $this->errors[] =
+                    "Baris {$rowNumber}: Media arsip hanya boleh TEKSTUAL atau DIGITAL.";
+            }
+
+            if (
+                !in_array(
+                    $kondisi,
+                    ['BAIK', 'RUSAK', 'HILANG']
+                )
+            ) {
+
+                $this->errors[] =
+                    "Baris {$rowNumber}: Kondisi arsip hanya boleh BAIK, RUSAK atau HILANG.";
+            }
+        }
+    }
+}
 public function customValidationMessages()
 {
     return [
-        'kode_klasifikasi.required' => 'Kode klasifikasi kosong',
-        'kode_klasifikasi.exists'   => 'Kode klasifikasi tidak ditemukan',
-        'jenis_arsip.required'     => 'Jenis arsip kosong',
-        'kurun_waktu.required'     => 'Tahun arsip kosong',
+
+        'kode_klasifikasi.required'
+            => 'Kode klasifikasi wajib diisi.',
+
+        'jenis_arsip.required'
+            => 'Jenis arsip wajib diisi.',
+
+        'kurun_waktu.required'
+            => 'Kurun waktu wajib diisi.',
+
+        'jumlah.required'
+            => 'Jumlah wajib diisi.',
+
+        'tingkat_perkembangan.in'
+            => 'Tingkat perkembangan tidak valid.',
+
+        'link_foto.url'
+            => 'Link foto tidak valid.',
+
     ];
 }
-    private function parseRetensiString($value)
-    {
-        if ($value === null) {
-            return null;
-        }
-
-        // Normalisasi string Excel - handle multiline dengan tag <br>
-        $raw = (string) $value;
-        $raw = str_replace("\xc2\xa0", ' ', $raw); // NBSP Excel
-        $raw = str_replace("<br>", " ", $raw); // Handle tag <br>
-        $raw = str_replace("\n", " ", $raw); // Handle newline
-        $raw = str_replace("\r", " ", $raw); // Handle carriage return
-        $raw = preg_replace('/\s+/', ' ', trim($raw));
-
-        if ($raw === '') {
-            return null;
-        }
-
-        /**
-         * =========================
-         * 1️⃣ ANGKA SAJA -> tambah "TAHUN"
-         * =========================
-         */
-        if (ctype_digit($raw)) {
-            return $raw . ' TAHUN';
-        }
-
-        /**
-         * =========================
-         * 2️⃣ Sudah format lengkap
-         * =========================
-         */
-        // Cek jika sudah mengandung "TAHUN" (case insensitive)
-        if (preg_match('/tahun/i', $raw)) {
-            // Uppercase kata "TAHUN" untuk konsistensi
-            $raw = preg_replace('/tahun/i', 'TAHUN', $raw);
-            return $raw;
-        }
-
-        /**
-         * =========================
-         * 3️⃣ Angka + spasi -> tambah "TAHUN"
-         * =========================
-         */
-        // Cek jika string berisi angka diikuti spasi
-        if (preg_match('/^(\d+)\s*$/i', $raw, $matches)) {
-            return $matches[1] . ' TAHUN';
-        }
-
-        /**
-         * =========================
-         * 4️⃣ Format lainnya
-         * =========================
-         */
-        return $raw;
-    }
-
     /**
-     * Ekstrak angka dari string retensi untuk perhitungan
+     * Proses setiap baris yang valid
      */
-    private function extractNumberFromText($text)
-    {
-        if (!$text) {
-            return null;
-        }
-        
-        if (preg_match('/\d+/', $text, $matches)) {
-            return (int) $matches[0];
-        }
-        return null;
-    }
-
-    /**
-     * Hitung retensi seperti di controller
-     */
-    private function hitungRetensi($aktifTahunText, $inaktifTahunText, $keteranganJRA, $tanggalArsip, $tanggalReferensi = null)
-    {
-        $result = [
-            'aktif_sampai' => null,
-            'inaktif_sampai' => null,
-            'status_arsip' => 'AKTIF'
-        ];
-        
-        // Cek apakah mengandung kata SETELAH
-        $aktifMengandungSetelah = stripos($aktifTahunText, 'SETELAH') !== false;
-        $inaktifMengandungSetelah = stripos($inaktifTahunText, 'SETELAH') !== false;
-        
-        // Jika mengandung SETELAH tapi tanggal referensi kosong, kembalikan status AKTIF saja
-        if (($aktifMengandungSetelah || $inaktifMengandungSetelah) && empty($tanggalReferensi)) {
-            $result['status_arsip'] = 'AKTIF';
-            return $result;
-        }
-        
-        // Ekstrak angka dari teks
-        $aktifTahun = $this->extractNumberFromText($aktifTahunText);
-        $inaktifTahun = $this->extractNumberFromText($inaktifTahunText);
-        
-        if (!$aktifTahun || !$inaktifTahun) {
-            $result['status_arsip'] = 'AKTIF';
-            return $result;
-        }
-        
-        // Tentukan tanggal dasar perhitungan
-        if ($aktifMengandungSetelah || $inaktifMengandungSetelah) {
-            // Jika ada SETELAH tapi tidak ada tanggal_referensi, gunakan tanggal_arsip
-            if ($tanggalReferensi) {
-                $tanggalDasar = Carbon::parse($tanggalReferensi);
-            } else {
-                $tanggalDasar = Carbon::parse($tanggalArsip);
-            }
-        } else {
-            $tanggalDasar = Carbon::parse($tanggalArsip);
-        }
-        
-        // Hitung tanggal aktif sampai
-        $aktifSampai = $tanggalDasar->copy()->addYears($aktifTahun);
-        
-        // Hitung tanggal inaktif sampai (ditambahkan setelah aktif)
-        $inaktifSampai = $aktifSampai->copy()->addYears($inaktifTahun);
-        
-        // Hitung tanggal musnah (untuk keterangan MUSNAH)
-        $musnahSampai = $inaktifSampai->copy()->addYears(1);
-        
-        // Tentukan status arsip berdasarkan tanggal hari ini
-        $sekarang = Carbon::now();
-        
-        if ($keteranganJRA === 'PERMANEN') {
-            $result['status_arsip'] = 'PERMANEN';
-        } elseif ($keteranganJRA === 'MUSNAH') {
-            if ($sekarang <= $aktifSampai) {
-                $result['status_arsip'] = 'AKTIF';
-            } elseif ($sekarang <= $inaktifSampai) {
-                $result['status_arsip'] = 'INAKTIF';
-            } elseif ($sekarang <= $musnahSampai) {
-                $result['status_arsip'] = 'HABIS_RETENSI';
-            } else {
-                $result['status_arsip'] = 'HABIS_RETENSI';
-            }
-        } else {
-            if ($sekarang <= $aktifSampai) {
-                $result['status_arsip'] = 'AKTIF';
-            } elseif ($sekarang <= $inaktifSampai) {
-                $result['status_arsip'] = 'INAKTIF';
-            } else {
-                $result['status_arsip'] = 'INAKTIF';
-            }
-        }
-        
-        // Set tanggal hasil perhitungan
-        $result['aktif_sampai'] = $aktifSampai->format('Y-m-d');
-        $result['inaktif_sampai'] = $inaktifSampai->format('Y-m-d');
-        
-        return $result;
-    }
-
-    // public function model(array $row)
-    // {
-    //     // =======================
-    //     // DEBUG LOG
-    //     // =======================
-    //     \Log::info('Importing row:', $row);
-        
-    //     // =======================
-    //     // NORMALISASI INPUT
-    //     // =======================
-    //     $kodeInput = strtoupper(trim((string) ($row['kode_klasifikasi'] ?? '')));
-    //     $kodeInput = str_replace(' ', '', $kodeInput);
-
-    //     $subBagianInput = trim((string) ($row['sub_bagian'] ?? ''));
-
-    //     if (!$kodeInput || !$subBagianInput) {
-    //         \Log::warning('Kode atau Sub Bagian kosong: ' . $kodeInput . ' - ' . $subBagianInput);
-    //         return null;
-    //     }
-
-    //     $kode = KodeKlasifikasi::where('kode', $kodeInput)->first();
-    //     $subBagian = SubBagian::where('nama_sub_bagian', $subBagianInput)->first();
-
-    //     if (!$kode) {
-    //         \Log::warning('Kode klasifikasi tidak ditemukan: ' . $kodeInput);
-    //         return null;
-    //     }
-        
-    //     if (!$subBagian) {
-    //         \Log::warning('Sub bagian tidak ditemukan: ' . $subBagianInput);
-    //         return null;
-    //     }
-
-    //     // =======================
-    //     // PARSING RETENSI (STRING LENGKAP) - HANDLE MULTILINE
-    //     // =======================
-    //     $aktifTahun = $this->parseRetensiString($row['aktif'] ?? null);
-    //     $inaktifTahun = $this->parseRetensiString($row['inaktif'] ?? null);
-
-    //     \Log::info('Parsed retensi:', [
-    //         'aktif_original' => $row['aktif'] ?? null,
-    //         'aktif_parsed' => $aktifTahun,
-    //         'inaktif_original' => $row['inaktif'] ?? null,
-    //         'inaktif_parsed' => $inaktifTahun
-    //     ]);
-
-    //     // Default jika null
-    //     if (!$aktifTahun) {
-    //         $aktifTahun = '0 TAHUN';
-    //         \Log::warning('Aktif tahun null, set to default: ' . $aktifTahun);
-    //     }
-        
-    //     if (!$inaktifTahun) {
-    //         $inaktifTahun = '0 TAHUN';
-    //         \Log::warning('Inaktif tahun null, set to default: ' . $inaktifTahun);
-    //     }
-
-    //     // =======================
-    //     // TANGGAL
-    //     // =======================
-    //     // =======================
-    //     // DEFAULT TANGGAL ARSIP DARI TAHUN_ARSIP
-    //     // =======================
-    //     $tahunArsip = $row['tahun_arsip'] ?? null;
-
-    //     if ($tahunArsip && is_numeric($tahunArsip)) {
-    //         // jadi 01-01-2025 kalau tahun_arsip = 2025
-    //         $tanggalArsip = Carbon::createFromDate((int)$tahunArsip, 1, 1);
-    //     } else {
-    //         $tanggalArsip = now();
-    //     }
-    //     if (!empty($row['tanggal_arsip'])) {
-    //         try {
-    //             if (is_numeric($row['tanggal_arsip'])) {
-    //                 $tanggalArsip = Date::excelToDateTimeObject($row['tanggal_arsip']);
-    //             } else {
-    //                 // Coba berbagai format
-    //                 $tanggalStr = trim($row['tanggal_arsip']);
-                    
-    //                 // Coba format dengan timestamp (2014-08-07 00:00:00)
-    //                 if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $tanggalStr)) {
-    //                     $tanggalArsip = \DateTime::createFromFormat('Y-m-d H:i:s', $tanggalStr);
-    //                 } 
-    //                 // Coba format Y-m-d
-    //                 elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggalStr)) {
-    //                     $tanggalArsip = \DateTime::createFromFormat('Y-m-d', $tanggalStr);
-    //                 }
-    //                 // Coba format d/m/Y
-    //                 elseif (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $tanggalStr)) {
-    //                     $tanggalArsip = \DateTime::createFromFormat('d/m/Y', $tanggalStr);
-    //                 }
-                    
-    //                 if (!$tanggalArsip) {
-    //                     $tanggalArsip = now();
-    //                     \Log::warning('Format tanggal tidak dikenali: ' . $tanggalStr . ', using now()');
-    //                 }
-    //             }
-    //         } catch (\Exception $e) {
-    //             \Log::error('Error parsing tanggal_arsip: ' . $e->getMessage());
-    //             $tanggalArsip = now();
-    //         }
-    //     }
-
-    //     \Log::info('Tanggal arsip: ' . $tanggalArsip->format('Y-m-d'));
-
-    //     // =======================
-    //     // KETERANGAN JRA
-    //     // =======================
-    //     // Default ke MUSNAH karena Excel tidak punya kolom ini
-    //     $keteranganJRA = 'MUSNAH';
-        
-    //     // =======================
-    //     // TANGGAL REFERENSI (jika ada)
-    //     // =======================
-    //     $tanggalReferensi = null;
-    //     // Tidak ada kolom tanggal_referensi di Excel
-
-    //     // =======================
-    //     // HITUNG RETENSI OTOMATIS
-    //     // =======================
-    //     \Log::info('Menghitung retensi dengan parameter:', [
-    //         'aktif_tahun' => $aktifTahun,
-    //         'inaktif_tahun' => $inaktifTahun,
-    //         'keterangan_jra' => $keteranganJRA,
-    //         'tanggal_arsip' => $tanggalArsip->format('Y-m-d'),
-    //         'tanggal_referensi' => $tanggalReferensi
-    //     ]);
-
-    //     $perhitungan = $this->hitungRetensi(
-    //         $aktifTahun,
-    //         $inaktifTahun,
-    //         $keteranganJRA,
-    //         $tanggalArsip->format('Y-m-d'), // Convert to string
-    //         $tanggalReferensi
-    //     );
-
-    //     \Log::info('Hasil perhitungan:', $perhitungan);
-
-    //     // =======================
-    //     // NOMOR BOX (handle format Excel)
-    //     // =======================
-    //     $nomorBox = $row['nomor_box'] ?? null;
-    //     if (!empty($nomorBox)) {
-    //         // Handle format time (21:14:00) -> convert to string
-    //         if (preg_match('/^\d{2}:\d{2}:\d{2}$/', $nomorBox)) {
-    //             // Keep as is
-    //             \Log::info('Nomor box is time format: ' . $nomorBox);
-    //         } elseif (is_numeric($nomorBox) && $nomorBox < 1) {
-    //             $totalMinutes = round($nomorBox * 24 * 60);
-    //             $jam = floor($totalMinutes / 60);
-    //             $menit = $totalMinutes % 60;
-    //             $nomorBox = $jam . '.' . str_pad($menit, 2, '0', STR_PAD_LEFT);
-    //             \Log::info('Nomor box converted from Excel time: ' . $nomorBox);
-    //         }
-    //     }
-
-    //     // =======================
-    //     // TINGKAT PERKEMBANGAN (default ASLI karena tidak ada di Excel)
-    //     // =======================
-    //     $tingkatPerkembangan = 'ASLI';
-
-    //     // =======================
-    //     // PARSING KETERANGAN (MEDIA / KONDISI)
-    //     // Format: TEKSTUAL/BAIK
-    //     // =======================
-    //     $mediaArsip = null;
-    //     $kondisiFisik = 'BAIK'; // default
-
-    //     $keteranganRaw = strtoupper(trim($row['keterangan'] ?? ''));
-
-    //     if ($keteranganRaw) {
-    //         // Pisahkan berdasarkan /
-    //         $parts = array_map('trim', explode('/', $keteranganRaw));
-
-    //         if (count($parts) === 2) {
-    //             $mediaArsip = $parts[0];   // TEKSTUAL
-    //             $kondisiFisik = $parts[1]; // BAIK
-    //         } else {
-    //             // Jika hanya satu nilai, anggap sebagai kondisi fisik
-    //             $kondisiFisik = $parts[0];
-    //         }
-    //     }
-
-    //     // Mapping media arsip biar konsisten
-    //     $mediaMap = [
-    //         'TEKSTUAL' => 'TEKSTUAL',
-    //         'DIGITAL'  => 'DIGITAL',
-    //     ];
-
-    //     $mediaArsip = $mediaMap[$mediaArsip] ?? $mediaArsip;
-
-    //     // =======================
-    //     // PARSING JUMLAH BERKAS
-    //     // Contoh: "1 Bendel", "2 Lembar"
-    //     // =======================
-    //     $jumlahBerkas = 1;
-    //     $satuanArsip  = 'LEMBAR'; // default aman
-
-    //     $jumlahRaw = strtoupper(trim($row['jumlah_berkas'] ?? ''));
-
-    //     if ($jumlahRaw) {
-    //         // Ambil angka
-    //         preg_match('/\d+/', $jumlahRaw, $angka);
-    //         $jumlahBerkas = isset($angka[0]) ? (int) $angka[0] : 1;
-
-    //         // Ambil satuan (huruf)
-    //         preg_match('/[A-Z]+/', $jumlahRaw, $satuan);
-    //         $satuanArsip = isset($satuan[0]) ? $satuan[0] : 'LEMBAR';
-    //     }
-
-    //     // =======================
-    //     // DATA UNTUK DISIMPAN
-    //     // =======================
-    //     $data = [
-    //         // WAJIB - Data Dasar
-    //         'kode_klasifikasi_id' => $kode->id,
-    //         'uraian_arsip'        => $row['jenis_arsip'] ?? '',
-    //         'sub_bagian_id'       => $subBagian->id,
-    //         'tahun_arsip'         => (string) ($row['tahun_arsip'] ?? date('Y')),
-    //         'tanggal_arsip'       => $tanggalArsip->format('Y-m-d'),
-    //         'jumlah_berkas' => $jumlahBerkas,
-    //         'satuan_arsip'  => $satuanArsip,
-
-    //         // Masa Retensi (STRING LENGKAP)
-    //         'aktif_tahun'         => $aktifTahun,
-    //         'inaktif_tahun'       => $inaktifTahun,
-    //         'tanggal_referensi'   => $tanggalReferensi,
-    //         'keterangan_jra'      => $keteranganJRA,
-
-    //         // Hasil Perhitungan OTOMATIS
-    //         'aktif_sampai'        => $perhitungan['aktif_sampai'],
-    //         'inaktif_sampai'      => $perhitungan['inaktif_sampai'],
-    //         'status_arsip'        => $perhitungan['status_arsip'],
-
-    //         // OPTIONAL
-    //         'nomor_rak'           => (string) ($row['nomor_rak'] ?? ''),
-    //         'nomor_box'           => (string) $nomorBox,
-    //         'nomor_sampul'        => $row['nomor_sampul'] ?? '',
-    //         'tingkat_perkembangan' => $tingkatPerkembangan,
-    //         // 'keterangan'          => strtoupper(trim(($row['keterangan'] ?? 'BAIK'))),
-    //         'media_arsip' => $mediaArsip,
-    //         'keterangan'  => $kondisiFisik,
-    //         'tanggal_masuk'       => now()->format('Y-m-d'),
-    //         'created_by'          => Auth::id(),
-    //     ];
-
-    //     \Log::info('Data untuk disimpan:', $data);
-
-    //     return new Arsip($data);
-    // }
-
     public function model(array $row)
-{
+    {
+// dd($row);
     if (
     empty(trim($row['kode_klasifikasi'] ?? '')) &&
     empty(trim($row['jenis_arsip'] ?? '')) &&
     empty(trim($row['kurun_waktu'] ?? ''))
 ) {
-    return null; // skip baris kosong
+    return null;
 }
-    \Log::info('Importing row:', $row);
-    
-    // =======================
-    // MAPPING KOLOM EXCEL DARI GAMBAR
-    // =======================
-    $kodeInput = strtoupper(trim((string) ($row['kode_klasifikasi'] ?? $row['KODE KLASIFIKASI'] ?? '')));
-    $kodeInput = str_replace(' ', '', $kodeInput);
-    
-    if (!$kodeInput) {
-        \Log::warning('Kode klasifikasi kosong');
-        return null;
-    }
-    
-    // =======================
-    // AMBIL SUB BAGIAN DARI USER YANG LOGIN
-    // =======================
-    $user = Auth::user();
-    if (!$user) {
-        \Log::warning('User tidak login');
-        return null;
-    }
-    
-    // Asumsi: user memiliki relasi ke sub bagian
-    $subBagian = $user->subBagian ?? SubBagian::first(); // Ganti dengan logika sesuai struktur Anda
-    
-    if (!$subBagian) {
-        \Log::warning('Sub bagian tidak ditemukan untuk user: ' . $user->id);
-        return null;
-    }
-    
-    // =======================
-    // CARI KODE KLASIFIKASI
-    // =======================
-    $kode = KodeKlasifikasi::where('kode', $kodeInput)->first();
-    
-    if (!$kode) {
-        \Log::warning('Kode klasifikasi tidak ditemukan di database: ' . $kodeInput);
-        return null;
-    }
-    
-    // =======================
-    // PARSING DATA DARI EXCEL (SESUAI GAMBAR)
-    // =======================
-    $uraianArsip = $row['jenis_arsip'] ?? $row['JENIS ARSIP'] ?? '';
-    $tahunArsip = $row['kurun_waktu'] ?? $row['KURUN WAKTU'] ?? date('Y');
-    $tingkatPerkembangan = $row['tingkat_perkembangan'] ?? $row['TINGKAT PERKEMBANGAN'] ?? 'ASLI';
-    $linkFoto = trim(
-    $row['link_foto'] ?? $row['LINK FOTO'] ?? ''
-);
-    
-    // =======================
-    // PARSING JUMLAH (format: "1 BENDEL")
-    // =======================
-    $jumlahRaw = strtoupper(trim($row['jumlah'] ?? $row['JUMLAH'] ?? '1 BENDEL'));
-    $jumlahBerkas = 1;
-    $satuanArsip = 'BENDEL'; // default
-    
-    if ($jumlahRaw) {
+        // Data sudah tervalidasi, kita bisa langsung proses
+        Log::info('Import row:', $row);
+
+        // Ambil user dan sub bagian
+        $user = Auth::user();
+        if (!$user) {
+            Log::warning('User tidak login');
+            return null;
+        }
+
+        $subBagian = $user->subBagian;
+        if (!$subBagian) {
+            Log::warning('Sub bagian tidak ditemukan untuk user: ' . $user->id);
+            return null;
+        }
+
+        // Cari kode klasifikasi
+        $kodeInput = str_replace(' ', '', strtoupper(trim($row['kode_klasifikasi'])));
+        $kode = KodeKlasifikasi::where('kode', $kodeInput)->first();
+        if (!$kode) {
+            Log::warning('Kode tidak ditemukan: ' . $kodeInput);
+            return null;
+        }
+
+        // Parsing data
+        $uraianArsip = trim($row['jenis_arsip'] ?? '');
+        $tahunArsip  = (int) ($row['kurun_waktu'] ?? date('Y'));
+        $tingkatPerkembangan = strtoupper(trim($row['tingkat_perkembangan'] ?? 'ASLI'));
+        if (!in_array($tingkatPerkembangan, ['ASLI', 'COPY', 'SALINAN'])) {
+            $tingkatPerkembangan = 'ASLI';
+        }
+
+        // Link foto
+        $linkFoto = trim($row['link_foto'] ?? '');
+        if ($linkFoto && !filter_var($linkFoto, FILTER_VALIDATE_URL)) {
+            $linkFoto = null; // validasi sudah memastikan URL, tapi amankan
+        }
+
+        // Jumlah dan satuan
+        $jumlahRaw = strtoupper(trim($row['jumlah'] ?? '1 BENDEL'));
         preg_match('/\d+/', $jumlahRaw, $angka);
         $jumlahBerkas = isset($angka[0]) ? (int) $angka[0] : 1;
-        
         preg_match('/[A-Z]+/', $jumlahRaw, $satuan);
         $satuanArsip = isset($satuan[0]) ? $satuan[0] : 'BENDEL';
-    }
-    
-    // =======================
-    // PARSING KETERANGAN (format: "TEKSTUAL / BAIK")
-    // =======================
-    $keteranganRaw = strtoupper(trim($row['keterangan'] ?? $row['KETERANGAN'] ?? 'TEKSTUAL / BAIK'));
-    $mediaArsip = 'TEKSTUAL';
-    $kondisiFisik = 'BAIK';
-    
-    if ($keteranganRaw) {
-        $parts = array_map('trim', explode('/', $keteranganRaw));
-        if (count($parts) === 2) {
-            $mediaArsip = $parts[0];
-            $kondisiFisik = $parts[1];
+
+        // Keterangan (media/kondisi)
+        $mediaArsip = 'TEKSTUAL';
+        $kondisiFisik = 'BAIK';
+        $keteranganRaw = trim($row['keterangan'] ?? '');
+        if ($keteranganRaw) {
+            $parts = array_map('trim', explode('/', $keteranganRaw));
+            if (count($parts) === 2) {
+                $mediaArsip = strtoupper($parts[0]);
+                $kondisiFisik = strtoupper($parts[1]);
+            }
         }
+
+        // Nomor box/rak
+        $nomorBox = $row['namanomor_box'] ?? '';
+        $nomorRak = $row['nama_raklemari'] ?? '';
+
+        // Retensi (ambil dari kode klasifikasi jika tidak ada di Excel)
+        $aktifTahun = $this->parseRetensiString($row['aktif'] ?? $kode->aktif_tahun ?? null);
+        $inaktifTahun = $this->parseRetensiString($row['inaktif'] ?? $kode->inaktif_tahun ?? null);
+        $keteranganJRA = $kode->keterangan_jra ?? 'BELUM DITENTUKAN';
+
+        // Tanggal arsip (dari tahun)
+        $tanggalArsip = Carbon::createFromDate($tahunArsip, 1, 1);
+
+        // Hitung retensi
+        $perhitungan = $this->hitungRetensi(
+            $aktifTahun,
+            $inaktifTahun,
+            $keteranganJRA,
+            $tanggalArsip->format('Y-m-d'),
+            null
+        );
+
+        // Lokasi arsip dari mapping sub bagian
+        $lokasiMapping = [
+            'SUB BAGIAN UMUM DAN LOGISTIK' => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
+            'SUB BAGIAN PARTISIPASI MASYARAKAT DAN SDM' => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
+            'SUB BAGIAN KEUANGAN' => 'RUANG_SUBBAGIAN_KEUANGAN',
+            'SUB BAGIAN PERENCANAAN DATA DAN INFORMASI' => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
+            'SUB BAGIAN TEKNIS' => 'RUANG_SUBBAGIAN_TEKNIS',
+            'SUB BAGIAN HUKUM' => 'RUANG_SUBBAGIAN_HUKUM',
+        ];
+        $namaSubBagian = strtoupper(trim($subBagian->nama_sub_bagian ?? ''));
+        $lokasiArsip = $lokasiMapping[$namaSubBagian] ?? null;
+
+        // Siapkan data
+        $data = [
+            'kode_klasifikasi_id' => $kode->id,
+            'uraian_arsip'        => $uraianArsip,
+            'sub_bagian_id'       => $subBagian->id,
+            'tahun_arsip'         => (string) $tahunArsip,
+            'tanggal_arsip'       => $tanggalArsip->format('Y-m-d'),
+            'jumlah_berkas'       => $jumlahBerkas,
+            'satuan_arsip'        => $satuanArsip,
+            'aktif_tahun'         => $aktifTahun,
+            'inaktif_tahun'       => $inaktifTahun,
+            'keterangan_jra'      => $keteranganJRA,
+            'aktif_sampai'        => $perhitungan['aktif_sampai'],
+            'inaktif_sampai'      => $perhitungan['inaktif_sampai'],
+            'status_arsip'        => $perhitungan['status_arsip'],
+            'status_pindah'       => 'BELUM',
+            'nomor_box'           => (string) $nomorBox,
+            'nomor_rak'           => (string) $nomorRak,
+            'lokasi_arsip'        => $lokasiArsip,
+            'tingkat_perkembangan'=> $tingkatPerkembangan,
+            'link_foto'           => $linkFoto,
+            'media_arsip'         => $mediaArsip,
+            'keterangan'          => $kondisiFisik,
+            'tanggal_masuk'       => now()->format('Y-m-d'),
+            'created_by'          => Auth::id(),
+        ];
+
+        Log::info('Data siap simpan:', $data);
+        $this->importedRows++;
+        return new Arsip($data);
     }
-    
-    // =======================
-    // NOMOR BOX
-    // =======================
-  $nomorBox = $row['namanomor_box'] ?? null;
-$nomorRak = $row['nama_raklemari'] ?? null;
-\Log::info('Available headers: ', array_keys($row));
-    
-    // =======================
-    // RETENSI (ambil dari kode klasifikasi)
-    // =======================
-    $aktifTahun = $this->parseRetensiString($row['aktif'] ?? null); 
-    $inaktifTahun = $this->parseRetensiString($row['inaktif'] ?? null);
-    $keteranganJRA = $kode->keterangan_jra ?? 'BELUM DITENTUKAN';
-    
-    // =======================
-    // TANGGAL ARSIP (dari tahun)
-    // =======================
-    $tanggalArsip = Carbon::createFromDate((int)$tahunArsip, 1, 1);
-    
-    // =======================
-    // HITUNG RETENSI
-    // =======================
-    $perhitungan = $this->hitungRetensi(
-        $aktifTahun,
-        $inaktifTahun,
-        $keteranganJRA,
-        $tanggalArsip->format('Y-m-d'),
-        null
-    );
 
-    $lokasiMapping = [
-    'SUB BAGIAN UMUM DAN LOGISTIK' => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
-    'SUB BAGIAN PARTISIPASI MASYARAKAT DAN SDM' => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
-    'SUB BAGIAN KEUANGAN' => 'RUANG_SUBBAGIAN_KEUANGAN',
-    'SUB BAGIAN PERENCANAAN DATA DAN INFORMASI' => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
-    'SUB BAGIAN TEKNIS' => 'RUANG_SUBBAGIAN_TEKNIS',
-    'SUB BAGIAN HUKUM' => 'RUANG_SUBBAGIAN_HUKUM',
-];
+    // ========================
+    // METHOD PEMBANTU (tetap sama)
+    // ========================
 
-$namaSubBagian = strtoupper(trim($subBagian->nama_sub_bagian ?? ''));
-$lokasiArsip = $lokasiMapping[$namaSubBagian] ?? null;
-
-if (!$lokasiArsip) {
-    \Log::warning('Mapping lokasi_arsip tidak ditemukan untuk sub bagian: ' . $namaSubBagian);
-}
-    
-    // =======================
-    // BUAT DATA ARSIP
-    // =======================
-    $data = [
-        'kode_klasifikasi_id' => $kode->id,
-        'uraian_arsip'        => $uraianArsip,
-        'sub_bagian_id'       => $subBagian->id,
-        'tahun_arsip'         => (string) $tahunArsip,
-        'tanggal_arsip'       => $tanggalArsip->format('Y-m-d'),
-        'jumlah_berkas'       => $jumlahBerkas,
-        'satuan_arsip'        => $satuanArsip,
-        'aktif_tahun'         => $aktifTahun,
-        'inaktif_tahun'       => $inaktifTahun,
-        'keterangan_jra'      => $keteranganJRA,
-        'aktif_sampai'        => $perhitungan['aktif_sampai'],
-        'inaktif_sampai'      => $perhitungan['inaktif_sampai'],
-        'status_arsip'        => $perhitungan['status_arsip'],
-        'status_pindah'       => 'BELUM',
-        'nomor_box'           => (string) $nomorBox,
-        'nomor_rak'           => (string) $nomorRak,
-        'lokasi_arsip' => $lokasiArsip,
-        'tingkat_perkembangan' => $tingkatPerkembangan,
-         'link_foto'            => $linkFoto,
-        'media_arsip'         => $mediaArsip,
-        'keterangan'          => $kondisiFisik,
-        'tanggal_masuk'       => now()->format('Y-m-d'),
-        'created_by'          => Auth::id(),
-    ];
-    
-    \Log::info('Data untuk disimpan:', $data);
-    $this->importedRows++;
-    return new Arsip($data);
-}
-
-    /**
-     * Aturan heading row
-     */
-    public function headingRow(): int
+    private function parseRetensiString($value)
     {
-        return 5; // Baris pertama adalah header
+        if ($value === null) return null;
+        $raw = (string) $value;
+        $raw = str_replace(["\xc2\xa0", "<br>", "\n", "\r"], ' ', $raw);
+        $raw = preg_replace('/\s+/', ' ', trim($raw));
+        if ($raw === '') return null;
+        if (ctype_digit($raw)) return $raw . ' TAHUN';
+        if (preg_match('/tahun/i', $raw)) return preg_replace('/tahun/i', 'TAHUN', $raw);
+        if (preg_match('/^(\d+)\s*$/i', $raw, $m)) return $m[1] . ' TAHUN';
+        return $raw;
+    }
+
+    private function extractNumberFromText($text)
+    {
+        if (!$text) return null;
+        if (preg_match('/\d+/', $text, $m)) return (int) $m[0];
+        return null;
+    }
+
+    private function hitungRetensi($aktifTahunText, $inaktifTahunText, $keteranganJRA, $tanggalArsip, $tanggalReferensi = null)
+    {
+        $result = ['aktif_sampai' => null, 'inaktif_sampai' => null, 'status_arsip' => 'AKTIF'];
+        if (!$aktifTahunText || !$inaktifTahunText) return $result;
+
+        $aktifTahun = $this->extractNumberFromText($aktifTahunText);
+        $inaktifTahun = $this->extractNumberFromText($inaktifTahunText);
+        if (!$aktifTahun || !$inaktifTahun) return $result;
+
+        $tanggalDasar = Carbon::parse($tanggalArsip);
+        if (stripos($aktifTahunText, 'SETELAH') !== false || stripos($inaktifTahunText, 'SETELAH') !== false) {
+            if ($tanggalReferensi) $tanggalDasar = Carbon::parse($tanggalReferensi);
+        }
+
+        $aktifSampai = $tanggalDasar->copy()->addYears($aktifTahun);
+        $inaktifSampai = $aktifSampai->copy()->addYears($inaktifTahun);
+        $musnahSampai = $inaktifSampai->copy()->addYears(1);
+        $sekarang = Carbon::now();
+
+        if ($keteranganJRA === 'PERMANEN') {
+            $result['status_arsip'] = 'PERMANEN';
+        } elseif ($keteranganJRA === 'MUSNAH') {
+            if ($sekarang <= $aktifSampai) $result['status_arsip'] = 'AKTIF';
+            elseif ($sekarang <= $inaktifSampai) $result['status_arsip'] = 'INAKTIF';
+            elseif ($sekarang <= $musnahSampai) $result['status_arsip'] = 'HABIS_RETENSI';
+            else $result['status_arsip'] = 'HABIS_RETENSI';
+        } else {
+            $result['status_arsip'] = ($sekarang <= $aktifSampai) ? 'AKTIF' : 'INAKTIF';
+        }
+
+        $result['aktif_sampai'] = $aktifSampai->format('Y-m-d');
+        $result['inaktif_sampai'] = $inaktifSampai->format('Y-m-d');
+        return $result;
     }
 }

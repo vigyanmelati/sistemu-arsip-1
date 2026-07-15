@@ -95,20 +95,42 @@
 </div>
 @endif
 
+<!-- @if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong><i class="bi bi-exclamation-triangle-fill"></i> Error!</strong>
+        <div>{!! session('error') !!}</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif -->
+
 @if(session('import_errors'))
-<div class="alert alert-danger alert-dismissible fade show" role="alert">
-    <strong>❌ Data gagal diimport:</strong>
-    <ul class="mb-0 mt-2">
-        @foreach(session('import_errors') as $fail)
-            <li>
-                <strong>Baris {{ $fail->row() }}</strong> :
-                {{ implode(', ', $fail->errors()) }}
-            </li>
+<div class="alert alert-danger alert-dismissible fade show">
+
+    <strong>❌ Data gagal diimport :</strong>
+
+    <ul class="mt-2 mb-0">
+
+        @foreach(session('import_errors') as $error)
+            <li>{{ $error }}</li>
         @endforeach
+
     </ul>
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+
+    <button type="button"
+        class="btn-close"
+        data-bs-dismiss="alert">
+    </button>
+
 </div>
 @endif
+
+<!-- @if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong><i class="bi bi-exclamation-triangle-fill"></i> Error!</strong>
+        <div>{!! session('error') !!}</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif -->
           @if(request('show_duplicates'))
 <div class="alert alert-info mb-3 d-flex align-items-center">
     <i class="bi bi-info-circle-fill me-2"></i>

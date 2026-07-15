@@ -485,63 +485,141 @@ if (!$user->canViewArsip($arsip)) {
         return redirect()->route('subbagian.arsip.index')->with('success','Arsip berhasil dihapus.');
     }
 
+// public function import(Request $request)
+// {
+//     $request->validate([
+//         'file_excel' => [
+//             'required',
+//             'file',
+//             'mimes:xlsx,xls',
+//             'extensions:xlsx,xls'
+//         ]
+//     ]);
+
+//     try {
+
+//         // validasi isi file excel
+//         \PhpOffice\PhpSpreadsheet\IOFactory::load(
+//             $request->file('file_excel')->getRealPath()
+//         );
+
+//         $import = new ArsipImportSubBagian();
+
+//         Excel::import($import, $request->file('file_excel'));
+
+//         if ($import->importedRows == 0) {
+//             return back()->with(
+//                 'error',
+//                 'File tidak berisi data yang dapat diimport.'
+//             );
+//         }
+
+//         if ($import->failures()->isNotEmpty()) {
+//             return back()->with([
+//                 'warning' => 'Import selesai tetapi ada data yang gagal.',
+//                 'import_errors' => $import->failures()
+//             ]);
+//         }
+
+//         return back()->with(
+//             'success',
+//             'Semua data berhasil diimport.'
+//         );
+
+//     } catch (\PhpOffice\PhpSpreadsheet\Reader\Exception $e) {
+
+//         return back()->with(
+//             'error',
+//             'File Excel tidak valid atau rusak.'
+//         );
+
+//     } catch (\Exception $e) {
+
+//         return back()->with(
+//             'error',
+//             'Import gagal: '.$e->getMessage()
+//         );
+//     }
+// }
+// di ArsipController (atau controller yang sesuai)
+
 public function import(Request $request)
 {
     $request->validate([
-        'file_excel' => [
-            'required',
-            'file',
-            'mimes:xlsx,xls',
-            'extensions:xlsx,xls'
-        ]
+        'file_excel' => 'required|file|mimes:xlsx,xls'
     ]);
 
     try {
 
-        // validasi isi file excel
-        \PhpOffice\PhpSpreadsheet\IOFactory::load(
-            $request->file('file_excel')->getRealPath()
+        /*
+        |--------------------------------------------------------------------------
+        | BACA EXCEL
+        |--------------------------------------------------------------------------
+        */
+
+        $rows = Excel::toArray(
+            new ArsipImportSubBagian(),
+            $request->file('file_excel')
         );
 
-        $import = new ArsipImportSubBagian();
+        $rows = $rows[0];
 
-        Excel::import($import, $request->file('file_excel'));
+        $validatorImport = new ArsipImportSubBagian();
 
-        if ($import->importedRows == 0) {
-            return back()->with(
-                'error',
-                'File tidak berisi data yang dapat diimport.'
-            );
-        }
+        $validatorImport->validateExcel($rows);
 
-        if ($import->failures()->isNotEmpty()) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | ADA ERROR
+        |--------------------------------------------------------------------------
+        */
+
+        if (!empty($validatorImport->errors)) {
+
             return back()->with([
-                'warning' => 'Import selesai tetapi ada data yang gagal.',
-                'import_errors' => $import->failures()
+                'error' => 'Import dibatalkan karena terdapat data yang tidak valid.',
+                'import_errors' => $validatorImport->errors,
             ]);
         }
 
-        return back()->with(
-            'success',
-            'Semua data berhasil diimport.'
+
+        /*
+        |--------------------------------------------------------------------------
+        | TIDAK ADA ERROR
+        |--------------------------------------------------------------------------
+        */
+
+        DB::beginTransaction();
+
+        $import = new ArsipImportSubBagian();
+
+        Excel::import(
+            $import,
+            $request->file('file_excel')
         );
 
-    } catch (\PhpOffice\PhpSpreadsheet\Reader\Exception $e) {
+        DB::commit();
 
-        return back()->with(
-            'error',
-            'File Excel tidak valid atau rusak.'
-        );
+        return redirect()
+            ->route('subbagian.arsip.index')
+            ->with(
+                'success',
+                "Berhasil mengimpor {$import->importedRows} data arsip."
+            );
 
     } catch (\Exception $e) {
 
+        DB::rollBack();
+
+        Log::error($e->getMessage());
+
         return back()->with(
             'error',
-            'Import gagal: '.$e->getMessage()
+            'Import gagal : ' . $e->getMessage()
         );
     }
 }
-
 // public function import(Request $request)
 // {
 //     $request->validate([
