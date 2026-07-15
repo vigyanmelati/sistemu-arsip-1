@@ -73,6 +73,34 @@
                             </form>
                         </div>
                     </div>
+{{-- ALERT ERROR IMPORT --}}
+@if(session('import_errors'))
+    <div class="alert alert-danger shadow-sm rounded-4">
+        <h6 class="fw-bold mb-2">
+            <i class="fas fa-times-circle me-2"></i>
+            {{ session('error') }}
+        </h6>
+
+        <ul class="mb-0 ps-3">
+            @foreach(session('import_errors') as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+{{-- SUCCESS --}}
+@if(session('success'))
+    <div class="alert alert-success shadow-sm rounded-4">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if(session('error'))
+<div class="alert alert-danger">
+    {{ session('error') }}
+</div>
+@endif
 
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">

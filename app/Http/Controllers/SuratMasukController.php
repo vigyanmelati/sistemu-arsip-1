@@ -249,14 +249,72 @@ public function import(Request $request)
         'file' => 'required|mimes:xlsx,xls,csv'
     ]);
 
-    Excel::import(
-        new SuratMasukImport,
-        $request->file('file')
-    );
+    try {
+
+        /*
+        |--------------------------------------------------------------------------
+        | BACA EXCEL
+        |--------------------------------------------------------------------------
+        */
+
+        $rows = Excel::toArray(
+            new SuratMasukImport(),
+            $request->file('file')
+        );
+// dd($rows);
+        $rows = $rows[0];
+
+        $validatorImport = new SuratMasukImport();
+
+        $validatorImport->validateExcel($rows);
+   
+
+        /*
+        |--------------------------------------------------------------------------
+        | ADA ERROR
+        |--------------------------------------------------------------------------
+        */
+
+      if (!empty($validatorImport->errors)) {
 
     return redirect()
-        ->route('surat-masuk.index')
-        ->with('success', 'Data berhasil diimport.');
+        ->back()
+        ->withInput()
+        ->with([
+            'error' => 'Import dibatalkan karena terdapat data yang tidak valid.',
+            'import_errors' => $validatorImport->errors,
+        ]);
+}
+
+        /*
+        |--------------------------------------------------------------------------
+        | TIDAK ADA ERROR
+        |--------------------------------------------------------------------------
+        */
+
+        $import = new SuratMasukImport();
+
+        Excel::import(
+            $import,
+            $request->file('file')
+        );
+
+        return redirect()
+            ->route('surat-masuk.index')
+            ->with(
+                'success',
+                'Data surat masuk berhasil diimport.'
+            );
+
+    } catch (\Exception $e) {
+
+        \Log::error($e->getMessage());
+
+        return back()->with(
+            'error',
+            'Import gagal : ' . $e->getMessage()
+        );
+    }
 }
 
 
