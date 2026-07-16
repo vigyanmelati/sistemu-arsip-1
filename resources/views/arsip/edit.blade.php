@@ -11,7 +11,7 @@
     <div class="card-body">
         @if ($errors->any())
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <strong><i class="bi bi-exclamation-triangle-fill"></i> Terjadi kesalahan:</strong>
+            <strong>Terjadi kesalahan:</strong>
             <ul class="mb-0 mt-2">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -23,7 +23,7 @@
 
         @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-circle-fill"></i> {{ session('error') }}
+            {{ session('error') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         @endif
@@ -34,7 +34,7 @@
             <input type="hidden" name="redirect_url" value="{{ url()->previous() }}">
 
             <!-- BAGIAN DATA DASAR (WAJIB) -->
-            <h6 class="mb-3 text-primary"><i class="bi bi-file-earmark-text me-2"></i>Data Dasar Arsip (Wajib)</h6>
+            <h6 class="mb-3 text-primary">Data Dasar Arsip (Wajib)</h6>
             <div class="row">
                 <!-- Kode Klasifikasi -->
                 <div class="col-md-6 mb-3">
@@ -175,7 +175,7 @@
             <hr class="my-4">
             
             <!-- MASA RETENSI -->
-            <h6 class="mb-3 text-primary"><i class="bi bi-clock-history me-2"></i>Masa Retensi Arsip</h6>
+            <h6 class="mb-3 text-primary">Masa Retensi Arsip</h6>
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Masa Retensi Aktif</label>
@@ -224,20 +224,19 @@
 
             <!-- PREVIEW PERHITUNGAN -->
             <div class="alert alert-info" id="previewRetensi" style="display:none;">
-                <h6><i class="bi bi-info-circle me-1"></i>Preview Perhitungan Retensi:</h6>
+                <h6>Preview Perhitungan Retensi:</h6>
                 <p id="previewText"></p>
             </div>
 
             <hr class="my-4">
             
-            <!-- INFORMASI TAMBAHAN (OPTIONAL) -->
-            <h6 class="mb-3 text-primary"><i class="bi bi-geo-alt me-2"></i>Informasi Lokasi & Tambahan</h6>
+            <!-- INFORMASI LOKASI & TAMBAHAN -->
+            <h6 class="mb-3 text-primary">Informasi Lokasi & Tambahan</h6>
+            
             <div class="row">
-                <!-- Lokasi Arsip -->
-                <div class="col-md-6 mb-3">
-                    <label for="lokasi_arsip" class="form-label fw-semibold">
-                        <i class="bi bi-building text-primary me-1"></i> Lokasi Arsip
-                    </label>
+                <!-- Lokasi Arsip (1 baris penuh) -->
+                <div class="col-md-12 mb-3">
+                    <label for="lokasi_arsip" class="form-label">Lokasi Arsip</label>
                     <select name="lokasi_arsip" id="lokasi_arsip" class="form-control @error('lokasi_arsip') is-invalid @enderror">
                         <option value="">Pilih Lokasi</option>
                         <option value="RECORD_CENTER_PERMANEN" {{ old('lokasi_arsip', $arsip->lokasi_arsip) == 'RECORD_CENTER_PERMANEN' ? 'selected' : '' }}>
@@ -253,11 +252,9 @@
                     @enderror
                 </div>
 
-                <!-- Rak -->
-                <div class="col-md-3 mb-3">
-                    <label for="rak_id" class="form-label fw-semibold">
-                        <i class="bi bi-layers text-success me-1"></i> Rak
-                    </label>
+                <!-- Rak, Box, Nomor Sampul (3 kolom) -->
+                <div class="col-md-4 mb-3">
+                    <label for="rak_id" class="form-label">Rak</label>
                     <select class="form-control @error('rak_id') is-invalid @enderror" id="rak_id" name="rak_id">
                         <option value="">Pilih Rak</option>
                         @forelse($rakOptions as $rak)
@@ -274,11 +271,8 @@
                     @enderror
                 </div>
 
-                <!-- Box -->
-                <div class="col-md-3 mb-3">
-                    <label for="box_id" class="form-label fw-semibold">
-                        <i class="bi bi-box-seam text-warning me-1"></i> Box
-                    </label>
+                <div class="col-md-4 mb-3">
+                    <label for="box_id" class="form-label">Box</label>
                     <select class="form-control @error('box_id') is-invalid @enderror" id="box_id" name="box_id">
                         <option value="">Pilih Box</option>
                         @forelse($boxOptions as $box)
@@ -295,32 +289,26 @@
                     @enderror
                 </div>
 
-                <!-- Nomor Sampul -->
-                <div class="col-md-3 mb-3">
-                    <label for="nomor_sampul" class="form-label fw-semibold">
-                        <i class="bi bi-tag text-info me-1"></i> Nomor Sampul
-                    </label>
+                <div class="col-md-4 mb-3">
+                    <label for="nomor_sampul" class="form-label">Nomor Sampul</label>
                     <input type="text" class="form-control @error('nomor_sampul') is-invalid @enderror" id="nomor_sampul" name="nomor_sampul" value="{{ old('nomor_sampul', $arsip->nomor_sampul) }}" placeholder="Contoh: 1">
+                    <small class="text-muted">Isi jika ada nomor sampul pada arsip</small>
                     @error('nomor_sampul')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
                 <!-- Tanggal Masuk -->
-                <div class="col-md-3 mb-3">
-                    <label for="tanggal_masuk" class="form-label fw-semibold">
-                        <i class="bi bi-calendar-event text-secondary me-1"></i> Tanggal Masuk
-                    </label>
+                {{-- <div class="col-md-6 mb-3">
+                    <label for="tanggal_masuk" class="form-label">Tanggal Masuk</label>
                     <input type="date" class="form-control @error('tanggal_masuk') is-invalid @enderror" id="tanggal_masuk" name="tanggal_masuk" value="{{ old('tanggal_masuk', $arsip->tanggal_masuk_for_input) }}">
                     <small class="text-muted">Tanggal arsip dimasukkan ke sistem</small>
                     @error('tanggal_masuk')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
-                </div>
-            </div>
-            
-            <!-- FILE UPLOAD -->
-            <div class="row">
+                </div> --}}
+
+                <!-- File Upload & Link Foto (2 kolom) -->
                 <div class="col-md-6 mb-3">
                     <label for="file_dokumen" class="form-label">File Dokumen</label>
                     @if($arsip->file_dokumen)
@@ -334,18 +322,19 @@
                         </div>
                     @endif
                     <input type="file" class="form-control @error('file_dokumen') is-invalid @enderror" id="file_dokumen" name="file_dokumen" accept=".pdf,.jpg,.jpeg,.png">
-                    <small class="text-muted">Format: PDF, JPG, JPEG, PNG (Maks: 10MB)</small>
+                    <small class="text-muted">Format: PDF, JPG, JPEG, PNG (Maks: 10MB) - Opsional</small>
                     @error('file_dokumen')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label for="link_foto" class="form-label">Link Foto / Google Drive</label>
+                    <label for="link_foto" class="form-label">Link Foto / URL Dokumen</label>
                     <input type="url" class="form-control @error('link_foto') is-invalid @enderror" id="link_foto" name="link_foto" value="{{ old('link_foto', $arsip->link_foto) }}" placeholder="https://drive.google.com/file/d/...">
                     @if($arsip->link_foto)
                         <small class="d-block mt-2">Link saat ini: <a href="{{ $arsip->link_foto }}" target="_blank">Lihat Foto</a></small>
                     @endif
+                    <small class="text-muted">Isi jika file disimpan di Google Drive, OneDrive, Dropbox, dll. - Opsional</small>
                     @error('link_foto')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -456,7 +445,7 @@ document.addEventListener('DOMContentLoaded', function () {
             statusArsipInput.value = 'AKTIF';
             aktifSampaiInput.value = '';
             inaktifSampaiInput.value = '';
-            previewText.innerHTML = `<strong>Perhatian:</strong><br>Anda menggunakan format "SETELAH" untuk masa retensi, tetapi belum mengisi tanggal referensi.<br><strong>Status arsip otomatis di-set ke: AKTIF</strong><br>Perhitungan retensi tidak dapat dilakukan tanpa tanggal referensi.<br>Silakan isi tanggal referensi untuk perhitungan yang lebih akurat.`;
+            previewText.innerHTML = '<strong>Perhatian:</strong><br>Anda menggunakan format "SETELAH" untuk masa retensi, tetapi belum mengisi tanggal referensi.<br><strong>Status arsip otomatis di-set ke: AKTIF</strong><br>Perhitungan retensi tidak dapat dilakukan tanpa tanggal referensi.<br>Silakan isi tanggal referensi untuk perhitungan yang lebih akurat.';
             previewRetensi.style.display = 'block';
             return;
         }
@@ -523,13 +512,13 @@ document.addEventListener('DOMContentLoaded', function () {
         inaktifSampaiInput.value = inaktifSampai;
         statusArsipInput.value = statusArsip;
 
-        let preview = `<strong>Perhitungan Retensi:</strong><br>`;
-        preview += `Sumber Tanggal: ${sumberTanggal === 'tanggal_referensi' ? 'Tanggal Referensi' : 'Tanggal Arsip'}<br>`;
-        preview += `Tanggal Dasar: ${formatTanggal(tanggalDasar)}<br>`;
-        preview += `Aktif Sampai: ${formatTanggal(aktifSampai)}<br>`;
-        preview += `Inaktif Sampai: ${formatTanggal(inaktifSampai)}<br>`;
-        if (keterangan === 'MUSNAH') preview += `Musnah: ${formatTanggal(musnahSampai)}<br>`;
-        preview += `<strong>${statusText}</strong>`;
+        let preview = '<strong>Perhitungan Retensi:</strong><br>';
+        preview += 'Sumber Tanggal: ' + (sumberTanggal === 'tanggal_referensi' ? 'Tanggal Referensi' : 'Tanggal Arsip') + '<br>';
+        preview += 'Tanggal Dasar: ' + formatTanggal(tanggalDasar) + '<br>';
+        preview += 'Aktif Sampai: ' + formatTanggal(aktifSampai) + '<br>';
+        preview += 'Inaktif Sampai: ' + formatTanggal(inaktifSampai) + '<br>';
+        if (keterangan === 'MUSNAH') preview += 'Musnah: ' + formatTanggal(musnahSampai) + '<br>';
+        preview += '<strong>' + statusText + '</strong>';
         previewText.innerHTML = preview;
         previewRetensi.style.display = 'block';
     }
@@ -560,7 +549,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('box-info').textContent = 'Pilih rak terlebih dahulu';
             return;
         }
-        const filteredRak = allRakOptions.filter(opt => {
+        const filteredRak = allRakOptions.filter(function(opt) {
             if (opt.value === '') return false;
             return opt.getAttribute('data-lokasi') === selectedLokasi;
         });
@@ -568,14 +557,16 @@ document.addEventListener('DOMContentLoaded', function () {
             infoRak.textContent = 'Tidak ada rak di lokasi ini';
             rakSelect.innerHTML = '<option value="">-- Tidak ada rak --</option>';
         } else {
-            infoRak.textContent = `${filteredRak.length} rak tersedia`;
-            filteredRak.forEach(opt => rakSelect.appendChild(opt));
+            infoRak.textContent = filteredRak.length + ' rak tersedia';
+            filteredRak.forEach(function(opt) {
+                rakSelect.appendChild(opt);
+            });
         }
         boxSelect.innerHTML = '<option value="">Pilih Box</option>';
         document.getElementById('box-info').textContent = 'Pilih rak terlebih dahulu';
         const selectedRakId = "{{ old('rak_id', $arsip->rak_id) }}";
         if (selectedRakId) {
-            const rakOption = rakSelect.querySelector(`option[value="${selectedRakId}"]`);
+            const rakOption = rakSelect.querySelector('option[value="' + selectedRakId + '"]');
             if (rakOption) rakOption.selected = true;
         }
         rakSelect.dispatchEvent(new Event('change'));
@@ -589,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function () {
             infoBox.textContent = 'Pilih rak terlebih dahulu';
             return;
         }
-        const filteredBox = allBoxOptions.filter(opt => {
+        const filteredBox = allBoxOptions.filter(function(opt) {
             if (opt.value === '') return false;
             return opt.getAttribute('data-rak-id') === selectedRakId;
         });
@@ -597,12 +588,14 @@ document.addEventListener('DOMContentLoaded', function () {
             infoBox.textContent = 'Tidak ada box di rak ini';
             boxSelect.innerHTML = '<option value="">-- Tidak ada box --</option>';
         } else {
-            infoBox.textContent = `${filteredBox.length} box tersedia`;
-            filteredBox.forEach(opt => boxSelect.appendChild(opt));
+            infoBox.textContent = filteredBox.length + ' box tersedia';
+            filteredBox.forEach(function(opt) {
+                boxSelect.appendChild(opt);
+            });
         }
         const selectedBoxId = "{{ old('box_id', $arsip->box_id) }}";
         if (selectedBoxId) {
-            const boxOption = boxSelect.querySelector(`option[value="${selectedBoxId}"]`);
+            const boxOption = boxSelect.querySelector('option[value="' + selectedBoxId + '"]');
             if (boxOption) boxOption.selected = true;
         }
     }
@@ -614,13 +607,13 @@ document.addEventListener('DOMContentLoaded', function () {
         filterRak();
         const selectedRakId = "{{ old('rak_id', $arsip->rak_id) }}";
         if (selectedRakId) {
-            const rakOption = rakSelect.querySelector(`option[value="${selectedRakId}"]`);
+            const rakOption = rakSelect.querySelector('option[value="' + selectedRakId + '"]');
             if (rakOption) rakOption.selected = true;
         }
         filterBox();
         const selectedBoxId = "{{ old('box_id', $arsip->box_id) }}";
         if (selectedBoxId) {
-            const boxOption = boxSelect.querySelector(`option[value="${selectedBoxId}"]`);
+            const boxOption = boxSelect.querySelector('option[value="' + selectedBoxId + '"]');
             if (boxOption) boxOption.selected = true;
         }
     }

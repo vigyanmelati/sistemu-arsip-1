@@ -157,21 +157,17 @@
             <!-- INFORMASI TAMBAHAN (Opsional) -->
             <h6 class="mb-3 text-primary">Informasi Tambahan (Opsional)</h6>
             <div class="row">
-                <!-- Lokasi Arsip (readonly) -->
-                <div class="col-md-6 mb-3">
-                    <label class="form-label fw-semibold">
-                        <i class="bi bi-building text-primary me-1"></i> Lokasi Arsip
-                    </label>
+                <!-- Lokasi Arsip -->
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Lokasi Arsip</label>
                     <input type="text" class="form-control" value="{{ $lokasiLabel ?? 'Sub Bagian' }}" readonly disabled>
                     <small class="text-muted">Lokasi ditentukan berdasarkan sub bagian Anda</small>
                     <input type="hidden" name="lokasi_arsip" value="{{ $lokasi }}">
                 </div>
 
                 <!-- Rak -->
-                <div class="col-md-3 mb-3">
-                    <label for="rak_id" class="form-label fw-semibold">
-                        <i class="bi bi-layers text-success me-1"></i> Rak
-                    </label>
+                <div class="col-md-4 mb-3">
+                    <label for="rak_id" class="form-label">Rak</label>
                     <select class="form-control @error('rak_id') is-invalid @enderror" id="rak_id" name="rak_id">
                         <option value="">Pilih Rak</option>
                         @forelse($rakOptions as $rak)
@@ -191,10 +187,8 @@
                 </div>
 
                 <!-- Box -->
-                <div class="col-md-3 mb-3">
-                    <label for="box_id" class="form-label fw-semibold">
-                        <i class="bi bi-box-seam text-warning me-1"></i> Box
-                    </label>
+                <div class="col-md-4 mb-3">
+                    <label for="box_id" class="form-label">Box</label>
                     <select class="form-control @error('box_id') is-invalid @enderror" id="box_id" name="box_id">
                         <option value="">Pilih Box</option>
                         @forelse($boxOptions as $box)
@@ -214,19 +208,18 @@
                 </div>
 
                 <!-- Nomor Sampul -->
-                <div class="col-md-3 mb-3">
-                    <label for="nomor_sampul" class="form-label fw-semibold">
-                        <i class="bi bi-tag text-info me-1"></i> Nomor Sampul
-                    </label>
+                <div class="col-md-4 mb-3">
+                  <label for="nomor_sampul" class="form-label">Nomor Sampul <span class="text-muted">(Opsional)</span></label>
                     <input type="text" class="form-control @error('nomor_sampul') is-invalid @enderror" 
                         name="nomor_sampul" value="{{ old('nomor_sampul', $arsip->nomor_sampul) }}" placeholder="Contoh: 1">
-                    @error('nomor_sampul')
+                    <small class="text-muted">Isi jika ada nomor sampul</small>
+                        @error('nomor_sampul')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
                 <!-- Tanggal Masuk -->
-                <div class="col-md-3 mb-3">
+                <div class="col-md-6 mb-3">
                     <label for="tanggal_masuk" class="form-label">Tanggal Masuk</label>
                     <input type="date" class="form-control @error('tanggal_masuk') is-invalid @enderror" 
                         name="tanggal_masuk" value="{{ old('tanggal_masuk', $arsip->tanggal_masuk_for_input) }}">
@@ -315,6 +308,7 @@
         </form>
     </div>
 </div>
+@endsection
 
 @push('scripts')
 <script>
@@ -322,37 +316,47 @@ document.addEventListener('DOMContentLoaded', function () {
     const rakSelect = document.getElementById('rak_id');
     const boxSelect = document.getElementById('box_id');
 
-    const allRakOptions = Array.from(rakSelect.options);
-    const allBoxOptions = Array.from(boxSelect.options);
+    // Simpan semua opsi asli
+    const allRakOptions = Array.from(rakSelect.querySelectorAll('option:not([value=""])'));
+    const allBoxOptions = Array.from(boxSelect.querySelectorAll('option:not([value=""])'));
 
+    // Ambil nilai yang tersimpan
     const selectedLokasi = "{{ $lokasi }}";
+    const selectedRakId = "{{ old('rak_id', $arsip->rak_id) }}";
+    const selectedBoxId = "{{ old('box_id', $arsip->box_id) }}";
+
     function filterRak() {
+        // Reset rak
         rakSelect.innerHTML = '<option value="">Pilih Rak</option>';
         const infoRak = document.getElementById('rak-info');
+        
         if (!selectedLokasi) {
-            boxSelect.innerHTML = '<option value="">Pilih Box</option>';
             infoRak.textContent = 'Lokasi tidak ditemukan';
-            document.getElementById('box-info').textContent = 'Pilih rak terlebih dahulu';
             return;
         }
+
+        // Filter rak berdasarkan lokasi
         const filteredRak = allRakOptions.filter(opt => {
-            if (opt.value === '') return false;
             return opt.getAttribute('data-lokasi') === selectedLokasi;
         });
+
         if (filteredRak.length === 0) {
             infoRak.textContent = 'Tidak ada rak di lokasi ini';
             rakSelect.innerHTML = '<option value="">-- Tidak ada rak --</option>';
         } else {
-            infoRak.textContent = `${filteredRak.length} rak tersedia`;
+            infoRak.textContent = filteredRak.length + ' rak tersedia';
             filteredRak.forEach(opt => rakSelect.appendChild(opt));
+            
+            // Set selected rak jika ada
+            if (selectedRakId) {
+                const rakOption = rakSelect.querySelector('option[value="' + selectedRakId + '"]');
+                if (rakOption) {
+                    rakOption.selected = true;
+                }
+            }
         }
-        boxSelect.innerHTML = '<option value="">Pilih Box</option>';
-        document.getElementById('box-info').textContent = 'Pilih rak terlebih dahulu';
-        const oldRakId = "{{ old('rak_id', $arsip->rak_id) }}";
-        if (oldRakId) {
-            const rakOption = rakSelect.querySelector(`option[value="${oldRakId}"]`);
-            if (rakOption) rakOption.selected = true;
-        }
+
+        // Trigger change untuk filter box
         rakSelect.dispatchEvent(new Event('change'));
     }
 
@@ -360,29 +364,38 @@ document.addEventListener('DOMContentLoaded', function () {
         const selectedRakId = rakSelect.value;
         boxSelect.innerHTML = '<option value="">Pilih Box</option>';
         const infoBox = document.getElementById('box-info');
+
         if (!selectedRakId) {
             infoBox.textContent = 'Pilih rak terlebih dahulu';
             return;
         }
+
+        // Filter box berdasarkan rak_id
         const filteredBox = allBoxOptions.filter(opt => {
-            if (opt.value === '') return false;
             return opt.getAttribute('data-rak-id') === selectedRakId;
         });
+
         if (filteredBox.length === 0) {
             infoBox.textContent = 'Tidak ada box di rak ini';
             boxSelect.innerHTML = '<option value="">-- Tidak ada box --</option>';
         } else {
-            infoBox.textContent = `${filteredBox.length} box tersedia`;
+            infoBox.textContent = filteredBox.length + ' box tersedia';
             filteredBox.forEach(opt => boxSelect.appendChild(opt));
-        }
-        const oldBoxId = "{{ old('box_id', $arsip->box_id) }}";
-        if (oldBoxId) {
-            const boxOption = boxSelect.querySelector(`option[value="${oldBoxId}"]`);
-            if (boxOption) boxOption.selected = true;
+            
+            // Set selected box jika ada
+            if (selectedBoxId) {
+                const boxOption = boxSelect.querySelector('option[value="' + selectedBoxId + '"]');
+                if (boxOption) {
+                    boxOption.selected = true;
+                }
+            }
         }
     }
 
+    // Jalankan filter
     filterRak();
+
+    // Event listener
     rakSelect.addEventListener('change', filterBox);
 
     // Fungsi hapus file
@@ -390,10 +403,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (confirm('Apakah Anda yakin ingin menghapus file ini?')) {
             document.getElementById('hapus_file').value = '1';
             const fileInfoDiv = document.querySelector('.mb-2');
-            if (fileInfoDiv) fileInfoDiv.style.display = 'none';
+            if (fileInfoDiv) {
+                fileInfoDiv.style.display = 'none';
+            }
         }
     }
 });
 </script>
 @endpush
-@endsection

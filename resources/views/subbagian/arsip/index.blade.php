@@ -95,14 +95,6 @@
 </div>
 @endif
 
-<!-- @if(session('error'))
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <strong><i class="bi bi-exclamation-triangle-fill"></i> Error!</strong>
-        <div>{!! session('error') !!}</div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif -->
-
 @if(session('import_errors'))
 <div class="alert alert-danger alert-dismissible fade show">
 
@@ -124,13 +116,6 @@
 </div>
 @endif
 
-<!-- @if(session('error'))
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <strong><i class="bi bi-exclamation-triangle-fill"></i> Error!</strong>
-        <div>{!! session('error') !!}</div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif -->
           @if(request('show_duplicates'))
 <div class="alert alert-info mb-3 d-flex align-items-center">
     <i class="bi bi-info-circle-fill me-2"></i>
@@ -200,9 +185,9 @@
                             </a>
                         </th>
                         <th style="min-width: 100px;" class="sortable-header">
-                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'nomor_rak', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
-                                <span style="text-align: center">Nama/No Rak</span>
-                                @if(request('sort') == 'nomor_rak')
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'rak.nomor_rak', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
+                                <span style="text-align: center">No Rak</span>
+                                @if(request('sort') == 'rak.nomor_rak')
                                     <i class="bi bi-caret-{{ request('direction') == 'asc' ? 'up' : 'down' }}-fill text-dark"></i>
                                 @else
                                     <i class="bi bi-caret-up-down text-secondary"></i>
@@ -210,9 +195,9 @@
                             </a>
                         </th>
                         <th style="min-width: 100px;" class="sortable-header">
-                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'nomor_box', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
-                                <span style="text-align: center">Nama/No Box</span>
-                                @if(request('sort') == 'nomor_box')
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'box.nomor_box', 'direction' => request('direction') == 'asc' ? 'desc' : 'asc']) }}" class="text-decoration-none text-dark d-flex justify-content-between align-items-center">
+                                <span style="text-align: center">No Box</span>
+                                @if(request('sort') == 'box.nomor_box')
                                     <i class="bi bi-caret-{{ request('direction') == 'asc' ? 'up' : 'down' }}-fill text-dark"></i>
                                 @else
                                     <i class="bi bi-caret-up-down text-secondary"></i>
@@ -245,8 +230,8 @@
                         <td>{{ Str::limit($arsip->uraian_arsip, 100) }}</td>
                         <td>{{ $arsip->tahun_arsip }}</td>
                         <td>{{ $arsip->jumlah_berkas }} {{ $arsip->satuan_arsip }}</td>
-                        <td>{{ $arsip->nomor_rak ?? '-' }}</td>
-                        <td>{{ $arsip->nomor_box ?? '-' }}</td>
+                        <td>{{ $arsip->rak->nomor_rak ?? '-' }}</td>
+                        <td>{{ $arsip->box->nomor_box ?? '-' }}</td>
                         <td>
                             @if($arsip->status_pindah)
                                 @php
@@ -277,16 +262,6 @@
                                 <a href="{{ route('subbagian.arsip.edit', $arsip->id) }}" class="btn btn-warning" title="Edit" style="padding: 0.25rem 0.5rem;">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <!-- Tombol Ajukan Pindah per Arsip -->
-                                <!-- @if($arsip->sub_bagian_id == auth()->user()->sub_bagian_id && $arsip->status_pindah !== 'DIAJUKAN')
-                                <form action="{{ route('subbagian.arsip.ajukanPindah', $arsip->id) }}" method="POST" enctype="multipart/form-data" class="d-inline ajukan-pindah-single">
-                                    @csrf
-                                    <input type="file" name="file_berita_acara" class="d-none file-input-single" accept=".pdf,.jpg,.jpeg,.png">
-                                    <button type="button" class="btn btn-warning btn-ajukan-single" title="Ajukan Pindah" style="padding: 0.25rem 0.5rem;" data-id="{{ $arsip->id }}" data-judul="{{ $arsip->uraian_arsip }}">
-                                        <i class="bi bi-arrow-right-circle"></i>
-                                    </button>
-                                </form>
-                                @endif -->
                                 <form action="{{ route('subbagian.arsip.destroy', $arsip->id) }}"
                                     method="POST"
                                     data-confirm="delete"
@@ -302,7 +277,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="text-center py-4">
+                        <td colspan="11" class="text-center py-4">
                             <i class="bi bi-folder-x fa-2x text-muted mb-2"></i>
                             <p class="text-muted">Belum ada data arsip</p>
                             <a href="{{ route('subbagian.arsip.create') }}" class="btn btn-primary">
@@ -365,11 +340,6 @@
                             <!-- akan diisi JavaScript -->
                         </div>
                     </div>
-
-                    <!-- <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        <strong>Perhatian:</strong> Arsip yang diajukan akan menunggu persetujuan Unit Kearsipan.
-                    </div> -->
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-outline-secondary" id="cancelAjukanPindah">Batal</button>
@@ -421,18 +391,6 @@
                             </select>
                         </div>
                         
-                        {{-- <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold">Sub Bagian</label>
-                            <select name="sub_bagian_id" class="form-select">
-                                <option value="">Semua Sub Bagian</option>
-                                @foreach($subBagianOptions as $subBagian)
-                                <option value="{{ $subBagian->id }}" {{ request('sub_bagian_id') == $subBagian->id ? 'selected' : '' }}>
-                                    {{ $subBagian->nama_sub_bagian }}
-                                </option>
-                                @endforeach
-                            </select>
-                        </div> --}}
-
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-semibold">Kondisi Fisik</label>
                             <select class="form-select" name="keterangan">
@@ -454,18 +412,6 @@
                                 @endforeach
                             </select>
                         </div>
-
-                        <!-- <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold">Status Pindah</label>
-                            <select name="status_pindah" class="form-select">
-                                <option value="">Semua Status</option>
-                                <option value="" {{ request('status_pindah') == '' ? 'selected' : '' }}>Belum Diajukan</option>
-                                <option value="DIAJUKAN" {{ request('status_pindah') == 'DIAJUKAN' ? 'selected' : '' }}>Diajukan</option>
-                                <option value="DITERIMA" {{ request('status_pindah') == 'DITERIMA' ? 'selected' : '' }}>Diterima</option>
-                                <option value="DITOLAK" {{ request('status_pindah') == 'DITOLAK' ? 'selected' : '' }}>Ditolak</option>
-                                <option value="SELESAI" {{ request('status_pindah') == 'SELESAI' ? 'selected' : '' }}>Selesai</option>
-                            </select>
-                        </div> -->
                     </div>
                     
                     <div class="alert alert-info mt-3 mb-0 d-flex align-items-center">
@@ -629,6 +575,8 @@
         </div>
     </div>
 </div>
+
+<!-- CSS dan JavaScript tetap sama seperti sebelumnya -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <style>
     /* ===== STYLE UNTUK SORTING ===== */
@@ -848,7 +796,7 @@
     @keyframes modalSlideIn {
         from {
             opacity: 0;
-            transform: translateY(-20px) scale(0.95); /* sebelumnya -50px */
+            transform: translateY(-20px) scale(0.95);
         }
         to {
             opacity: 1;

@@ -415,5 +415,32 @@ public function box()
 {
     return $this->belongsTo(MasterBox::class, 'box_id');
 }
+  const LOKASI_ARSIP = [
+        'RECORD_CENTER_PERMANEN' => 'Record Center Permanen',
+        'RECORD_CENTER_INAKTIF' => 'Record Center Inaktif',
+        'RUANG_SUBBAGIAN_UMUM_LOGISTIK' => 'Subbagian Umum & Logistik',
+        'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM' => 'Subbagian Parmas & SDM',
+        'RUANG_SUBBAGIAN_KEUANGAN' => 'Subbagian Keuangan',
+        'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI' => 'Subbagian Perencanaan, Data & Informasi',
+        'RUANG_SUBBAGIAN_TEKNIS' => 'Subbagian Teknis',
+        'RUANG_SUBBAGIAN_HUKUM' => 'Subbagian Hukum',
+    ];
 
+    // Ambil semua key lokasi arsip
+    public static function getLokasiArsipKeys()
+    {
+        return array_keys(self::LOKASI_ARSIP);
+    }
+
+    // Ambil semua label lokasi arsip
+    public static function getLokasiArsipLabels()
+    {
+        return self::LOKASI_ARSIP;
+    }
+
+    // Ambil label dari suatu key
+    public static function getLokasiArsipLabel($key)
+    {
+        return self::LOKASI_ARSIP[$key] ?? $key;
+    }
 }

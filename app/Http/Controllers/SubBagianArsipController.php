@@ -58,6 +58,23 @@ class SubBagianArsipController extends Controller
 
 });
             
+// Di dalam method index() controller SubBagianArsipController
+
+if ($request->has('sort')) {
+    $sort = $request->sort;
+    $direction = $request->direction ?? 'asc';
+    
+    // Handle sorting untuk relasi
+    if ($sort == 'rak.nomor_rak') {
+        $query->join('master_raks', 'arsips.rak_id', '=', 'master_raks.id')
+              ->orderBy('master_raks.nomor_rak', $direction)
+              ->select('arsips.*');
+    } elseif ($sort == 'box.nomor_box') {
+        $query->join('master_box', 'arsips.box_id', '=', 'master_box.id')
+              ->orderBy('master_box.nomor_box', $direction)
+              ->select('arsips.*');
+    }
+}
 
         $tahunOptions = Arsip::select('tahun_arsip')
             ->distinct()

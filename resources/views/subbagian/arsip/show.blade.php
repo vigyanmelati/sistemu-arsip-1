@@ -1,4 +1,4 @@
-{{-- resources/views/arsip/show.blade.php --}}
+
 @extends('layouts.app')
 
 @section('page-title', 'Detail Arsip')
@@ -8,14 +8,6 @@
 <div class="card shadow">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h6 class="m-0 font-weight-bold text-primary">Detail Arsip</h6>
-        {{-- <div class="btn-group">
-            <a href="{{ route('subbagian.arsip.index') }}" class="btn btn-secondary btn-sm">
-                <i class="bi bi-arrow-left"></i> Kembali
-            </a>
-            <a href="{{ route('subbagian.arsip.edit', $arsip->id) }}" class="btn btn-warning btn-sm">
-                <i class="bi bi-pencil"></i> Edit
-            </a>
-        </div> --}}
     </div>
     <div class="card-body">
         <div class="row">
@@ -27,11 +19,9 @@
                         <td width="40%"><strong>Kode Klasifikasi</strong></td>
                         <td>: {{ $arsip->kodeKlasifikasi->kode ?? 'N/A' }} - {{ $arsip->kodeKlasifikasi->uraian ?? '' }}</td>
                     </tr>
-                   <tr>
+                    <tr>
                         <td><strong>Judul Arsip</strong></td>
-                        <td class="detail-text">
-                            : {{ $arsip->uraian_arsip }}
-                        </td>
+                        <td class="detail-text">: {{ $arsip->uraian_arsip }}</td>
                     </tr>
                     <tr>
                         <td><strong>Sub Bagian</strong></td>
@@ -81,13 +71,12 @@
                             @endif
                         </td>
                     </tr>
-
                 </table>
             </div>
             
             <!-- Informasi Fisik -->
             <div class="col-md-6">
-                <h6 class="font-weight-bold text-primary mb-3">Informasi Fisik</h6>
+                <h6 class="font-weight-bold text-primary mb-3">Informasi Fisik & Lokasi</h6>
                 <table class="table table-borderless">
                     <tr>
                         <td width="40%"><strong>Jumlah Berkas</strong></td>
@@ -102,14 +91,31 @@
                         <td>: {{ $arsip->tingkat_perkembangan ?? '-' }}</td>
                     </tr>
                     <tr>
+                        <td><strong>Lokasi Arsip</strong></td>
+                        <td>: 
+                            @php
+                                $lokasiLabels = [
+                                    'RUANG_SUBBAGIAN_UMUM_LOGISTIK' => 'Ruang Subbagian Umum & Logistik',
+                                    'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM' => 'Ruang Subbagian Parmas & SDM',
+                                    'RUANG_SUBBAGIAN_KEUANGAN' => 'Ruang Subbagian Keuangan',
+                                    'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI' => 'Ruang Subbagian Perencanaan, Data & Informasi',
+                                    'RUANG_SUBBAGIAN_TEKNIS' => 'Ruang Subbagian Teknis',
+                                    'RUANG_SUBBAGIAN_HUKUM' => 'Ruang Subbagian Hukum',
+                                ];
+                                $lokasiLabel = $lokasiLabels[$arsip->lokasi_arsip] ?? $arsip->lokasi_arsip ?? '-';
+                            @endphp
+                            {{ $lokasiLabel }}
+                        </td>
+                    </tr>
+                    <tr>
                         <td><strong>Nomor Rak</strong></td>
-                        <td>: {{ $arsip->nomor_rak ?: '-' }}</td>
+                        <td>: {{ $arsip->rak ? $arsip->rak->nomor_rak : '-' }}</td>
                     </tr>
                     <tr>
                         <td><strong>Nomor Box</strong></td>
-                        <td>: {{ $arsip->nomor_box ?: '-' }}</td>
+                        <td>: {{ $arsip->box ? $arsip->box->nomor_box : '-' }}</td>
                     </tr>
-                     <tr>
+                    <tr>
                         <td><strong>Nomor Sampul</strong></td>
                         <td>: {{ $arsip->nomor_sampul ?: '-' }}</td>
                     </tr>
@@ -149,31 +155,28 @@
                             @endif
                         </td>
                     </tr>
-
                     <tr>
-    <td><strong>Klasifikasi Keamanan</strong></td>
-    <td>:
-        @php
-            $keamananColors = [
-                'Biasa/Terbuka' => 'success',
-                'Terbatas'      => 'warning',
-                'Rahasia'       => 'danger',
-            ];
+                        <td><strong>Klasifikasi Keamanan</strong></td>
+                        <td>:
+                            @php
+                                $keamananColors = [
+                                    'Biasa/Terbuka' => 'success',
+                                    'Terbatas'      => 'warning',
+                                    'Rahasia'       => 'danger',
+                                ];
+                                $keamananColor = $keamananColors[$arsip->klasifikasi_keamanan] ?? 'secondary';
+                            @endphp
 
-            $keamananColor = $keamananColors[$arsip->klasifikasi_keamanan] ?? 'secondary';
-        @endphp
-
-        @if($arsip->klasifikasi_keamanan)
-            <span class="badge bg-{{ $keamananColor }}">
-                {{ ucwords(strtolower($arsip->klasifikasi_keamanan)) }}
-            </span>
-        @else
-            <span class="text-muted">-</span>
-        @endif
-    </td>
-</tr>
-
-                     <tr>
+                            @if($arsip->klasifikasi_keamanan)
+                                <span class="badge bg-{{ $keamananColor }}">
+                                    {{ ucwords(strtolower($arsip->klasifikasi_keamanan)) }}
+                                </span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                    </tr>
+                    <tr>
                         <td><strong>File Dokumen</strong></td>
                         <td>: 
                             @if($arsip->file_dokumen || $arsip->link_foto)
@@ -182,13 +185,13 @@
                                         @if($arsip->file_dokumen)
                                             <a href="{{ route('subbagian.arsip.downloadFile', $arsip->id) }}"
                                                target="_blank"
-                                               class="btn btn-primary">
+                                               class="btn btn-primary btn-sm">
                                                 Lihat/Unduh Dokumen
                                             </a>
                                         @elseif($arsip->link_foto)
                                             <a href="{{ $arsip->link_foto }}"
                                                target="_blank"
-                                               class="btn btn-primary">
+                                               class="btn btn-primary btn-sm">
                                                 Lihat Dokumen
                                             </a>
                                         @endif
@@ -315,53 +318,41 @@
         
         <div class="mt-4 pt-3 border-top">
             <div class="d-flex gap-2 align-items-center">
-
-                {{-- <a href="{{ $returnUrl ?? route('subbagian.arsip.index') }}"
-                class="btn btn-secondary">
-                    ⬅ Kembali
-                </a> --}}
-
-                    <a href="{{ session('arsip_return_url') ?? url()->previous() ?? route('subbagian.arsip.index') }}"
-                class="btn btn-secondary">
-                    ⬅ Kembali
+                <a href="{{ session('arsip_return_url') ?? url()->previous() ?? route('subbagian.arsip.index') }}"
+                   class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Kembali
                 </a>
 
+                @if(auth()->user()->canEditArsip($arsip))
+                    <a href="{{ route('subbagian.arsip.edit', $arsip->id) }}"
+                       class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Edit Arsip
+                    </a>
+                @endif
 
-               @if(auth()->user()->canEditArsip($arsip))
-    <a href="{{ route('subbagian.arsip.edit', $arsip->id) }}"
-       class="btn btn-warning">
-        <i class="bi bi-pencil"></i> Edit Arsip
-    </a>
-@endif
-
-@if(auth()->user()->canDeleteArsip($arsip))
-    <form action="{{ route('subbagian.arsip.destroy', $arsip->id) }}"
-          method="POST"
-          class="d-inline">
-        @csrf
-        @method('DELETE')
-        <button type="submit"
-                class="btn btn-danger"
-                onclick="return confirm('Apakah Anda yakin ingin menghapus arsip ini?')">
-            <i class="bi bi-trash"></i> Hapus Arsip
-        </button>
-    </form>
-@endif
-
+                @if(auth()->user()->canDeleteArsip($arsip))
+                    <form action="{{ route('subbagian.arsip.destroy', $arsip->id) }}"
+                          method="POST"
+                          class="d-inline">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit"
+                                class="btn btn-danger"
+                                onclick="return confirm('Apakah Anda yakin ingin menghapus arsip ini?')">
+                            <i class="bi bi-trash"></i> Hapus Arsip
+                        </button>
+                    </form>
+                @endif
             </div>
         </div>
-
     </div>
 </div>
 
 <style>
     .detail-text {
-    white-space: normal;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-}
-
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
 </style>
-
 @endsection
-

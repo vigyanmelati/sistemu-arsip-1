@@ -15,17 +15,21 @@ class LokasiController extends Controller
     //     $this->middleware('role:admin,super_admin');
     // }
 
-    // Layer 1: Tampilkan semua ruangan (hanya yang memiliki nilai)
-    public function index()
+       public function index()
     {
-        // Ambil ruangan yang tidak null dan tidak kosong
-       // Di method index()
-$ruangans = MasterRak::select('lokasi_arsip')
-    ->whereNotNull('lokasi_arsip')
-    ->where('lokasi_arsip', '!=', '')
-    ->distinct()
-    ->pluck('lokasi_arsip')
-    ->toArray();
+        // Ambil semua key lokasi arsip dari Model
+        $ruangans = Arsip::getLokasiArsipKeys();
+        
+        // Atau jika hanya ingin yang ada data di database:
+        // $ruangans = Arsip::select('lokasi_arsip')
+        //     ->whereNotNull('lokasi_arsip')
+        //     ->where('lokasi_arsip', '!=', '')
+        //     ->distinct()
+        //     ->pluck('lokasi_arsip')
+        //     ->toArray();
+
+        // Label ruangan dari Model
+        $ruanganLabels = Arsip::getLokasiArsipLabels();
 
         // Hitung arsip yang belum punya ruangan
         $arsipTanpaRuangan = Arsip::where(function ($query) {
@@ -34,11 +38,6 @@ $ruangans = MasterRak::select('lokasi_arsip')
         })
         ->whereIn('status_pindah', ['LANGSUNG', 'DIPINDAHKAN'])
         ->count();
-
-        $ruanganLabels = [
-            'RECORD_CENTER_PERMANEN' => 'Record Center Permanen',
-            'RECORD_CENTER_INAKTIF' => 'Record Center Inaktif',
-        ];
 
         return view('manajemen-lokasi.index', compact('ruangans', 'ruanganLabels', 'arsipTanpaRuangan'));
     }
