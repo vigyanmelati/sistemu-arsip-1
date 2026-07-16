@@ -13,11 +13,21 @@
             <span class="badge bg-warning">{{ $berita_acara->status }}</span>
         </p>
 
-        <a href="{{ asset('storage/berita_acara/'.$berita_acara->file_bap) }}" 
+        <!-- <a href="{{ asset('storage/berita_acara/'.$berita_acara->file_bap) }}" 
            target="_blank" class="btn btn-primary">
             Lihat File
-        </a>
-
+        </a> -->
+<div class="mb-3">
+    <a href="{{ asset('storage/berita_acara/'.$berita_acara->file_bap) }}"
+       target="_blank"
+       class="btn btn-primary">
+        Lihat File BAP
+    </a>
+<a href="{{ route('subbagian.berita-acara.exportLampiran', $berita_acara->id) }}"
+   class="btn btn-success">
+    Export Lampiran BAP
+</a>
+</div>
     </div>
 </div>
 
@@ -37,19 +47,27 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($berita_acara->details as $detail)
-                <tr>
-                    <td>{{ $loop->iteration }}</td>
-                    <td>{{ $detail->arsip->kodeKlasifikasi->kode ?? '-' }}</td>
-                    <td>{{ $detail->arsip->uraian_arsip }}</td>
-                    <td>{{ $detail->arsip->tahun_arsip }}</td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="4" class="text-center">Belum ada arsip</td>
-                </tr>
-                @endforelse
-            </tbody>
+    @forelse($berita_acara->details as $detail)
+    <tr>
+        <td>{{ $loop->iteration }}</td>
+        <td>{{ $detail->arsip->kodeKlasifikasi->kode ?? '-' }}</td>
+        <td>{{ $detail->arsip->uraian_arsip }}</td>
+        <td>{{ $detail->arsip->tahun_arsip }}</td>
+        <td>
+            <a href="{{ route('subbagian.arsip.show', $detail->arsip->id) }}"
+               class="btn btn-sm btn-info">
+                <i class="fas fa-eye"></i> Detail
+            </a>
+        </td>
+    </tr>
+    @empty
+    <tr>
+        <td colspan="5" class="text-center">
+            Belum ada arsip
+        </td>
+    </tr>
+    @endforelse
+</tbody>
         </table>
 
     </div>

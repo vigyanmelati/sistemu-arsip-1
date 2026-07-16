@@ -277,7 +277,10 @@ Route::middleware(['auth', 'subbagian'])->prefix('subbagian')->name('subbagian.'
     });
 Route::post('/subbagian/arsip/{arsip}/duplicate', [SubBagianArsipController::class, 'duplicate'])
     ->name('subbagian.arsip.duplicate');
-
+Route::get(
+    '/berita-acara/{berita_acara}/export-lampiran',
+    [BeritaAcaraPindahController::class, 'exportLampiran']
+)->name('berita-acara.exportLampiran');
 
     
 });

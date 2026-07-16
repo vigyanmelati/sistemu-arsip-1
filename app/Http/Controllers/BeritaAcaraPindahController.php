@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\BeritaAcaraPindah;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\LampiranBeritaAcaraExport;
 
 class BeritaAcaraPindahController extends Controller
 {
@@ -152,4 +154,20 @@ class BeritaAcaraPindahController extends Controller
             abort(403, 'Tidak punya akses ke data ini.');
         }
     }
+
+ public function exportLampiran(BeritaAcaraPindah $berita_acara)
+{
+    $this->authorizeAccess($berita_acara);
+
+    $namaFile = str_replace(
+        ['/', '\\'],
+        '_',
+        $berita_acara->nomor_bap
+    );
+
+    return Excel::download(
+        new LampiranBeritaAcaraExport($berita_acara),
+        'Lampiran_BA_' . $namaFile . '.xlsx'
+    );
+}
 }
