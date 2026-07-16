@@ -16,6 +16,8 @@ use Carbon\Carbon;
 use App\Models\BeritaAcaraPindah;
 use App\Models\BeritaAcaraDetail;
 use Illuminate\Support\Facades\DB;
+use App\Models\MasterRak;
+use App\Models\MasterBox;
 
 
 class SubBagianArsipController extends Controller
@@ -249,20 +251,42 @@ if ($request->show_duplicates == 1) {
         }
     }
 
-    public function create()
-    {
-        $kodeKlasifikasiOptions = KodeKlasifikasi::orderBy('kode')->get();
-        $subBagianOptions = SubBagian::orderBy('nama_sub_bagian')->get();
-        $defaultValues = [
-            'status_arsip' => 'AKTIF',
-            'jumlah_berkas' => 1,
-            'satuan_arsip' => 'LEMBAR',
-            'tahun_arsip' => date('Y'),
-            'tanggal_arsip' => date('Y-m-d'),
-            'keterangan_jra' => 'MUSNAH',
-        ];
-        return view('subbagian.arsip.create', compact('kodeKlasifikasiOptions','defaultValues','subBagianOptions'));
-    }
+ public function create()
+{
+    $user = Auth::user();
+    $lokasi = $this->getLokasiArsip($user);
+    $lokasiLabel = $this->getLabelLokasi($lokasi);
+
+    $kodeKlasifikasiOptions = KodeKlasifikasi::orderBy('kode')->get();
+    $subBagianOptions = SubBagian::orderBy('nama_sub_bagian')->get();
+
+    $rakOptions = MasterRak::where('lokasi_arsip', $lokasi)
+        ->orderBy('nomor_rak')
+        ->get(['id', 'nomor_rak', 'lokasi_arsip']);
+
+    $boxOptions = MasterBox::whereIn('rak_id', $rakOptions->pluck('id'))
+        ->orderBy('nomor_box')
+        ->get(['id', 'nomor_box', 'rak_id']);
+
+    $defaultValues = [
+        'status_arsip' => 'AKTIF',
+        'jumlah_berkas' => 1,
+        'satuan_arsip' => 'LEMBAR',
+        'tahun_arsip' => date('Y'),
+        'tanggal_arsip' => date('Y-m-d'),
+        'keterangan_jra' => 'MUSNAH',
+    ];
+
+    return view('subbagian.arsip.create', compact(
+        'kodeKlasifikasiOptions',
+        'subBagianOptions',
+        'rakOptions',
+        'boxOptions',
+        'defaultValues',
+        'lokasi',
+        'lokasiLabel'
+    ));
+}
 
     public function store(Request $request)
     {
@@ -281,10 +305,10 @@ if ($request->show_duplicates == 1) {
             // 'inaktif_tahun'=>'nullable|string|max:100',
             // 'tanggal_referensi'=>'nullable|date',
             // 'keterangan_jra'=>'nullable|in:PERMANEN,MUSNAH',
-            'nomor_rak'=>'nullable|string|max:50',
-            'nomor_box'=>'nullable|string|max:50',
+             'rak_id' => 'nullable|exists:master_raks,id',
+        'box_id' => 'nullable|exists:master_box,id',
             'nomor_sampul'=>'nullable|string|max:100',
-            'lokasi_arsip' => 'nullable|in:SUB_BAGIAN,RECORD_CENTER_PERMANEN,RECORD_CENTER_INAKTIF',
+            'lokasi_arsip' => 'nullable|string|max:100',
             'tingkat_perkembangan'=>'nullable|in:ASLI,COPY,SALINAN',
             'keterangan'=>'nullable|in:BAIK,RUSAK,HILANG',
             'media_arsip'=>'nullable|string|max:255',
@@ -338,14 +362,35 @@ if ($request->show_duplicates == 1) {
         return redirect()->route('subbagian.arsip.index')->with('success','Arsip berhasil ditambahkan.');
     }
 
-    public function edit(Arsip $arsip)
-    {
-        $this->authorizeSubBagianArsip($arsip);
+  public function edit(Arsip $arsip)
+{
+    $this->authorizeSubBagianArsip($arsip);
 
-        $kodeKlasifikasiOptions = KodeKlasifikasi::orderBy('kode')->get();
-        $subBagianOptions = SubBagian::orderBy('nama_sub_bagian')->get(); // tambahkan ini
-        return view('subbagian.arsip.edit', compact('arsip','kodeKlasifikasiOptions','subBagianOptions'));
-    }
+    $user = Auth::user();
+    $lokasi = $this->getLokasiArsip($user);
+    $lokasiLabel = $this->getLabelLokasi($lokasi);
+
+    $kodeKlasifikasiOptions = KodeKlasifikasi::orderBy('kode')->get();
+    $subBagianOptions = SubBagian::orderBy('nama_sub_bagian')->get();
+
+    $rakOptions = MasterRak::where('lokasi_arsip', $lokasi)
+        ->orderBy('nomor_rak')
+        ->get(['id', 'nomor_rak', 'lokasi_arsip']);
+
+    $boxOptions = MasterBox::whereIn('rak_id', $rakOptions->pluck('id'))
+        ->orderBy('nomor_box')
+        ->get(['id', 'nomor_box', 'rak_id']);
+
+    return view('subbagian.arsip.edit', compact(
+        'arsip',
+        'kodeKlasifikasiOptions',
+        'subBagianOptions',
+        'rakOptions',
+        'boxOptions',
+        'lokasi',
+        'lokasiLabel'
+    ));
+}
 
     public function show(Request $request, Arsip $arsip)
     {
@@ -402,8 +447,8 @@ if (!$user->canViewArsip($arsip)) {
             // 'inaktif_tahun'=>'required|string|max:100',
             // 'tanggal_referensi'=>'nullable|date',
             // 'keterangan_jra'=>'required|in:PERMANEN,MUSNAH',
-            'nomor_rak'=>'nullable|string|max:50',
-            'nomor_box'=>'nullable|string|max:50',
+            'rak_id' => 'nullable|exists:master_raks,id',
+        'box_id' => 'nullable|exists:master_box,id',
             'nomor_sampul'=>'nullable|string|max:100',
             'lokasi_arsip' => 'nullable|string|max:100',
             'tingkat_perkembangan'=>'nullable|in:ASLI,COPY,SALINAN',
@@ -836,5 +881,19 @@ private function getLokasiArsip($user)
     ];
 
     return $mapLokasi[$namaSub] ?? null;
+}
+
+// Tambahkan method ini di controller
+private function getLabelLokasi($lokasiKey)
+{
+    $labels = [
+        'RUANG_SUBBAGIAN_UMUM_LOGISTIK' => 'Ruang Subbagian Umum & Logistik',
+        'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM' => 'Ruang Subbagian Parmas & SDM',
+        'RUANG_SUBBAGIAN_KEUANGAN' => 'Ruang Subbagian Keuangan',
+        'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI' => 'Ruang Subbagian Perencanaan, Data & Informasi',
+        'RUANG_SUBBAGIAN_TEKNIS' => 'Ruang Subbagian Teknis',
+        'RUANG_SUBBAGIAN_HUKUM' => 'Ruang Subbagian Hukum',
+    ];
+    return $labels[$lokasiKey] ?? $lokasiKey;
 }
 }

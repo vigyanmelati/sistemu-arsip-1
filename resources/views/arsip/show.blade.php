@@ -101,14 +101,37 @@
                         <td><strong>Tingkat Perkembangan</strong></td>
                         <td>: {{ $arsip->tingkat_perkembangan ?? '-' }}</td>
                     </tr>
+
+                    <tr>
+                        <td><strong>Lokasi Arsip</strong></td>
+                        <td>:
+                            @php
+                                $lokasiLabels = [
+                                    'RECORD_CENTER_PERMANEN' => 'Record Center Permanen',
+                                    'RECORD_CENTER_INAKTIF'  => 'Record Center Inaktif',
+                                    'SUB_BAGIAN'             => 'Ruang Sub Bagian',
+                                    // Tambahkan jika ada lokasi khusus subbagian
+                                    'RUANG_SUBBAGIAN_UMUM_LOGISTIK' => 'Ruang Subbagian Umum & Logistik',
+                                    'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM' => 'Ruang Subbagian Parmas & SDM',
+                                    'RUANG_SUBBAGIAN_KEUANGAN' => 'Ruang Subbagian Keuangan',
+                                    'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI' => 'Ruang Subbagian Perencanaan, Data & Informasi',
+                                    'RUANG_SUBBAGIAN_TEKNIS' => 'Ruang Subbagian Teknis',
+                                    'RUANG_SUBBAGIAN_HUKUM' => 'Ruang Subbagian Hukum',
+                                ];
+                                $lokasiLabel = $lokasiLabels[$arsip->lokasi_arsip] ?? $arsip->lokasi_arsip;
+                            @endphp
+                            {{ $lokasiLabel ?: '-' }}
+                        </td>
+                    </tr>
                     <tr>
                         <td><strong>Nomor Rak</strong></td>
-                        <td>: {{ $arsip->nomor_rak ?: '-' }}</td>
+                        <td>: {{ $arsip->rak ? $arsip->rak->nomor_rak : '-' }}</td>
                     </tr>
                     <tr>
                         <td><strong>Nomor Box</strong></td>
-                        <td>: {{ $arsip->nomor_box ?: '-' }}</td>
+                        <td>: {{ $arsip->box ? $arsip->box->nomor_box : '-' }}</td>
                     </tr>
+                    
                      <tr>
                         <td><strong>Nomor Sampul</strong></td>
                         <td>: {{ $arsip->nomor_sampul ?: '-' }}</td>

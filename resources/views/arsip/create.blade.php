@@ -4,6 +4,25 @@
 @section('page-subtitle', 'Form Tambah Arsip Digital')
 
 @section('content')
+
+@if ($errors->any())
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong><i class="bi bi-exclamation-triangle-fill"></i> Terjadi kesalahan:</strong>
+        <ul class="mb-0 mt-2">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
+@if (session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-circle-fill"></i> {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
 <div class="card shadow">
     <div class="card-header">
         <h6 class="m-0 font-weight-bold text-primary">Form Tambah Arsip</h6>
@@ -273,7 +292,7 @@
             
             <div class="row">
                 <!-- Nomor Rak -->
-                <div class="col-md-3 mb-3">
+                <!-- <div class="col-md-3 mb-3">
                     <label for="nomor_rak" class="form-label">Nomor Rak</label>
                     <input type="text" class="form-control @error('nomor_rak') is-invalid @enderror" 
                            id="nomor_rak" name="nomor_rak" 
@@ -282,9 +301,74 @@
                     @error('nomor_rak')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
-                </div>
-                
-                <!-- Nomor Box -->
+                </div> -->
+<!-- Lokasi Arsip (dipindah ke atas) -->
+<!-- Lokasi Arsip -->
+<div class="col-md-6 mb-3">
+    <label for="lokasi_arsip" class="form-label fw-semibold">
+        Lokasi Arsip
+    </label>
+    <select name="lokasi_arsip" id="lokasi_arsip" class="form-control @error('lokasi_arsip') is-invalid @enderror">
+        <option value="">Pilih Lokasi</option>
+        <option value="RECORD_CENTER_PERMANEN" {{ old('lokasi_arsip') == 'RECORD_CENTER_PERMANEN' ? 'selected' : '' }}>
+            Record Center (Arsip Permanen)
+        </option>
+        <option value="RECORD_CENTER_INAKTIF" {{ old('lokasi_arsip') == 'RECORD_CENTER_INAKTIF' ? 'selected' : '' }}>
+            Record Center (Arsip Inaktif)
+        </option>
+    </select>
+    <small class="text-muted">Pilih lokasi penyimpanan arsip</small>
+    @error('lokasi_arsip')
+        <div class="invalid-feedback">{{ $message }}</div>
+    @enderror
+</div>
+
+<!-- Rak -->
+<div class="col-md-3 mb-3">
+    <label for="rak_id" class="form-label fw-semibold">
+        <i class="bi bi-layers text-success me-1"></i> Rak
+    </label>
+    <select class="form-control @error('rak_id') is-invalid @enderror" id="rak_id" name="rak_id">
+        <option value="">Pilih Rak</option>
+        @forelse($rakOptions as $rak)
+            <option value="{{ $rak->id }}" 
+                    data-lokasi="{{ $rak->lokasi_arsip }}"
+                    {{ old('rak_id') == $rak->id ? 'selected' : '' }}>
+                {{ $rak->nomor_rak }}
+            </option>
+        @empty
+            <option value="" disabled>-- Tidak ada rak tersedia --</option>
+        @endforelse
+    </select>
+    <small class="text-muted" id="rak-info">Pilih lokasi terlebih dahulu</small>
+    @error('rak_id')
+        <div class="invalid-feedback">{{ $message }}</div>
+    @enderror
+</div>
+
+<!-- Box -->
+<div class="col-md-3 mb-3">
+    <label for="box_id" class="form-label fw-semibold">
+        <i class="bi bi-box-seam text-warning me-1"></i> Box
+    </label>
+    <select class="form-control @error('box_id') is-invalid @enderror" id="box_id" name="box_id">
+        <option value="">Pilih Box</option>
+        @forelse($boxOptions as $box)
+            <option value="{{ $box->id }}" 
+                    data-rak-id="{{ $box->rak_id }}"
+                    {{ old('box_id') == $box->id ? 'selected' : '' }}>
+                {{ $box->nomor_box }}
+            </option>
+        @empty
+            <option value="" disabled>-- Tidak ada box tersedia --</option>
+        @endforelse
+    </select>
+    <small class="text-muted" id="box-info">Pilih rak terlebih dahulu</small>
+    @error('box_id')
+        <div class="invalid-feedback">{{ $message }}</div>
+    @enderror
+</div>
+                <!-- Nomor Box
                 <div class="col-md-3 mb-3">
                     <label for="nomor_box" class="form-label">Nomor Box</label>
                     <input type="text" class="form-control @error('nomor_box') is-invalid @enderror" 
@@ -294,7 +378,7 @@
                     @error('nomor_box')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
-                </div>
+                </div> -->
                 
                 <!-- No Sampul -->
                 <div class="col-md-3 mb-3">
@@ -308,24 +392,7 @@
                     @enderror
                 </div>
             
-                <div class="col-md-6 mb-3">
-                    <label for="lokasi_arsip" class="form-label">Lokasi Arsip</label>
-                    <select name="lokasi_arsip" id="lokasi_arsip" class="form-control @error('lokasi_arsip') is-invalid @enderror">
-                        <option value="">Pilih Lokasi</option>
-                        <!-- <option value="SUB_BAGIAN" {{ old('lokasi_arsip') == 'SUB_BAGIAN' ? 'selected' : '' }}>
-                            Ruang Sub Bagian
-                        </option> -->
-                        <option value="RECORD_CENTER_PERMANEN" {{ old('lokasi_arsip') == 'RECORD_CENTER_PERMANEN' ? 'selected' : '' }}>
-                            Record Center (Arsip Permanen)
-                        </option>
-                        <option value="RECORD_CENTER_INAKTIF" {{ old('lokasi_arsip') == 'RECORD_CENTER_INAKTIF' ? 'selected' : '' }}>
-                            Record Center (Arsip Inaktif)
-                        </option>
-                    </select>
-                    @error('lokasi_arsip')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+            
                 
             </div>
             
@@ -388,6 +455,9 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // =========================
+    // 1. RETENSI (tidak berubah)
+    // =========================
     const form = document.getElementById('arsipForm');
     const aktifInput = document.getElementById('aktif_tahun');
     const inaktifInput = document.getElementById('inaktif_tahun');
@@ -401,156 +471,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const previewRetensi = document.getElementById('previewRetensi');
     const previewText = document.getElementById('previewText');
 
-    // AUTO SYNC TAHUN DARI TANGGAL
-tanggalArsipInput.addEventListener('change', function() {
-    if (this.value) {
-        const tahun = new Date(this.value).getFullYear();
-        document.getElementById('tahun_arsip').value = tahun;
-    }
-});
-
-    function cekSetelah() {
-        const aktifVal = aktifInput.value.toLowerCase();
-        const inaktifVal = inaktifInput.value.toLowerCase();
-
-        if (aktifVal.includes('setelah') || inaktifVal.includes('setelah')) {
-            wrapperRef.style.display = 'block';
-        } else {
-            wrapperRef.style.display = 'none';
-            if (tanggalRefInput) {
-                tanggalRefInput.value = '';
-            }
-        }
-        
-        hitungRetensi();
-    }
-
-    function hitungRetensi() {
-        const aktifVal = aktifInput.value.trim().toUpperCase();
-        const inaktifVal = inaktifInput.value.trim().toUpperCase();
-        const keterangan = keteranganJRA.value;
-        const tanggalArsip = tanggalArsipInput.value;
-        const tanggalReferensi = tanggalRefInput ? tanggalRefInput.value : '';
-        
-        if (!aktifVal || !inaktifVal || !tanggalArsip) {
-            previewRetensi.style.display = 'none';
-            return;
-        }
-
-        // LOGIKA UTAMA: Jika aktif_tahun mengandung SETELAH tetapi tanggal_referensi belum diisi
-        if ((aktifVal.includes('SETELAH') || inaktifVal.includes('SETELAH')) && !tanggalReferensi) {
-            // Otomatis set status arsip ke AKTIF (sesuai permintaan)
-            statusArsipInput.value = 'AKTIF';
-            
-            // Set nilai default untuk aktif_sampai dan inaktif_sampai (null)
-            aktifSampaiInput.value = '';
-            inaktifSampaiInput.value = '';
-            
-            // Tampilkan preview khusus
-            let preview = `<strong>Perhatian:</strong><br>`;
-            preview += `Anda menggunakan format "SETELAH" untuk masa retensi, tetapi belum mengisi tanggal referensi.<br>`;
-            preview += `<strong>Status arsip otomatis di-set ke: AKTIF</strong><br>`;
-            preview += `Perhitungan retensi tidak dapat dilakukan tanpa tanggal referensi.<br>`;
-            preview += `Silakan isi tanggal referensi untuk perhitungan yang lebih akurat.`;
-            
-            previewText.innerHTML = preview;
-            previewRetensi.style.display = 'block';
-            return;
-        }
-
-        // Ekstrak angka tahun dari input
-        const aktifTahun = ekstrakAngka(aktifVal);
-        const inaktifTahun = ekstrakAngka(inaktifVal);
-        
-        if (!aktifTahun || !inaktifTahun) {
-            previewText.textContent = 'Format tahun tidak valid. Contoh: "2 TAHUN"';
-            previewRetensi.style.display = 'block';
-            return;
-        }
-
-        // Tentukan tanggal dasar perhitungan
-        let tanggalDasar;
-        let sumberTanggal = 'tanggal_arsip';
-        
-        if (aktifVal.includes('SETELAH') || inaktifVal.includes('SETELAH')) {
-            tanggalDasar = tanggalReferensi;
-            sumberTanggal = 'tanggal_referensi';
-        } else {
-            tanggalDasar = tanggalArsip;
-        }
-
-        // Hitung tanggal aktif sampai
-        const aktifSampai = tambahTahun(tanggalDasar, aktifTahun);
-        
-        // Hitung tanggal inaktif sampai (ditambahkan setelah aktif)
-        const inaktifSampai = tambahTahun(aktifSampai, inaktifTahun);
-
-        // Hitung tanggal musnah (hanya untuk display jika keterangan MUSNAH)
-        const musnahSampai = tambahTahun(inaktifSampai, 1);
-
-        // Tentukan status arsip berdasarkan tanggal hari ini
-        const sekarang = new Date();
-        const aktifDate = new Date(aktifSampai);
-        const inaktifDate = new Date(inaktifSampai);
-        const musnahDate = new Date(musnahSampai);
-
-        let statusArsip = 'AKTIF';
-        let statusText = '';
-        
-        if (keterangan === 'PERMANEN') {
-            statusArsip = 'PERMANEN';
-            statusText = 'Status Arsip saat ini: PERMANEN';
-        } else if (keterangan === 'MUSNAH') {
-            // Tentukan status saat ini berdasarkan tanggal
-            if (sekarang <= aktifDate) {
-                statusArsip = 'AKTIF';
-                statusText = `Status Arsip saat ini: AKTIF`;
-            } else if (sekarang <= inaktifDate) {
-                statusArsip = 'INAKTIF';
-                statusText = `Status Arsip saat ini: INAKTIF`;
-            } else if (sekarang <= musnahDate) {
-                statusArsip = 'MUSNAH';
-                statusText = `Status Arsip saat ini: HABIS RETENSI`;
-            } else {
-                statusArsip = 'MUSNAH';
-                statusText = `Status Arsip saat ini: HABIS RETENSI (telah lewat)`;
-            }
-        } else {
-            // Jika keterangan tidak ada, gunakan logika biasa
-            if (sekarang <= aktifDate) {
-                statusArsip = 'AKTIF';
-                statusText = `Status Arsip saat ini: AKTIF`;
-            } else if (sekarang <= inaktifDate) {
-                statusArsip = 'INAKTIF';
-                statusText = `Status Arsip saat ini: INAKTIF`;
-            } else {
-                statusArsip = 'INAKTIF';
-                statusText = `Status Arsip saat ini: INAKTIF (telah lewat)`;
-            }
-        }
-
-        // Set nilai hidden inputs
-        aktifSampaiInput.value = aktifSampai;
-        inaktifSampaiInput.value = inaktifSampai;
-        statusArsipInput.value = statusArsip;
-
-        // Tampilkan preview dengan satu status saja
-        let preview = `<strong>Perhitungan Retensi:</strong><br>`;
-        preview += `Sumber Tanggal: ${sumberTanggal === 'tanggal_referensi' ? 'Tanggal Referensi' : 'Tanggal Arsip'}<br>`;
-        preview += `Tanggal Dasar: ${formatTanggal(tanggalDasar)}<br>`;
-        preview += `Aktif Sampai: ${formatTanggal(aktifSampai)}<br>`;
-        preview += `Inaktif Sampai: ${formatTanggal(inaktifSampai)}<br>`;
-        
-        if (keterangan === 'MUSNAH') {
-            preview += `Musnah: ${formatTanggal(musnahSampai)}<br>`;
-        }
-        
-        preview += `<strong>${statusText}</strong>`;
-        
-        previewText.innerHTML = preview;
-        previewRetensi.style.display = 'block';
-    }
-
+    // Fungsi retensi (sama seperti sebelumnya)
     function ekstrakAngka(text) {
         const match = text.match(/\d+/);
         return match ? parseInt(match[0]) : null;
@@ -571,7 +492,124 @@ tanggalArsipInput.addEventListener('change', function() {
         });
     }
 
-    // Event listeners
+    function cekSetelah() {
+        const aktifVal = aktifInput.value.toLowerCase();
+        const inaktifVal = inaktifInput.value.toLowerCase();
+
+        if (aktifVal.includes('setelah') || inaktifVal.includes('setelah')) {
+            wrapperRef.style.display = 'block';
+        } else {
+            wrapperRef.style.display = 'none';
+            if (tanggalRefInput) {
+                tanggalRefInput.value = '';
+            }
+        }
+        hitungRetensi();
+    }
+
+    function hitungRetensi() {
+        const aktifVal = aktifInput.value.trim().toUpperCase();
+        const inaktifVal = inaktifInput.value.trim().toUpperCase();
+        const keterangan = keteranganJRA.value;
+        const tanggalArsip = tanggalArsipInput.value;
+        const tanggalReferensi = tanggalRefInput ? tanggalRefInput.value : '';
+
+        if (!aktifVal || !inaktifVal || !tanggalArsip) {
+            previewRetensi.style.display = 'none';
+            return;
+        }
+
+        if ((aktifVal.includes('SETELAH') || inaktifVal.includes('SETELAH')) && !tanggalReferensi) {
+            statusArsipInput.value = 'AKTIF';
+            aktifSampaiInput.value = '';
+            inaktifSampaiInput.value = '';
+            let preview = `<strong>Perhatian:</strong><br>`;
+            preview += `Anda menggunakan format "SETELAH" untuk masa retensi, tetapi belum mengisi tanggal referensi.<br>`;
+            preview += `<strong>Status arsip otomatis di-set ke: AKTIF</strong><br>`;
+            preview += `Perhitungan retensi tidak dapat dilakukan tanpa tanggal referensi.<br>`;
+            preview += `Silakan isi tanggal referensi untuk perhitungan yang lebih akurat.`;
+            previewText.innerHTML = preview;
+            previewRetensi.style.display = 'block';
+            return;
+        }
+
+        const aktifTahun = ekstrakAngka(aktifVal);
+        const inaktifTahun = ekstrakAngka(inaktifVal);
+        if (!aktifTahun || !inaktifTahun) {
+            previewText.textContent = 'Format tahun tidak valid. Contoh: "2 TAHUN"';
+            previewRetensi.style.display = 'block';
+            return;
+        }
+
+        let tanggalDasar;
+        let sumberTanggal = 'tanggal_arsip';
+        if (aktifVal.includes('SETELAH') || inaktifVal.includes('SETELAH')) {
+            tanggalDasar = tanggalReferensi;
+            sumberTanggal = 'tanggal_referensi';
+        } else {
+            tanggalDasar = tanggalArsip;
+        }
+
+        const aktifSampai = tambahTahun(tanggalDasar, aktifTahun);
+        const inaktifSampai = tambahTahun(aktifSampai, inaktifTahun);
+        const musnahSampai = tambahTahun(inaktifSampai, 1);
+
+        const sekarang = new Date();
+        const aktifDate = new Date(aktifSampai);
+        const inaktifDate = new Date(inaktifSampai);
+        const musnahDate = new Date(musnahSampai);
+
+        let statusArsip = 'AKTIF';
+        let statusText = '';
+
+        if (keterangan === 'PERMANEN') {
+            statusArsip = 'PERMANEN';
+            statusText = 'Status Arsip saat ini: PERMANEN';
+        } else if (keterangan === 'MUSNAH') {
+            if (sekarang <= aktifDate) {
+                statusArsip = 'AKTIF';
+                statusText = `Status Arsip saat ini: AKTIF`;
+            } else if (sekarang <= inaktifDate) {
+                statusArsip = 'INAKTIF';
+                statusText = `Status Arsip saat ini: INAKTIF`;
+            } else if (sekarang <= musnahDate) {
+                statusArsip = 'HABIS_RETENSI';
+                statusText = `Status Arsip saat ini: HABIS RETENSI`;
+            } else {
+                statusArsip = 'HABIS_RETENSI';
+                statusText = `Status Arsip saat ini: HABIS RETENSI (telah lewat)`;
+            }
+        } else {
+            if (sekarang <= aktifDate) {
+                statusArsip = 'AKTIF';
+                statusText = `Status Arsip saat ini: AKTIF`;
+            } else if (sekarang <= inaktifDate) {
+                statusArsip = 'INAKTIF';
+                statusText = `Status Arsip saat ini: INAKTIF`;
+            } else {
+                statusArsip = 'INAKTIF';
+                statusText = `Status Arsip saat ini: INAKTIF (telah lewat)`;
+            }
+        }
+
+        aktifSampaiInput.value = aktifSampai;
+        inaktifSampaiInput.value = inaktifSampai;
+        statusArsipInput.value = statusArsip;
+
+        let preview = `<strong>Perhitungan Retensi:</strong><br>`;
+        preview += `Sumber Tanggal: ${sumberTanggal === 'tanggal_referensi' ? 'Tanggal Referensi' : 'Tanggal Arsip'}<br>`;
+        preview += `Tanggal Dasar: ${formatTanggal(tanggalDasar)}<br>`;
+        preview += `Aktif Sampai: ${formatTanggal(aktifSampai)}<br>`;
+        preview += `Inaktif Sampai: ${formatTanggal(inaktifSampai)}<br>`;
+        if (keterangan === 'MUSNAH') {
+            preview += `Musnah: ${formatTanggal(musnahSampai)}<br>`;
+        }
+        preview += `<strong>${statusText}</strong>`;
+        previewText.innerHTML = preview;
+        previewRetensi.style.display = 'block';
+    }
+
+    // Event retensi
     aktifInput.addEventListener('input', cekSetelah);
     inaktifInput.addEventListener('input', cekSetelah);
     tanggalArsipInput.addEventListener('change', hitungRetensi);
@@ -579,40 +617,114 @@ tanggalArsipInput.addEventListener('change', function() {
         tanggalRefInput.addEventListener('change', hitungRetensi);
     }
     keteranganJRA.addEventListener('change', hitungRetensi);
+    cekSetelah();
 
-    // Form submission validation
-    form.addEventListener('submit', function(e) {
-    hitungRetensi();
+       // =========================
+    // FILTER RAK & BOX
+    // =========================
+    const lokasiSelect = document.getElementById('lokasi_arsip');
+    const rakSelect = document.getElementById('rak_id');
+    const boxSelect = document.getElementById('box_id');
 
-    // VALIDASI FILE SAJA
-    const fileInput = document.getElementById('file_dokumen');
-if (fileInput && fileInput.files.length > 0) {
-    const file = fileInput.files[0];
-    const fileSize = (file.size / 1024 / 1024).toFixed(2);
-    const ext = file.name.split('.').pop().toLowerCase();
+    // Simpan semua option asli (termasuk placeholder) dari awal
+    const allRakOptions = Array.from(rakSelect.options);
+    const allBoxOptions = Array.from(boxSelect.options);
 
-    if (fileSize > 10) {
-        e.preventDefault();
-        alert('Ukuran file melebihi 10MB');
+   // Di dalam fungsi filterRak()
+function filterRak() {
+    const selectedLokasi = lokasiSelect.value;
+    rakSelect.innerHTML = '<option value="">Pilih Rak</option>';
+    const infoRak = document.getElementById('rak-info');
+    if (!selectedLokasi) {
+        boxSelect.innerHTML = '<option value="">Pilih Box</option>';
+        infoRak.textContent = 'Pilih lokasi terlebih dahulu';
+        document.getElementById('box-info').textContent = 'Pilih rak terlebih dahulu';
         return;
     }
+    const filteredRak = allRakOptions.filter(opt => {
+        if (opt.value === '') return false;
+        return opt.getAttribute('data-lokasi') === selectedLokasi;
+    });
+    if (filteredRak.length === 0) {
+        infoRak.textContent = 'Tidak ada rak di lokasi ini';
+        rakSelect.innerHTML = '<option value="">-- Tidak ada rak --</option>';
+    } else {
+        infoRak.textContent = `${filteredRak.length} rak tersedia`;
+        filteredRak.forEach(opt => rakSelect.appendChild(opt));
+    }
+    boxSelect.innerHTML = '<option value="">Pilih Box</option>';
+    document.getElementById('box-info').textContent = 'Pilih rak terlebih dahulu';
+    rakSelect.dispatchEvent(new Event('change'));
+}
 
-    if (!['pdf', 'jpg', 'jpeg', 'png'].includes(ext)) {
-        e.preventDefault();
-        alert('Format file tidak didukung');
+function filterBox() {
+    const selectedRakId = rakSelect.value;
+    boxSelect.innerHTML = '<option value="">Pilih Box</option>';
+    const infoBox = document.getElementById('box-info');
+    if (!selectedRakId) {
+        infoBox.textContent = 'Pilih rak terlebih dahulu';
         return;
+    }
+    const filteredBox = allBoxOptions.filter(opt => {
+        if (opt.value === '') return false;
+        return opt.getAttribute('data-rak-id') === selectedRakId;
+    });
+    if (filteredBox.length === 0) {
+        infoBox.textContent = 'Tidak ada box di rak ini';
+        boxSelect.innerHTML = '<option value="">-- Tidak ada box --</option>';
+    } else {
+        infoBox.textContent = `${filteredBox.length} box tersedia`;
+        filteredBox.forEach(opt => boxSelect.appendChild(opt));
     }
 }
-});
-// AUTO SYNC TAHUN DARI TANGGAL
-tanggalArsipInput.addEventListener('change', function() {
-    if (this.value) {
-        const tahun = new Date(this.value).getFullYear();
-        document.getElementById('tahun_arsip').value = tahun;
+
+    // Event listeners
+    lokasiSelect.addEventListener('change', filterRak);
+    rakSelect.addEventListener('change', filterBox);
+
+    // Inisialisasi pertama kali (jika ada old value)
+    if (lokasiSelect.value) {
+        filterRak();
+        if (rakSelect.value) {
+            filterBox();
+            // Set selected box sesuai old jika ada
+            const oldBoxId = "{{ old('box_id') }}";
+            if (oldBoxId) {
+                const boxOption = boxSelect.querySelector(`option[value="${oldBoxId}"]`);
+                if (boxOption) boxOption.selected = true;
+            }
+        }
     }
-});
-    // Initial load
-    cekSetelah();
+
+    // AUTO SYNC TAHUN DARI TANGGAL
+    tanggalArsipInput.addEventListener('change', function() {
+        if (this.value) {
+            const tahun = new Date(this.value).getFullYear();
+            document.getElementById('tahun_arsip').value = tahun;
+        }
+    });
+
+    // Submit validation
+    form.addEventListener('submit', function(e) {
+        hitungRetensi();
+
+        const fileInput = document.getElementById('file_dokumen');
+        if (fileInput && fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            const fileSize = (file.size / 1024 / 1024).toFixed(2);
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (fileSize > 10) {
+                e.preventDefault();
+                alert('Ukuran file melebihi 10MB');
+                return;
+            }
+            if (!['pdf', 'jpg', 'jpeg', 'png'].includes(ext)) {
+                e.preventDefault();
+                alert('Format file tidak didukung');
+                return;
+            }
+        }
+    });
 });
 </script>
 @endpush

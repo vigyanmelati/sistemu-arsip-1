@@ -19,6 +19,8 @@ use App\Http\Controllers\SuratMasukController;
 use App\Http\Controllers\LintasUnitController;
 use App\Http\Controllers\SubBagianSuratMasukController;
 use App\Http\Controllers\TUDashboardController;
+use App\Http\Controllers\MasterRakController;
+use App\Http\Controllers\MasterBoxController;
 
 
 require __DIR__.'/auth.php';
@@ -184,6 +186,7 @@ Route::prefix('manajemen-lokasi')->name('manajemen-lokasi.')->group(function () 
     Route::get('/ruangan/{ruangan}', [LokasiController::class, 'listRak'])->name('rak'); // card rak
     Route::get('/ruangan/{ruangan}/rak/{rak}', [LokasiController::class, 'listBox'])->name('box'); // card box
     Route::get('/ruangan/{ruangan}/rak/{rak}/box/{box}', [LokasiController::class, 'listArsip'])->name('arsip'); // list arsip
+    
 });
 
 Route::get('/surat-masuk/template', function () {
@@ -229,9 +232,25 @@ Route::prefix('lintas-unit')->name('lintas-unit.')->group(function () {
         ->name('daftar');
 
 });
+Route::post('/manajemen-lokasi/rak', [LokasiController::class, 'storeRak'])->name('manajemen-lokasi.store-rak');
+Route::post('/manajemen-lokasi/box', [LokasiController::class, 'storeBox'])->name('manajemen-lokasi.store-box');
+Route::get('/manajemen-lokasi/rak/{id}/edit', [LokasiController::class, 'editRak'])->name('manajemen-lokasi.edit-rak');
+Route::put('/manajemen-lokasi/rak/{id}', [LokasiController::class, 'updateRak'])->name('manajemen-lokasi.update-rak');
+Route::delete('/manajemen-lokasi/rak/{id}', [LokasiController::class, 'destroyRak'])->name('manajemen-lokasi.destroy-rak');
+Route::put('/manajemen-lokasi/box/{id}', [LokasiController::class, 'updateBox'])->name('manajemen-lokasi.update-box');
+Route::delete('/manajemen-lokasi/box/{id}', [LokasiController::class, 'destroyBox'])->name('manajemen-lokasi.destroy-box');
 });
 
 Route::middleware(['auth', 'subbagian'])->prefix('subbagian')->name('subbagian.')->group(function () {
+
+    Route::post('/manajemen-lokasi/rak', [LokasiSubBagianController::class, 'storeRak'])->name('manajemen-lokasi.store-rak');
+    Route::post('/manajemen-lokasi/box', [LokasiSubBagianController::class, 'storeBox'])->name('manajemen-lokasi.store-box');
+    Route::put('/manajemen-lokasi/rak/{id}', [LokasiSubBagianController::class, 'updateRak'])->name('manajemen-lokasi.update-rak');
+    Route::delete('/manajemen-lokasi/rak/{id}', [LokasiSubBagianController::class, 'destroyRak'])->name('manajemen-lokasi.destroy-rak');
+
+    Route::put('/manajemen-lokasi/box/{id}', [LokasiSubBagianController::class, 'updateBox'])->name('manajemen-lokasi.update-box');
+    Route::delete('/manajemen-lokasi/box/{id}', [LokasiSubBagianController::class, 'destroyBox'])->name('manajemen-lokasi.destroy-box');
+
     Route::get('/dashboard', [SubBagianDashboardController::class, 'index'])->name('dashboard');
      // CRUD Arsip
     Route::get('/arsip', [SubBagianArsipController::class, 'index'])->name('arsip.index');

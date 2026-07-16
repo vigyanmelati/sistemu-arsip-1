@@ -288,12 +288,12 @@
         
         <!-- Editable: Rak - disabled jika sudah disetujui musnah -->
         <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="nomor_rak">
-            {{ $arsip->nomor_rak }}
+            {{ $arsip->rak ? $arsip->rak->nomor_rak : '-' }}
         </td>
         
         <!-- Editable: Box - disabled jika sudah disetujui musnah -->
         <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="nomor_box">
-            {{ $arsip->nomor_box }}
+            {{ $arsip->box ? $arsip->box->nomor_box : '-' }}
         </td>
         
         <!-- Editable: Lokasi Arsip (dropdown) - disabled jika sudah disetujui musnah -->

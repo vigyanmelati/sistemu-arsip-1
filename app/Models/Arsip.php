@@ -39,8 +39,9 @@ class Arsip extends Model
         // LAINNYA
         'keterangan_jra',           // "MUSNAH" atau "PERMANEN"
         'tanggal_masuk',
-        'nomor_rak',
-        'nomor_box',
+         'rak_id',
+        'box_id',
+       
         'nomor_sampul',
         'lokasi_arsip',
         'tingkat_perkembangan',
@@ -70,8 +71,6 @@ class Arsip extends Model
         'satuan_arsip' => 'LEMBAR',
         'aktif_tahun' => '',    
         'inaktif_tahun' => '',  
-        'nomor_rak' => '',
-        'nomor_box' => '',
         'nomor_sampul' => '',
         'keterangan_jra' => 'BELUM DITENTUKAN',  
         'keterangan' => 'BAIK',
@@ -406,5 +405,15 @@ class Arsip extends Model
 
         return null;
     }
+
+    public function rak()
+{
+    return $this->belongsTo(MasterRak::class, 'rak_id');
+}
+
+public function box()
+{
+    return $this->belongsTo(MasterBox::class, 'box_id');
+}
 
 }

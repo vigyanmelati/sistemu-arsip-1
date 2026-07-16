@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Arsip;
 use Illuminate\Http\Request;
+use App\Models\MasterRak;
+use App\Models\MasterBox;
 
 class LokasiController extends Controller
 {
@@ -17,14 +19,13 @@ class LokasiController extends Controller
     public function index()
     {
         // Ambil ruangan yang tidak null dan tidak kosong
-        $ruangans = Arsip::select('lokasi_arsip')
-            ->whereIn('lokasi_arsip', [
-                'RECORD_CENTER_PERMANEN',
-                'RECORD_CENTER_INAKTIF'
-            ])
-            ->distinct()
-            ->pluck('lokasi_arsip')
-            ->toArray();
+       // Di method index()
+$ruangans = MasterRak::select('lokasi_arsip')
+    ->whereNotNull('lokasi_arsip')
+    ->where('lokasi_arsip', '!=', '')
+    ->distinct()
+    ->pluck('lokasi_arsip')
+    ->toArray();
 
         // Hitung arsip yang belum punya ruangan
         $arsipTanpaRuangan = Arsip::where(function ($query) {
@@ -43,64 +44,83 @@ class LokasiController extends Controller
     }
 
     // Layer 2: Rak dalam ruangan
-    public function listRak($ruangan)
-    {
-        if (empty($ruangan)) {
-            return redirect()->route('manajemen-lokasi.index')
-                ->with('error', 'Ruangan tidak valid.');
-        }
-
-        $raks = Arsip::where('lokasi_arsip', $ruangan)
-            ->whereNotNull('nomor_rak')
-            ->where('nomor_rak', '!=', '')
-            ->distinct()
-            ->pluck('nomor_rak')
-            ->toArray();
-
-        $ruanganLabel = $this->getLabelRuangan($ruangan);
-
-        return view('manajemen-lokasi.rak', compact('ruangan', 'ruanganLabel', 'raks'));
+ public function listRak($ruangan)
+{
+    if (empty($ruangan)) {
+        return redirect()->route('manajemen-lokasi.index')
+            ->with('error', 'Ruangan tidak valid.');
     }
 
+    // Ambil objek lengkap (nomor_rak dan keterangan)
+    $raks = MasterRak::where('lokasi_arsip', $ruangan)
+    ->orderBy('nomor_rak', 'asc')
+    ->get(); // ← ambil dua kolom
+//  dd($raks);
+    $ruanganLabel = $this->getLabelRuangan($ruangan);
+
+    return view('manajemen-lokasi.rak', compact('ruangan', 'ruanganLabel', 'raks'));
+}
     // Layer 3: Box dalam rak
-    public function listBox($ruangan, $rak)
-    {
-        if (empty($ruangan) || empty($rak)) {
-            return redirect()->route('manajemen-lokasi.index')
-                ->with('error', 'Parameter tidak valid.');
-        }
-
-        $boxes = Arsip::where('lokasi_arsip', $ruangan)
-            ->where('nomor_rak', $rak)
-            ->whereNotNull('nomor_box')
-            ->where('nomor_box', '!=', '')
-            ->distinct()
-            ->pluck('nomor_box')
-            ->toArray();
-
-        $ruanganLabel = $this->getLabelRuangan($ruangan);
-
-        return view('manajemen-lokasi.box', compact('ruangan', 'ruanganLabel', 'rak', 'boxes'));
+  public function listBox($ruangan, $rak)
+{
+    if (empty($ruangan) || empty($rak)) {
+        return redirect()->route('manajemen-lokasi.index')
+            ->with('error', 'Parameter tidak valid.');
     }
 
+  $rakModel = MasterRak::where('lokasi_arsip', $ruangan)
+        ->where('nomor_rak', $rak)
+        ->first();
+
+    if (!$rakModel) {
+        abort(404, 'Rak tidak ditemukan');
+    }
+
+    $boxes = MasterBox::where('rak_id', $rakModel->id)
+        ->orderBy('nomor_box', 'asc')
+        ->get();
+
+    $rakId = $rakModel->id; // ← tambahkan ini
+
+    $ruanganLabel = $this->getLabelRuangan($ruangan);
+
+    return view('manajemen-lokasi.box', compact('ruangan', 'ruanganLabel', 'rak', 'boxes', 'rakModel', 'rakId'));
+}
     // Layer 4: Daftar arsip dalam box
     public function listArsip($ruangan, $rak, $box)
-    {
-        if (empty($ruangan) || empty($rak) || empty($box)) {
-            return redirect()->route('manajemen-lokasi.index')
-                ->with('error', 'Parameter tidak valid.');
-        }
-
-        $arsips = Arsip::where('lokasi_arsip', $ruangan)
-            ->where('nomor_rak', $rak)
-            ->where('nomor_box', $box)
-            ->orderBy('tahun_arsip', 'desc')
-            ->get();
-
-        $ruanganLabel = $this->getLabelRuangan($ruangan);
-
-        return view('manajemen-lokasi.arsip', compact('ruangan', 'ruanganLabel', 'rak', 'box', 'arsips'));
+{
+    if (empty($ruangan) || empty($rak) || empty($box)) {
+        return redirect()->route('manajemen-lokasi.index')
+            ->with('error', 'Parameter tidak valid.');
     }
+
+    // Cari rak berdasarkan ruangan dan nomor rak
+    $rakModel = MasterRak::where('lokasi_arsip', $ruangan)
+        ->where('nomor_rak', $rak)
+        ->first();
+
+    if (!$rakModel) {
+        abort(404, 'Rak tidak ditemukan');
+    }
+
+    // Cari box berdasarkan rak_id dan nomor box
+    $boxModel = MasterBox::where('rak_id', $rakModel->id)
+        ->where('nomor_box', $box)
+        ->first();
+
+    if (!$boxModel) {
+        abort(404, 'Box tidak ditemukan');
+    }
+
+    // Ambil arsip berdasarkan box_id
+    $arsips = Arsip::where('box_id', $boxModel->id)
+        ->orderBy('tahun_arsip', 'desc')
+        ->get();
+
+    $ruanganLabel = $this->getLabelRuangan($ruangan);
+
+    return view('manajemen-lokasi.arsip', compact('ruangan', 'ruanganLabel', 'rak', 'box', 'arsips'));
+}
 
     private function getLabelRuangan($key)
     {
@@ -116,4 +136,107 @@ class LokasiController extends Controller
         ];
         return $labels[$key] ?? $key;
     }
+
+    public function storeRak(Request $request)
+{
+    $request->validate([
+        'lokasi_arsip' => 'required|string',
+        'nomor_rak' => 'required|string|unique:master_raks,nomor_rak,NULL,id,lokasi_arsip,' . $request->lokasi_arsip,
+        'keterangan' => 'nullable|string',
+    ]);
+
+    MasterRak::create([
+        'lokasi_arsip' => $request->lokasi_arsip,
+        'nomor_rak' => $request->nomor_rak,
+        'keterangan' => $request->keterangan,
+    ]);
+
+    return redirect()->back()->with('success', 'Rak berhasil ditambahkan.');
+}
+
+public function storeBox(Request $request)
+{
+    $request->validate([
+    'rak_id' => 'required|exists:master_raks,id',
+    'nomor_box' => 'required|string|unique:master_box,nomor_box,NULL,id,rak_id,' . $request->rak_id,
+    'keterangan' => 'nullable|string',
+]);
+
+    MasterBox::create([
+        'rak_id' => $request->rak_id,
+        'nomor_box' => $request->nomor_box,
+        'kapasitas' => $request->kapasitas,
+        'keterangan' => $request->keterangan,
+    ]);
+
+    return redirect()->back()->with('success', 'Box berhasil ditambahkan.');
+}
+// Edit form (bisa pakai modal atau halaman terpisah, di sini kita pakai modal, tapi kita akan buat modal di view)
+public function editRak($id)
+{
+    $rak = MasterRak::findOrFail($id);
+    // Kembalikan data JSON untuk modal edit
+    return response()->json($rak);
+}
+
+public function updateRak(Request $request, $id)
+{
+    $rak = MasterRak::findOrFail($id);
+    
+    $request->validate([
+        'nomor_rak' => 'required|string|unique:master_raks,nomor_rak,' . $id . ',id,lokasi_arsip,' . $rak->lokasi_arsip,
+        'keterangan' => 'nullable|string',
+    ]);
+
+    $rak->update([
+        'nomor_rak' => $request->nomor_rak,
+        'keterangan' => $request->keterangan,
+    ]);
+
+    return redirect()->back()->with('success', 'Rak berhasil diperbarui.');
+}
+
+public function destroyRak($id)
+{
+    $rak = MasterRak::findOrFail($id);
+
+    if ($rak->boxes()->exists()) {
+        return redirect()->back()->with(
+            'error',
+            'Rak tidak dapat dihapus karena masih memiliki box di dalamnya. Silakan hapus seluruh box terlebih dahulu.'
+        );
+    }
+
+    $rak->delete();
+
+    return redirect()->back()->with(
+        'success',
+        'Rak berhasil dihapus.'
+    );
+}
+
+public function updateBox(Request $request, $id)
+{
+    $box = MasterBox::findOrFail($id);
+    $request->validate([
+        'nomor_box' => 'required|string|unique:master_box,nomor_box,' . $id . ',id,rak_id,' . $box->rak_id,
+        'keterangan' => 'nullable|string',
+    ]);
+    $box->update([
+        'nomor_box' => $request->nomor_box,
+        'keterangan' => $request->keterangan,
+    ]);
+    return redirect()->back()->with('success', 'Box berhasil diperbarui.');
+}
+
+public function destroyBox($id)
+{
+    $box = MasterBox::findOrFail($id);
+    // Cek apakah ada arsip yang menggunakan box ini
+    if ($box->arsips()->exists()) {
+        return redirect()->back()->with('error', 'Box tidak dapat dihapus karena masih memiliki arsip di dalamnya.');
+    }
+    $box->delete();
+    return redirect()->back()->with('success', 'Box berhasil dihapus.');
+}
 }

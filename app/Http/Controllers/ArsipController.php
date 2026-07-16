@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Arsip;
 use App\Models\KodeKlasifikasi;
 use App\Models\SubBagian;
+use App\Models\MasterRak;
+use App\Models\MasterBox;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
@@ -190,11 +192,38 @@ class ArsipController extends Controller
 
     public function create()
     {
-        // Ambil data untuk dropdown
-        $kodeKlasifikasiOptions = KodeKlasifikasi::orderBy('kode')->get();
+    $kodeKlasifikasiOptions = KodeKlasifikasi::orderBy('kode')->get();
         $subBagianOptions = SubBagian::orderBy('nama_sub_bagian')->get();
-        
-        // Default values untuk form
+
+        // =========================
+        // FILTER LOKASI BERDASARKAN ROLE
+        // =========================
+        $user = auth()->user();
+        $allowedLokasi = [];
+
+        if (in_array($user->role, ['admin', 'unit_kearsipan'])) {
+            // Admin & Unit Kearsipan: bisa pilih semua lokasi
+            $allowedLokasi = [
+                'RECORD_CENTER_PERMANEN',
+                'RECORD_CENTER_INAKTIF'
+            ];
+        } else {
+            // Subbagian: hanya ruangannya sendiri
+            $subBagianId = $user->sub_bagian_id;
+            $ruanganUser = $this->getRuanganBySubBagian($subBagianId);
+            if ($ruanganUser) {
+                $allowedLokasi = [$ruanganUser];
+            }
+        }
+
+        $rakOptions = MasterRak::whereIn('lokasi_arsip', $allowedLokasi)
+            ->orderBy('nomor_rak')
+            ->get(['id', 'nomor_rak', 'lokasi_arsip']);
+
+        $boxOptions = MasterBox::whereIn('rak_id', $rakOptions->pluck('id'))
+            ->orderBy('nomor_box')
+            ->get(['id', 'nomor_box', 'rak_id']);
+
         $defaultValues = [
             'status_arsip' => 'AKTIF',
             'jumlah_berkas' => 1,
@@ -203,134 +232,76 @@ class ArsipController extends Controller
             'tanggal_arsip' => date('Y-m-d'),
             'keterangan_jra' => 'MUSNAH',
         ];
-        
+
         return view('arsip.create', compact(
-            'kodeKlasifikasiOptions', 
+            'kodeKlasifikasiOptions',
             'subBagianOptions',
+            'rakOptions',
+            'boxOptions',
             'defaultValues'
         ));
     }
 
-//    public function store(Request $request)
-// {
-//     // Debug data yang dikirim
-//     \Log::info('Data yang dikirim:', $request->all());
-    
-//     // Validate data berdasarkan view
-//     $validated = $request->validate([
-//         // WAJIB - Data Dasar
-//         'kode_klasifikasi_id' => 'required|exists:kode_klasifikasis,id',
-//         'uraian_arsip' => 'required|string|max:500',
-//         'sub_bagian_id' => 'required|exists:sub_bagians,id',
-//         'tahun_arsip' => 'required|integer|min:2000|max:' . (date('Y') + 1),
-//         'tanggal_arsip' => 'required|date',
-//         'jumlah_berkas' => 'required|integer|min:1',
-//         'satuan_arsip' => 'required|in:BENDEL,LEMBAR',
-        
-//         // Masa Retensi - BENTUK TEKS LENGKAP
-//         'aktif_tahun' => 'nullable|string|max:100',
-//         'inaktif_tahun' => 'nullable|string|max:100',
-//         'tanggal_referensi' => 'nullable|date',
-//         'keterangan_jra' => 'nullable|in:PERMANEN,MUSNAH',
-        
-//         // HASIL PERHITUNGAN (opsional dari JS, akan dihitung ulang)
-//         'aktif_sampai' => 'nullable|date',
-//         'inaktif_sampai' => 'nullable|date',
-//         'status_arsip' => 'nullable|in:AKTIF,INAKTIF,MUSNAH,PERMANEN',
-        
-//         // OPTIONAL
-//         'nomor_rak' => 'nullable|string|max:50',
-//         'nomor_box' => 'nullable|string|max:50',
-//         'nomor_sampul' => 'nullable|string|max:100',
-//         'lokasi_arsip' => 'nullable|in:SUB_BAGIAN,RECORD_CENTER_PERMANEN,RECORD_CENTER_INAKTIF',
-//         'tingkat_perkembangan' => 'nullable|in:ASLI,COPY,SALINAN',
-//         'keterangan' => 'nullable|in:BAIK,RUSAK,HILANG',
-//         'media_arsip' => 'nullable|string|max:255',
-//         'file_dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
-//     ]);
-    
-//     \Log::info('Data yang lolos validasi:', $validated);
-    
-//     try {
-//         // Konversi tipe data
-//         $validated['tahun_arsip'] = (string) $validated['tahun_arsip'];
-        
-//         // Tambahkan created_by jika ada user login
-//         if (auth()->check()) {
-//             $validated['created_by'] = auth()->id();
-//         }
-        
-//         // Tambahkan tanggal_masuk (otomatis hari ini)
-//         $validated['tanggal_masuk'] = now()->format('Y-m-d');
-        
-//         // Set default untuk kolom yang mungkin null
-//         $defaults = [
-//             'nomor_rak' => '',
-//             'nomor_box' => '',
-//             'nomor_sampul' => '',
-//             'keterangan' => 'BAIK',
-//             'tingkat_perkembangan' => 'ASLI',
-//             'status_pindah' => 'LANGSUNG'
-//         ];
-        
-//         foreach ($defaults as $field => $defaultValue) {
-//             if (!isset($validated[$field]) || $validated[$field] === '') {
-//                 $validated[$field] = $defaultValue;
-//             }
-//         }
-        
-//         // Handle file upload
-//         if ($request->hasFile('file_dokumen')) {
-//             $file = $request->file('file_dokumen');
-//             $fileName = time() . '_' . $file->getClientOriginalName();
-//             $filePath = $file->storeAs('arsip', $fileName, 'public');
-//             $validated['file_dokumen'] = $fileName;
-//         }
-        
-//         // ============================================
-//         // PERHITUNGAN RETENSI OTOMATIS (WAJIB DILAKUKAN)
-//         // ============================================
-//         // Selalu hitung ulang dari data input untuk memastikan konsistensi
-//         $perhitungan = $this->hitungRetensi(
-//             $validated['aktif_tahun'],
-//             $validated['inaktif_tahun'],
-//             $validated['keterangan_jra'],
-//             $validated['tanggal_arsip'],
-//             $validated['tanggal_referensi'] ?? null
-//         );
-        
-//         // Timpa nilai dari JS dengan hasil perhitungan di server
-//         $validated['aktif_sampai'] = $perhitungan['aktif_sampai'];
-//         $validated['inaktif_sampai'] = $perhitungan['inaktif_sampai'];
-//         $validated['status_arsip'] = $perhitungan['status_arsip'];
-        
-//         \Log::info('Hasil perhitungan retensi:', $perhitungan);
-//         \Log::info('Data sebelum disimpan:', $validated);
-        
-//         // Simpan data
-//         $arsip = Arsip::create($validated);
-        
-//         \Log::info('Arsip berhasil dibuat dengan ID: ' . $arsip->id);
-//         \Log::info('Status arsip: ' . $arsip->status_arsip);
-//         \Log::info('Aktif sampai: ' . $arsip->aktif_sampai);
-//         \Log::info('Inaktif sampai: ' . $arsip->inaktif_sampai);
-        
-//         return redirect()->route('arsip.index')
-//             ->with('success', 'Arsip berhasil ditambahkan.');
-            
-//     } catch (\Exception $e) {
-//         \Log::error('Gagal menyimpan arsip: ' . $e->getMessage());
-//         \Log::error('Trace: ' . $e->getTraceAsString());
-        
-//         return back()->withInput()
-//             ->with('error', 'Gagal menyimpan arsip: ' . $e->getMessage());
-//     }
-// }
+    private function getRuanganBySubBagian($subBagianId)
+    {
+        $mapping = [
+            1 => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
+            2 => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
+            3 => 'RUANG_SUBBAGIAN_KEUANGAN',
+            4 => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
+            5 => 'RUANG_SUBBAGIAN_TEKNIS',
+            6 => 'RUANG_SUBBAGIAN_HUKUM',
+        ];
+        return $mapping[$subBagianId] ?? null;
+    }
+
+    public function edit(Arsip $arsip)
+    {
+        $kodeKlasifikasiOptions = KodeKlasifikasi::orderBy('kode')->get();
+        $subBagianOptions = SubBagian::orderBy('nama_sub_bagian')->get();
+
+        // =========================
+        // FILTER LOKASI BERDASARKAN ROLE
+        // =========================
+        $user = auth()->user();
+        $allowedLokasi = [];
+
+        if (in_array($user->role, ['admin', 'unit_kearsipan'])) {
+            $allowedLokasi = [
+                'RECORD_CENTER_PERMANEN',
+                'RECORD_CENTER_INAKTIF'
+            ];
+        } else {
+            $subBagianId = $user->sub_bagian_id;
+            $ruanganUser = $this->getRuanganBySubBagian($subBagianId);
+            if ($ruanganUser) {
+                $allowedLokasi = [$ruanganUser];
+            }
+        }
+
+        $rakOptions = MasterRak::whereIn('lokasi_arsip', $allowedLokasi)
+            ->orderBy('nomor_rak')
+            ->get(['id', 'nomor_rak', 'lokasi_arsip']);
+
+        $boxOptions = MasterBox::whereIn('rak_id', $rakOptions->pluck('id'))
+            ->orderBy('nomor_box')
+            ->get(['id', 'nomor_box', 'rak_id']);
+
+        return view('arsip.edit', compact(
+            'arsip',
+            'kodeKlasifikasiOptions',
+            'subBagianOptions',
+            'rakOptions',
+            'boxOptions'
+        ));
+    }
+
+
 
 public function store(Request $request)
 {
     \Log::info('Data yang dikirim:', $request->all());
-    
+
     $validated = $request->validate([
         // WAJIB
         'kode_klasifikasi_id' => 'required|exists:kode_klasifikasis,id',
@@ -342,7 +313,7 @@ public function store(Request $request)
         'satuan_arsip' => 'required|in:BENDEL,LEMBAR',
         'klasifikasi_keamanan' => 'required|in:Biasa/Terbuka,Terbatas,Rahasia',
 
-        // OPTIONAL RETENSI
+        // RETENSI
         'aktif_tahun' => 'nullable|string|max:100',
         'inaktif_tahun' => 'nullable|string|max:100',
         'tanggal_referensi' => 'nullable|date',
@@ -354,8 +325,8 @@ public function store(Request $request)
         'status_arsip' => 'nullable|in:AKTIF,INAKTIF,MUSNAH,PERMANEN',
 
         // optional lain
-        'nomor_rak' => 'nullable|string|max:50',
-        'nomor_box' => 'nullable|string|max:50',
+        'rak_id' => 'nullable|exists:master_raks,id',
+        'box_id' => 'nullable|exists:master_box,id',
         'nomor_sampul' => 'nullable|string|max:100',
         'lokasi_arsip' => 'nullable|in:SUB_BAGIAN,RECORD_CENTER_PERMANEN,RECORD_CENTER_INAKTIF',
         'tingkat_perkembangan' => 'nullable|in:ASLI,COPY,SALINAN',
@@ -365,49 +336,38 @@ public function store(Request $request)
         'link_foto'    => 'nullable|url|max:1000',
     ]);
 
-    // ====================================
-    // 🔥 VALIDASI TAHUN HARUS SAMA
-    // ====================================
+    // Validasi tahun
     $tahunInput = (int) $validated['tahun_arsip'];
     $tahunTanggal = (int) date('Y', strtotime($validated['tanggal_arsip']));
-
     if ($tahunInput !== $tahunTanggal) {
-        return back()
-            ->withInput()
-            ->withErrors([
-                'tahun_arsip' => 'Tahun arsip harus sama dengan tahun pada tanggal arsip.',
-                'tanggal_arsip' => 'Tanggal arsip harus sesuai dengan tahun arsip.'
-            ]);
+        return back()->withInput()->withErrors([
+            'tahun_arsip' => 'Tahun arsip harus sama dengan tahun pada tanggal arsip.',
+            'tanggal_arsip' => 'Tanggal arsip harus sesuai dengan tahun arsip.'
+        ]);
     }
 
     try {
-        // pastikan string
         $validated['tahun_arsip'] = (string) $validated['tahun_arsip'];
-
         if (auth()->check()) {
             $validated['created_by'] = auth()->id();
         }
-
         $validated['tanggal_masuk'] = now()->format('Y-m-d');
         $validated['link_foto'] = $request->link_foto;
 
-        // default field
+        // Default field (tanpa nomor_rak dan nomor_box)
         $defaults = [
-            'nomor_rak' => '',
-            'nomor_box' => '',
             'nomor_sampul' => '',
             'keterangan' => 'BAIK',
             'tingkat_perkembangan' => 'ASLI',
             'status_pindah' => 'LANGSUNG'
         ];
-
         foreach ($defaults as $field => $value) {
             if (!isset($validated[$field]) || $validated[$field] === '') {
                 $validated[$field] = $value;
             }
         }
 
-        // upload file
+        // Upload file
         if ($request->hasFile('file_dokumen')) {
             $file = $request->file('file_dokumen');
             $fileName = time() . '_' . $file->getClientOriginalName();
@@ -415,9 +375,7 @@ public function store(Request $request)
             $validated['file_dokumen'] = $fileName;
         }
 
-        // ====================================
-        // 🔥 HANDLE RETENSI OPTIONAL
-        // ====================================
+        // Retensi
         if (empty($validated['aktif_tahun']) || empty($validated['inaktif_tahun'])) {
             $validated['aktif_sampai'] = null;
             $validated['inaktif_sampai'] = null;
@@ -430,7 +388,6 @@ public function store(Request $request)
                 $validated['tanggal_arsip'],
                 $validated['tanggal_referensi'] ?? null
             );
-
             $validated['aktif_sampai'] = $perhitungan['aktif_sampai'];
             $validated['inaktif_sampai'] = $perhitungan['inaktif_sampai'];
             $validated['status_arsip'] = $perhitungan['status_arsip'];
@@ -443,7 +400,6 @@ public function store(Request $request)
 
     } catch (\Exception $e) {
         \Log::error('Error: ' . $e->getMessage());
-
         return back()->withInput()
             ->with('error', 'Gagal menyimpan arsip: ' . $e->getMessage());
     }
@@ -658,18 +614,18 @@ private function extractNumberFromText($text)
         ]);
     }
 
-    public function edit(Arsip $arsip)
-    {
-        // Ambil data untuk dropdown
-        $kodeKlasifikasiOptions = KodeKlasifikasi::orderBy('kode')->get();
-        $subBagianOptions = SubBagian::orderBy('nama_sub_bagian')->get();
+    // public function edit(Arsip $arsip)
+    // {
+    //     // Ambil data untuk dropdown
+    //     $kodeKlasifikasiOptions = KodeKlasifikasi::orderBy('kode')->get();
+    //     $subBagianOptions = SubBagian::orderBy('nama_sub_bagian')->get();
         
-        return view('arsip.edit', compact(
-            'arsip', 
-            'kodeKlasifikasiOptions', 
-            'subBagianOptions'
-        ));
-    }
+    //     return view('arsip.edit', compact(
+    //         'arsip', 
+    //         'kodeKlasifikasiOptions', 
+    //         'subBagianOptions'
+    //     ));
+    // }
 
  public function update(Request $request, Arsip $arsip)
 {
@@ -702,8 +658,8 @@ private function extractNumberFromText($text)
         'status_arsip'        => 'nullable|in:AKTIF,INAKTIF,HABIS_RETENSI,MUSNAH,PERMANEN',
 
         // Optional
-        'nomor_rak'           => 'nullable|string|max:50',
-        'nomor_box'           => 'nullable|string|max:50',
+        'rak_id' => 'nullable|exists:master_raks,id',
+'box_id' => 'nullable|exists:master_box,id',
         'nomor_sampul'        => 'nullable|string|max:100',
         'lokasi_arsip'        => 'nullable|in:SUB_BAGIAN,RECORD_CENTER_PERMANEN,RECORD_CENTER_INAKTIF',
         'tingkat_perkembangan'=> 'nullable|in:ASLI,COPY,SALINAN',

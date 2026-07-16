@@ -184,5 +184,16 @@ public function canDeleteArsip(Arsip $arsip)
     // Sama seperti edit, atau sesuaikan
     return $this->canEditArsip($arsip);
 }
-
+public function hasRole($role)
+{
+    // Jika role berupa string
+    if (is_string($role)) {
+        return $this->role === $role;
+    }
+    // Jika role berupa array
+    if (is_array($role)) {
+        return in_array($this->role, $role);
+    }
+    return false;
+}
 }
