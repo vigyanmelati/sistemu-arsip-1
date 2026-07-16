@@ -41,7 +41,93 @@
             <li>Perubahan data langsung <b>tersimpan otomatis</b></li>
         </ul>
     </div>
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
 
+        <form method="GET">
+
+            <div class="row">
+
+                <div class="col-md-4">
+                    <input type="text"
+                           name="search"
+                           class="form-control"
+                           placeholder="Cari uraian arsip..."
+                           value="{{ request('search') }}">
+                </div>
+
+                <div class="col-md-2">
+                    <input type="number"
+                           name="tahun"
+                           class="form-control"
+                           placeholder="Tahun"
+                           value="{{ request('tahun') }}">
+                </div>
+
+                <div class="col-md-2">
+                    <select name="keputusan" class="form-select">
+
+                        <option value="">Semua Keputusan</option>
+
+                        <option value="musnah"
+                            {{ request('keputusan') == 'musnah' ? 'selected' : '' }}>
+                            Musnah
+                        </option>
+
+                        <option value="inaktif"
+                            {{ request('keputusan') == 'inaktif' ? 'selected' : '' }}>
+                            Inaktif
+                        </option>
+
+                        <option value="belum_dinilai"
+                            {{ request('keputusan') == 'belum_dinilai' ? 'selected' : '' }}>
+                            Belum Dinilai
+                        </option>
+
+                    </select>
+                </div>
+
+
+                <!-- <div class="col-md-2">
+                    <select name="tingkat" class="form-select">
+
+                        <option value="">Semua Tingkat</option>
+
+                        <option value="asli">
+                            Asli
+                        </option>
+
+                        <option value="copy">
+                            Copy
+                        </option>
+
+                        <option value="tembusan">
+                            Tembusan
+                        </option>
+
+                    </select>
+                </div> -->
+
+
+                <div class="col-md-2 d-flex gap-2">
+
+                    <button class="btn btn-primary">
+                        Search
+                    </button>
+
+                    <a href="{{ route('pemusnahan.sidang', $pemusnahan->id) }}"
+                       class="btn btn-secondary">
+                        Reset
+                    </a>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+</div>
     {{-- ================= TABEL SIDANG ================= --}}
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-light">
@@ -67,7 +153,7 @@
                 </thead>
                 <tbody>
 
-                @foreach ($pemusnahan->details as $i => $detail)
+                @forelse ($details as $i => $detail)
                 <tr>
                     <td class="text-center">{{ $i+1 }}</td>
 
@@ -220,7 +306,13 @@
 
                     </td>
                 </tr>
-                @endforeach
+                @empty
+<tr>
+    <td colspan="11" class="text-center text-muted py-4">
+        Tidak ada arsip yang cocok dengan filter.
+    </td>
+</tr>
+@endforelse
 
                 </tbody>
             </table>

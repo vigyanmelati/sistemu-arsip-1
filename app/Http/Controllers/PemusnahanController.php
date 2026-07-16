@@ -373,12 +373,44 @@ class PemusnahanController extends Controller
         return back()->with('success', 'Arsip dikeluarkan dari daftar');
     }
 
-    public function sidang(Pemusnahan $pemusnahan)
-    {
-        $pemusnahan->load('details.arsip');
+public function sidang(Request $request, Pemusnahan $pemusnahan)
+{
+    $pemusnahan->load('details.arsip');
 
-        return view('pemusnahan.sidang.index', compact('pemusnahan'));
+    $details = $pemusnahan->details;
+
+    if ($request->filled('search')) {
+        $details = $details->filter(function ($detail) use ($request) {
+            return str_contains(
+                strtolower($detail->arsip->uraian_arsip),
+                strtolower($request->search)
+            );
+        });
     }
+
+    if ($request->filled('tahun')) {
+        $details = $details->filter(function ($detail) use ($request) {
+            return $detail->arsip->tahun_arsip == $request->tahun;
+        });
+    }
+
+    if ($request->filled('keputusan')) {
+        $details = $details->filter(function ($detail) use ($request) {
+            return $detail->keputusan == $request->keputusan;
+        });
+    }
+
+    if ($request->filled('tingkat')) {
+        $details = $details->filter(function ($detail) use ($request) {
+            return strtolower($detail->arsip->tingkat_perkembangan)
+                    == strtolower($request->tingkat);
+        });
+    }
+
+    $details = $details->values(); // 👈 penting! reset key jadi 0,1,2,...
+
+    return view('pemusnahan.sidang.index', compact('pemusnahan', 'details'));
+}
 
     public function inlineUpdate(Request $request)
     {
