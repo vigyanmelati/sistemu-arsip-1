@@ -300,10 +300,10 @@
                             Catatan Verifikasi
                         </h6>
                         <p class="mb-0" style="white-space: pre-line;">{{ $arsip->catatan_verifikasi }}</p>
-                        <small class="text-muted d-block mt-2">
+                        {{-- <small class="text-muted d-block mt-2">
                             Oleh: {{ $arsip->verifikator->name ?? 'System' }} | 
                             {{ $arsip->tanggal_diverifikasi ? \Carbon\Carbon::parse($arsip->tanggal_diverifikasi)->format('d/m/Y H:i') : '-' }}
-                        </small>
+                        </small> --}}
                     </div>
                 @endif
 
