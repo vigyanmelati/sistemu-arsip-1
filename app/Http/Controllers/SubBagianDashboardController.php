@@ -1,4 +1,5 @@
 <?php
+// app/Http/Controllers/SubBagianDashboardController.php
 
 namespace App\Http\Controllers;
 
@@ -24,20 +25,19 @@ class SubBagianDashboardController extends Controller
 
         // Query arsip milik sub-bagian
         $arsipQuery = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
-         ->whereIn('status_pindah', [
-            'DIPINDAHKAN',
-            'DITOLAK',
-             'DIAJUKAN',
-            'BELUM'
-        ]);
-        
+            ->whereIn('status_pindah', [
+                'DIPINDAHKAN',
+                'DITOLAK',
+                'DIAJUKAN',
+                'BELUM'
+            ]);
 
         // Jumlah total arsip
         $totalArsip = $arsipQuery->count();
 
         // Jumlah berdasarkan status_pindah
         $arsipDipindahkan = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
-            ->where('status_pindah', 'dipindahkan')
+            ->where('status_pindah', 'DIPINDAHKAN')
             ->count();
 
         $arsipDiajukan = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
@@ -45,11 +45,28 @@ class SubBagianDashboardController extends Controller
             ->count();
 
         $arsipDitolak = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
-            ->where('status_pindah', 'ditolak')
+            ->where('status_pindah', 'DITOLAK')
             ->count();
 
         $arsipBelumDipindahkan = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
-            ->where('status_pindah', 'belum')
+            ->where('status_pindah', 'BELUM')
+            ->count();
+
+        // ========== AMBIL DATA ARSIP DITOLAK DENGAN CATATAN ==========
+        $arsipDitolakList = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
+            ->where('status_pindah', 'DITOLAK')
+            ->whereNotNull('catatan_verifikasi')
+            ->orderBy('updated_at', 'desc')
+            ->limit(10)
+            ->get(['id', 'uraian_arsip', 'catatan_verifikasi', 'updated_at', 'kode_klasifikasi_id']);
+
+        // Load relasi kode klasifikasi
+        $arsipDitolakList->load('kodeKlasifikasi');
+
+        // ========== HITUNG JUMLAH ARSIP DITOLAK YANG BELUM DIPERBAIKI ==========
+        $arsipDitolakBelumDiperbaiki = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
+            ->where('status_pindah', 'DITOLAK')
+            ->whereNull('catatan_perbaikan')
             ->count();
 
         // Jumlah arsip per status_arsip
@@ -61,20 +78,17 @@ class SubBagianDashboardController extends Controller
                 ->count();
         }
 
-        // Data untuk chart distribusi per tahun (opsional)
-        // $arsipPerTahun = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
-        //     ->selectRaw('YEAR(tanggal_arsip) as tahun, COUNT(*) as total')
-        //     ->groupBy('tahun')
-        //     ->orderBy('tahun')
-        //     ->get();
-       $arsipPerTahun = Arsip::where('sub_bagian_id', Auth::user()->sub_bagian_id)
-    ->where('status_pindah', 'belum')
-    ->select('tahun_arsip', DB::raw('COUNT(*) as total'))
-    ->groupBy('tahun_arsip')
-    ->orderBy('tahun_arsip', 'asc')
-    ->get();
+        // Data untuk chart distribusi per tahun
+        $arsipPerTahun = Arsip::where('sub_bagian_id', Auth::user()->sub_bagian_id)
+            ->whereIn('status_pindah', ['BELUM', 'DIAJUKAN', 'DIPINDAHKAN', 'DITOLAK'])
+            ->select('tahun_arsip', DB::raw('COUNT(*) as total'))
+            ->groupBy('tahun_arsip')
+            ->orderBy('tahun_arsip', 'asc')
+            ->get();
+
         // Arsip terbaru untuk tabel (opsional)
         $arsipTerbaru = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
+            ->whereIn('status_pindah', ['BELUM', 'DIAJUKAN', 'DITOLAK'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
@@ -83,10 +97,13 @@ class SubBagianDashboardController extends Controller
             'totalArsip' => $totalArsip,
             'arsipDipindahkan' => $arsipDipindahkan,
             'arsipDiajukan' => $arsipDiajukan,
+            'arsipDitolak' => $arsipDitolak,
             'arsipBelumDipindahkan' => $arsipBelumDipindahkan,
             'arsipPerStatus' => $arsipPerStatus,
             'arsipPerTahun' => $arsipPerTahun,
             'arsipTerbaru' => $arsipTerbaru,
+            'arsipDitolakList' => $arsipDitolakList,
+            'arsipDitolakBelumDiperbaiki' => $arsipDitolakBelumDiperbaiki,
         ]);
     }
 }
