@@ -60,7 +60,7 @@
                 @enderror
             </div>
 
-            <div class="mb-3">
+            {{-- <div class="mb-3">
                 <label class="form-label">File Baru (Opsional)</label>
                 <input type="file"
                        name="file_bap"
@@ -90,7 +90,7 @@
                         <i class="bi bi-file-earmark-pdf"></i> Lihat File Lama
                     </a>
                 </div>
-            @endif
+            @endif --}}
 
             <div class="d-flex gap-2">
                 <a href="{{ route('berita-acara.index') }}" class="btn btn-secondary">

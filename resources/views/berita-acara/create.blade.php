@@ -58,7 +58,7 @@
                 @enderror
             </div>
 
-            <div class="mb-3">
+            {{-- <div class="mb-3">
                 <label class="form-label">File BAP</label>
                 <input type="file"
                        name="file_bap"
@@ -75,7 +75,7 @@
                 @error('file_bap')
                     <div class="invalid-feedback d-block">{{ $message }}</div>
                 @enderror
-            </div>
+            </div> --}}
 
             <div class="d-flex gap-2">
                 <a href="{{ route('berita-acara.index') }}" class="btn btn-secondary">

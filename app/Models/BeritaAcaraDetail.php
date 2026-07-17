@@ -1,4 +1,5 @@
 <?php
+// app/Models/BeritaAcaraDetail.php
 
 namespace App\Models;
 
@@ -8,32 +9,20 @@ use Illuminate\Database\Eloquent\Model;
 class BeritaAcaraDetail extends Model
 {
     use HasFactory;
-
-    protected $table = 'berita_acara_detail';
-
+ protected $table = 'berita_acara_detail';
     protected $fillable = [
         'bap_id',
         'arsip_id',
-        'status', // DIAJUKAN / DIPINDAHKAN
+        'status', // DRAFT, DIAJUKAN, DITERIMA, DITOLAK
     ];
 
-    // RELASI KE ARSIP
-    public function arsip()
-    {
-        return $this->belongsTo(Arsip::class, 'arsip_id');
-    }
-
-    // RELASI KE BAP
     public function bap()
     {
         return $this->belongsTo(BeritaAcaraPindah::class, 'bap_id');
     }
 
-    public function beritaAcara()
+    public function arsip()
     {
-        return $this->belongsTo(BeritaAcaraPindah::class, 'bap_id');
+        return $this->belongsTo(Arsip::class);
     }
-    
-
-    
 }

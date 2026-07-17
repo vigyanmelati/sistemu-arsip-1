@@ -27,6 +27,18 @@ require __DIR__.'/auth.php';
 
 
 Route::middleware(['auth', 'nocache'])->group(function () {
+    // routes/web.php
+
+Route::get('/arsip-masuk/{arsip}/download-file', [AdminArsipMasukController::class, 'downloadFile'])
+    ->name('arsip-masuk.download-file')
+    ->where('arsip', '[0-9]+'); // Hanya menerima angka
+    // Route untuk edit harus diatas route resource atau menggunakan nama yang berbeda
+Route::get('/arsip-masuk/{id}/edit', [AdminArsipMasukController::class, 'edit'])->name('arsip-masuk.edit');
+Route::put('/arsip-masuk/{id}', [AdminArsipMasukController::class, 'update'])->name('arsip-masuk.update');
+Route::post('/arsip-masuk/{id}/update-field', [AdminArsipMasukController::class, 'updateField'])->name('arsip-masuk.update-field');
+
+// Route resource (jika ada)
+// Route::resource('arsip-masuk', AdminArsipMasukController::class);
     Route::patch('/arsip/{id}/inline-update', [ArsipController::class, 'updateInline'])
     ->name('arsip.inline-update');
     Route::resource('berita-acara', BeritaAcaraPindahController::class);
@@ -151,6 +163,8 @@ Route::middleware(['auth', 'nocache'])->group(function () {
         });
           // Arsip Masuk (pengajuan dari subbagian)
          // Arsip Masuk
+            Route::post('/arsip-masuk/{arsip}/verifikasi', [AdminArsipMasukController::class, 'verifikasi'])
+        ->name('admin.arsip-masuk.verifikasi');
     Route::get('/arsip-masuk', [AdminArsipMasukController::class, 'index'])->name('arsip-masuk.index');
     Route::get('/arsip-masuk/{arsip}', [AdminArsipMasukController::class, 'show'])->name('arsip-masuk.show');
     Route::post('/arsip-masuk/{arsip}/terima', [AdminArsipMasukController::class, 'terima'])->name('admin.arsip-masuk.terima');
@@ -217,6 +231,7 @@ Route::get(
 
 
 Route::middleware(['auth', 'nocache'])->group(function () {
+    Route::post('/arsip-masuk/{id}/update-field', [AdminArsipMasukController::class, 'updateField'])->name('arsip-masuk.update-field');
      Route::resource('arsip', ArsipController::class);
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::get('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
@@ -232,6 +247,10 @@ Route::prefix('lintas-unit')->name('lintas-unit.')->group(function () {
         ->name('daftar');
 
 });
+   Route::post('/berita-acara/{berita_acara}/kirim', [BeritaAcaraPindahController::class, 'kirim'])->name('berita-acara.kirim');
+    
+    // === ROUTE EXPORT LAMPIRAN ===
+    Route::get('/berita-acara/{berita_acara}/export-lampiran', [BeritaAcaraPindahController::class, 'exportLampiran'])->name('berita-acara.exportLampiran');
 Route::post('/manajemen-lokasi/rak', [LokasiController::class, 'storeRak'])->name('manajemen-lokasi.store-rak');
 Route::post('/manajemen-lokasi/box', [LokasiController::class, 'storeBox'])->name('manajemen-lokasi.store-box');
 Route::get('/manajemen-lokasi/rak/{id}/edit', [LokasiController::class, 'editRak'])->name('manajemen-lokasi.edit-rak');
@@ -310,6 +329,9 @@ Route::get(
 Route::middleware(['auth'])->group(function () {
     Route::get('/tu/dashboard', [TuDashboardController::class, 'index'])
         ->name('tu.dashboard');
+
+        Route::get('/arsip-masuk/{id}/edit', [AdminArsipMasukController::class, 'edit'])->name('arsip-masuk.edit');
+Route::put('/arsip-masuk/{id}', [AdminArsipMasukController::class, 'update'])->name('arsip-masuk.update');
 });
 
 Route::middleware(['auth'])->prefix('subbagian')->name('subbagian.')->group(function () {
@@ -335,6 +357,35 @@ Route::middleware(['auth'])->prefix('subbagian')->name('subbagian.')->group(func
             SubBagianSuratMasukController::class
         );
 });
+Route::prefix('subbagian/riwayat-pemindahan')
+    ->name('subbagian.riwayat-pemindahan.')
+    ->middleware(['auth'])
+    ->group(function () {
 
+        // Halaman utama riwayat pemindahan
+        Route::get('/', [SubBagianRiwayatPemindahanController::class, 'index'])
+            ->name('index');
+
+        // Detail arsip
+        Route::get('/{arsip}', [SubBagianRiwayatPemindahanController::class, 'show'])
+            ->name('show');
+
+        // Form perbaikan arsip
+        Route::get('/{arsip}/perbaikan', [SubBagianRiwayatPemindahanController::class, 'perbaikanForm'])
+            ->name('perbaikan');
+
+        // Simpan hasil perbaikan
+        Route::put('/{arsip}/perbaikan', [SubBagianRiwayatPemindahanController::class, 'simpanPerbaikan'])
+            ->name('simpan-perbaikan');
+
+        // Ajukan kembali setelah diperbaiki
+        Route::post('/{arsip}/ajukan-kembali', [SubBagianRiwayatPemindahanController::class, 'ajukanKembali'])
+            ->name('ajukan-kembali');
+
+        // Kembalikan menjadi arsip internal
+        Route::post('/{arsip}/kembalikan-internal', [SubBagianRiwayatPemindahanController::class, 'kembalikanInternal'])
+            ->name('kembalikan-internal');
+
+    });
 
 

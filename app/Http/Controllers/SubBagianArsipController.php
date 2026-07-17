@@ -32,7 +32,9 @@ class SubBagianArsipController extends Controller
         // if (!$user->canViewRahasiaArsip()) {
         //     $query->where('klasifikasi_keamanan', '!=', 'Rahasia');
         // }
-
+   $query->whereDoesntHave('beritaAcaraDetails', function($q) {
+        $q->whereIn('status', ['DRAFT', 'DIAJUKAN', 'DITERIMA']);
+    });
         $query->where(function ($q) use ($user) {
 
     // selain rahasia
@@ -85,10 +87,10 @@ if ($request->has('sort')) {
             ->orderBy('nama_sub_bagian')
             ->get();
 
-            $bapOptions = BeritaAcaraPindah::where('sub_bagian_id', $user->sub_bagian_id)
-    ->where('status', 'DIAJUKAN') // optional, biar hanya yg aktif
-    ->orderBy('tanggal_bap', 'desc')
-    ->get();
+    $bapOptions = BeritaAcaraPindah::where('sub_bagian_id', $user->sub_bagian_id)
+        ->where('status', 'DRAFT') // <-- GANTI dari DIAJUKAN ke DRAFT
+        ->orderBy('tanggal_bap', 'desc')
+        ->get();
 
         // Filter & search sama seperti ArsipController
         if ($request->has('status_arsip') && $request->status_arsip != '') {
@@ -800,6 +802,7 @@ public function export(Request $request)
     }
 }
 
+
 public function ajukanPindahMultiple(Request $request)
 {
     $user = Auth::user();
@@ -810,49 +813,55 @@ public function ajukanPindahMultiple(Request $request)
         'bap_id'      => 'required|exists:berita_acara_pindah,id'
     ]);
 
-    // Ambil BAP
+    // Ambil BAP - pastikan status DRAFT
     $bap = BeritaAcaraPindah::where('id', $request->bap_id)
         ->where('sub_bagian_id', $user->sub_bagian_id)
+        ->where('status', 'DRAFT')
         ->firstOrFail();
 
-    // Ambil arsip milik user
+    // Ambil arsip milik user yang BELUM memiliki BAP aktif
     $arsips = Arsip::whereIn('id', $request->arsip_ids)
         ->where('sub_bagian_id', $user->sub_bagian_id)
+        ->where('status_pindah', 'BELUM')
+        ->whereDoesntHave('beritaAcaraDetails', function($q) {
+            $q->whereIn('status', ['DRAFT', 'DIAJUKAN', 'DITERIMA']);
+        })
         ->get();
 
     if ($arsips->count() != count($request->arsip_ids)) {
-        return back()->with('error', 'Beberapa arsip tidak ditemukan atau tidak memiliki akses.');
+        return back()->with('error', 'Beberapa arsip tidak ditemukan atau sudah memiliki BAP.');
     }
 
     DB::beginTransaction();
     try {
         foreach ($arsips as $arsip) {
-
-            // Hindari double insert (optional tapi recommended 🔥)
-            $exists = BeritaAcaraDetail::where('arsip_id', $arsip->id)->exists();
+            // Cek apakah arsip sudah ada di BAP ini
+            $exists = BeritaAcaraDetail::where('bap_id', $bap->id)
+                ->where('arsip_id', $arsip->id)
+                ->exists();
 
             if (!$exists) {
                 BeritaAcaraDetail::create([
                     'bap_id'   => $bap->id,
                     'arsip_id' => $arsip->id,
-                    'status'   => 'DIAJUKAN',
+                    'status'   => 'DRAFT',
                 ]);
             }
 
-            // Update arsip
-            $arsip->status_pindah = 'DIAJUKAN';
-            $arsip->file_berita_acara = $bap->file_bap;
-            $arsip->save();
+            // UPDATE status_pindah menjadi DRAFT
+            $arsip->update([
+                'status_pindah' => 'DRAFT'
+            ]);
         }
 
         DB::commit();
 
         return redirect()->route('subbagian.arsip.index')
-            ->with('success', count($arsips) . ' arsip berhasil diajukan dengan BAP: ' . $bap->nomor_bap);
+            ->with('success', count($arsips) . ' arsip berhasil ditambahkan ke BAP: ' . $bap->nomor_bap);
 
     } catch (\Exception $e) {
         DB::rollBack();
-        return back()->with('error', 'Gagal mengajukan: ' . $e->getMessage());
+        return back()->with('error', 'Gagal menambahkan arsip ke BAP: ' . $e->getMessage());
     }
 }
     public function duplicate(Arsip $arsip)

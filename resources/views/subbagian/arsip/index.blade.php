@@ -324,14 +324,25 @@
             <form method="POST" action="{{ route('subbagian.arsip.ajukanPindahMultiple') }}" enctype="multipart/form-data" id="ajukanPindahForm">
                 @csrf
                 <div class="modal-body p-4">
-                   <select name="bap_id" class="form-select" required>
-    <option value="">-- Pilih Berita Acara --</option>
-    @foreach($bapOptions as $bap)
-        <option value="{{ $bap->id }}">
-            {{ $bap->nomor_bap }} - {{ $bap->tanggal_bap }}
-        </option>
-    @endforeach
-</select>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Pilih Berita Acara <span class="text-danger">*</span></label>
+                        <select name="bap_id" class="form-select" required>
+                            <option value="">-- Pilih Berita Acara (DRAFT) --</option>
+                            @foreach($bapOptions as $bap)
+                                <option value="{{ $bap->id }}">
+                                    {{ $bap->nomor_bap }} - {{ \Carbon\Carbon::parse($bap->tanggal_bap)->format('d/m/Y') }}
+                                    <span class="badge bg-secondary">DRAFT</span>
+                                </option>
+                            @endforeach
+                        </select>
+                        @if($bapOptions->count() == 0)
+                            <small class="text-danger d-block mt-1">
+                                <i class="bi bi-exclamation-circle"></i> 
+                                Belum ada Berita Acara dengan status DRAFT. 
+                                <a href="{{ route('berita-acara.create') }}">Buat BAP baru</a>
+                            </small>
+                        @endif
+                    </div>
 
                     <!-- Daftar arsip yang dipilih -->
                     <div class="mb-3">

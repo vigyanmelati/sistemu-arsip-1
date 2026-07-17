@@ -373,6 +373,16 @@
         a, button {
             transition: 0.2s ease;
         }
+        .mobile-menu-btn {
+    display: none;
+}
+
+@media (max-width: 991.98px) {
+    .mobile-menu-btn {
+        display: flex !important;
+        align-items: center;
+    }
+}
     </style>
 
     @stack('styles')

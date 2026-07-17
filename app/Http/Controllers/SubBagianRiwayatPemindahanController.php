@@ -18,11 +18,11 @@ class SubBagianRiwayatPemindahanController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        
-        // Ambil arsip dengan status DIPINDAHKAN atau DITOLAK
+
+        // Ambil arsip dengan semua status yang relevan termasuk DRAFT
         $query = Arsip::with(['kodeKlasifikasi', 'subBagian'])
             ->where('sub_bagian_id', $user->sub_bagian_id)
-            ->whereIn('status_pindah', ['DIPINDAHKAN', 'DITOLAK','DIAJUKAN','DIPERBAIKI'])
+            ->whereIn('status_pindah', ['DIPINDAHKAN', 'DITOLAK', 'DIAJUKAN', 'DIPERBAIKI', 'DRAFT'])
             ->orderBy('updated_at', 'desc');
 
         // Filter berdasarkan status
@@ -37,12 +37,12 @@ class SubBagianRiwayatPemindahanController extends Controller
 
         // Search
         if ($request->has('search') && $request->search != '') {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('uraian_arsip', 'like', "%{$request->search}%")
-                  ->orWhereHas('kodeKlasifikasi', function($sub) use ($request){
-                      $sub->where('kode','like',"%{$request->search}%")
-                          ->orWhere('uraian','like',"%{$request->search}%");
-                  });
+                    ->orWhereHas('kodeKlasifikasi', function ($sub) use ($request) {
+                        $sub->where('kode', 'like', "%{$request->search}%")
+                            ->orWhere('uraian', 'like', "%{$request->search}%");
+                    });
             });
         }
 
@@ -50,22 +50,27 @@ class SubBagianRiwayatPemindahanController extends Controller
 
         // Data untuk filter
         $tahunOptions = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
-           ->whereIn('status_pindah', ['DIPINDAHKAN', 'DITOLAK', 'DIAJUKAN', 'DIPERBAIKI'])
+            ->whereIn('status_pindah', ['DIPINDAHKAN', 'DITOLAK', 'DIAJUKAN', 'DIPERBAIKI', 'DRAFT'])
             ->selectRaw('YEAR(updated_at) as tahun')
             ->distinct()
             ->orderBy('tahun', 'desc')
             ->pluck('tahun');
 
+        // Status options
         $statusOptions = [
-            'DIPINDAHKAN' => 'Dipindahkan',
-            'DITOLAK' => 'Ditolak'
+            'DRAFT' => 'Draft',
+            'DIAJUKAN' => 'Diajukan',
+            'DIPERBAIKI' => 'Diperbaiki',
+            'DITOLAK' => 'Ditolak',
+            'DIPINDAHKAN' => 'Dipindahkan'
         ];
 
         return view('subbagian.riwayat-pemindahan.index', compact(
-            'arsips', 'tahunOptions', 'statusOptions'
+            'arsips',
+            'tahunOptions',
+            'statusOptions'
         ));
     }
-
 
     public function show(Arsip $arsip)
     {
@@ -75,7 +80,7 @@ class SubBagianRiwayatPemindahanController extends Controller
             abort(403);
         }
 
-        if (!in_array($arsip->status_pindah, ['DIPINDAHKAN', 'DITOLAK', 'DIAJUKAN', 'DIPERBAIKI'])) {
+        if (!in_array($arsip->status_pindah, ['DIPINDAHKAN', 'DITOLAK', 'DIAJUKAN', 'DIPERBAIKI', 'DRAFT'])) {
             abort(404);
         }
 
@@ -86,11 +91,11 @@ class SubBagianRiwayatPemindahanController extends Controller
                 ->first()
         )->beritaAcara;
 
-        // ✅ Ambil tanggal pindah dari riwayat_pindah
+        // Ambil tanggal pindah dari riwayat_pindah
         $tanggalDipindahkan = HistoryPindah::where('arsip_id', $arsip->id)
             ->where('alasan_pindah', 'Arsip dipindahkan ke Unit Kearsipan')
             ->orderBy('tanggal_pindah', 'desc')
-            ->value('tanggal_pindah'); // langsung ambil tanggal saja
+            ->value('tanggal_pindah');
 
         return view(
             'subbagian.riwayat-pemindahan.show',
@@ -98,196 +103,195 @@ class SubBagianRiwayatPemindahanController extends Controller
         );
     }
 
-    public function perbaikiArsip(Request $request, Arsip $arsip)
+    /**
+     * Menampilkan halaman Perbaikan Arsip.
+     * Berisi: alasan penolakan, form edit arsip, catatan perbaikan,
+     * tombol ajukan kembali, dan tombol kembalikan ke arsip internal.
+     */
+    public function perbaikanForm(Arsip $arsip)
     {
         $user = Auth::user();
-        
-        // Validasi akses
-        if ($arsip->sub_bagian_id != $user->sub_bagian_id || $arsip->status_pindah != 'DITOLAK') {
+
+        if ($arsip->sub_bagian_id != $user->sub_bagian_id) {
             abort(403);
         }
 
-        // Simpan catatan perbaikan
-        // $validated = $request->validate([
-        //     'catatan_perbaikan' => 'required|string|max:1000'
-        // ]);
-
-        $arsip->update([
-            // 'catatan_perbaikan' => $validated['catatan_perbaikan'],
-            'status_pindah' => 'DIPERBAIKI'
-        ]);
-
-        return redirect()->route('subbagian.riwayat-pemindahan.index')
-            ->with('success', 'Arsip telah ditandai sebagai diperbaiki. Silakan ajukan kembali untuk verifikasi.');
-    }
-
-    // public function ajukanKembali(Request $request, Arsip $arsip)
-    // {
-    //     $user = Auth::user();
-        
-    //     // Validasi akses
-    //     if ($arsip->sub_bagian_id != $user->sub_bagian_id) {
-    //         abort(403);
-    //     }
-
-    //     // Validasi file berita acara
-    //     $request->validate([
-    //         'file_berita_acara_baru' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048'
-    //     ]);
-
-    //     // Simpan file berita acara baru
-    //     $file = $request->file('file_berita_acara_baru');
-    //     $fileName = time().'_'.$file->getClientOriginalName();
-    //     $file->storeAs('arsip', $fileName, 'public');
-
-    //     // Update arsip
-    //     $arsip->update([
-    //         'file_berita_acara' => $fileName,
-    //         'status_pindah' => 'DIAJUKAN',
-    //         'catatan_perbaikan' => null,
-    //         'updated_at' => now()
-    //     ]);
-
-    //     return redirect()->route('subbagian.riwayat-pemindahan.index')
-    //         ->with('success', 'Arsip berhasil diajukan kembali untuk proses pemindahan.');
-    // }
-    public function editPerbaikan(Arsip $arsip)
-    {
-        $user = Auth::user();
-        
-        // Validasi akses
-        if ($arsip->sub_bagian_id != $user->sub_bagian_id || $arsip->status_pindah != 'DITOLAK') {
-            abort(403);
+        // Hanya arsip yang DITOLAK atau sudah DIPERBAIKI (belum diajukan ulang)
+        // yang boleh masuk ke halaman perbaikan.
+        if (!in_array($arsip->status_pindah, ['DITOLAK', 'DIPERBAIKI'])) {
+            abort(404);
         }
 
-        // Load data yang diperlukan
         $arsip->load(['kodeKlasifikasi', 'subBagian']);
         $kodeKlasifikasis = KodeKlasifikasi::orderBy('kode')->get();
 
-        return view('subbagian.riwayat-pemindahan.edit-perbaikan', compact('arsip', 'kodeKlasifikasis'));
+        return view('subbagian.riwayat-pemindahan.perbaikan', compact('arsip', 'kodeKlasifikasis'));
     }
 
-    public function updatePerbaikan(Request $request, Arsip $arsip)
+    /**
+     * Simpan perbaikan arsip (edit data + catatan perbaikan).
+     * Status arsip diubah menjadi DIPERBAIKI.
+     * File berita acara TIDAK wajib diupload ulang di sini.
+     */
+    public function simpanPerbaikan(Request $request, Arsip $arsip)
     {
         $user = Auth::user();
-        
-        // Validasi akses
-        if ($arsip->sub_bagian_id != $user->sub_bagian_id || $arsip->status_pindah != 'DITOLAK') {
+
+        if ($arsip->sub_bagian_id != $user->sub_bagian_id
+            || !in_array($arsip->status_pindah, ['DITOLAK', 'DIPERBAIKI'])) {
             abort(403);
         }
 
-        // Validasi data
         $validated = $request->validate([
             'kode_klasifikasi_id' => 'required|exists:kode_klasifikasis,id',
-            'uraian_arsip' => 'required|string|max:500',
-            'tahun_arsip' => 'required|integer|min:1900|max:' . (date('Y') + 1),
-            'tanggal_arsip' => 'required|date',
-            'jumlah_berkas' => 'required|integer|min:1',
-            'satuan_arsip' => 'required|string|max:20',
-            
-            // Data retensi (jika diperlukan, uncomment)
-            // 'aktif_tahun' => 'required',
-            // 'inaktif_tahun' => 'required',
-            // 'tanggal_referensi' => 'nullable|date',
-            // 'keterangan_jra' => 'required|in:MUSNAH,PERMANEN,BELUM DITENTUKAN',
-            
-            // Lokasi
-            'nomor_rak' => 'nullable|string|max:50',
-            'nomor_box' => 'nullable|string|max:50',
-            'nomor_sampul' => 'nullable|string|max:50',
-            
-            // Kondisi
+            'uraian_arsip'        => 'required|string|max:500',
+            'tahun_arsip'         => 'required|integer|min:1900|max:' . (date('Y') + 1),
+            'tanggal_arsip'       => 'required|date',
+            'jumlah_berkas'       => 'required|integer|min:1',
+            'satuan_arsip'        => 'required|string|max:20',
+
+            'nomor_rak'           => 'nullable|string|max:50',
+            'nomor_box'           => 'nullable|string|max:50',
+            'nomor_sampul'        => 'nullable|string|max:50',
+
             'tingkat_perkembangan' => 'required|string|max:50',
-            'keterangan' => 'required|string|max:100',
-            'media_arsip' => 'required|string|max:50',
-            
-            // Berita acara baru (opsional)
-            'file_berita_acara_baru' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240', // ← perbaikan typo
-            
-            // Catatan perbaikan 
-            // 'catatan_perbaikan' => 'required|string|max:1000',
+            'keterangan'           => 'required|string|max:100',
+            'media_arsip'          => 'required|string|max:50',
+
+            // Upload BA baru bersifat OPSIONAL — tidak wajib
+            'file_berita_acara_baru' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+
+            // Wajib diisi agar jelas apa yang sudah diperbaiki
+            'catatan_perbaikan' => 'required|string|max:1000',
         ]);
 
         DB::beginTransaction();
         try {
             // Upload file berita acara baru (jika ada)
             if ($request->hasFile('file_berita_acara_baru')) {
-                // Hapus file lama jika ada
                 if ($arsip->file_berita_acara) {
                     Storage::disk('public')->delete('arsip/' . $arsip->file_berita_acara);
                 }
-                
+
                 $file = $request->file('file_berita_acara_baru');
                 $fileName = time() . '_' . $file->getClientOriginalName();
                 $file->storeAs('arsip', $fileName, 'public');
                 $validated['file_berita_acara'] = $fileName;
             }
 
-            // Update status
+            // Tandai sebagai sudah diperbaiki (belum diajukan ulang)
             $validated['status_pindah'] = 'DIPERBAIKI';
             $validated['updated_at'] = now();
 
-            // Hapus field yang tidak ada di database
             unset($validated['file_berita_acara_baru']);
 
-            // Update arsip
             $arsip->update($validated);
 
             DB::commit();
 
-            return redirect()->route('subbagian.riwayat-pemindahan.show', $arsip->id)
-                ->with('success', 'Arsip berhasil diperbaiki. Silakan ajukan kembali untuk verifikasi.');
-
+            return redirect()->route('subbagian.riwayat-pemindahan.perbaikan', $arsip->id)
+                ->with('success', 'Perbaikan arsip berhasil disimpan. Silakan klik "Ajukan Kembali" jika sudah yakin.');
         } catch (\Exception $e) {
             DB::rollback();
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())
-                        ->withInput();
+                ->withInput();
         }
     }
 
+    /**
+     * Ajukan kembali arsip yang sudah diperbaiki.
+     * TIDAK memerlukan upload ulang berkas berita acara.
+     */
     public function ajukanKembali(Request $request, Arsip $arsip)
     {
         $user = Auth::user();
-        
-        // Validasi akses dan status
+
         if ($arsip->sub_bagian_id != $user->sub_bagian_id || $arsip->status_pindah != 'DIPERBAIKI') {
             abort(403);
         }
 
-        // Validasi bahwa arsip sudah diperbaiki
-        // if (!$arsip->catatan_perbaikan) {
-        //     return back()->with('error', 'Arsip harus diperbaiki terlebih dahulu sebelum diajukan kembali.');
-        // }
-
         DB::beginTransaction();
         try {
-            // Update status menjadi DIAJUKAN
             $arsip->update([
-                'status_pindah' => 'DIAJUKAN',
-                'catatan_verifikasi' => null, // Reset catatan verifikasi lama
-                'diverifikasi_oleh' => null,
+                'status_pindah'        => 'DIAJUKAN',
+                'diverifikasi_oleh'    => null,
                 'tanggal_diverifikasi' => null,
-                'updated_at' => now()
+                'updated_at'           => now()
             ]);
-
-            // Log aktivitas
-            // activity()
-            //     ->causedBy($user)
-            //     ->performedOn($arsip)
-            //     ->withProperties([
-            //         'status_sebelumnya' => 'DIPERBAIKI',
-            //         // 'catatan_perbaikan' => $arsip->catatan_perbaikan
-            //     ])
-                // ->log('Mengajukan kembali arsip setelah perbaikan');
 
             DB::commit();
 
             return redirect()->route('subbagian.riwayat-pemindahan.index')
                 ->with('success', 'Arsip berhasil diajukan kembali untuk proses verifikasi.');
-
         } catch (\Exception $e) {
             DB::rollback();
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Kembalikan arsip menjadi arsip internal Sub Bagian.
+     * Dipakai untuk kasus arsip ditolak karena sebenarnya masih aktif
+     * dan tidak perlu dipindahkan ke Unit Kearsipan.
+     *
+     * - status_pindah di-reset (keluar dari alur pemindahan)
+     * - arsip dikeluarkan dari detail berita acara terkait
+     */
+    public function kembalikanInternal(Arsip $arsip)
+    {
+        $user = Auth::user();
+
+        if ($arsip->sub_bagian_id != $user->sub_bagian_id
+            || !in_array($arsip->status_pindah, ['DITOLAK', 'DIPERBAIKI'])) {
+            abort(403);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Keluarkan arsip ini dari detail berita acara (jika ada)
+            $arsip->beritaAcaraDetailS()->delete();
+
+            // Reset arsip menjadi arsip internal Sub Bagian
+            // (keluar sepenuhnya dari alur pemindahan ke Unit Kearsipan)
+            $arsip->update([
+                'status_pindah'         => null,
+                'catatan_verifikasi'    => null,
+                'catatan_perbaikan'     => null,
+                'diverifikasi_oleh'     => null,
+                'tanggal_diverifikasi'  => null,
+                'rak_id'                => null,
+                'box_id'                => null,
+                'updated_at'            => now(),
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('subbagian.riwayat-pemindahan.index')
+                ->with('success', 'Arsip berhasil dikembalikan menjadi arsip internal Sub Bagian dan dikeluarkan dari berita acara.');
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    // ==========================================================
+    // Method lama di bawah ini dipertahankan untuk kompatibilitas
+    // route yang mungkin masih memanggilnya, tapi flow utama
+    // sekarang menggunakan perbaikanForm() + simpanPerbaikan().
+    // ==========================================================
+
+    public function perbaikiArsip(Request $request, Arsip $arsip)
+    {
+        return redirect()->route('subbagian.riwayat-pemindahan.perbaikan', $arsip->id);
+    }
+
+    public function editPerbaikan(Arsip $arsip)
+    {
+        return redirect()->route('subbagian.riwayat-pemindahan.perbaikan', $arsip->id);
+    }
+
+    public function updatePerbaikan(Request $request, Arsip $arsip)
+    {
+        return $this->simpanPerbaikan($request, $arsip);
     }
 }

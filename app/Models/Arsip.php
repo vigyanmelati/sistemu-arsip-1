@@ -443,4 +443,190 @@ public function box()
     {
         return self::LOKASI_ARSIP[$key] ?? $key;
     }
+
+
+public function hasActiveBap()
+{
+    return $this->beritaAcaraDetails()
+        ->whereIn('status', ['DRAFT', 'DIAJUKAN', 'DITERIMA'])
+        ->exists();
+}
+
+public function scopeWithoutActiveBap($query)
+{
+    return $query->whereDoesntHave('beritaAcaraDetails', function($q) {
+        $q->whereIn('status', ['DRAFT', 'DIAJUKAN', 'DITERIMA']);
+    });
+}
+
+/**
+ * Scope untuk arsip yang sudah memiliki BAP
+ */
+public function scopeWithActiveBap($query)
+{
+    return $query->whereHas('beritaAcaraDetails', function($q) {
+        $q->whereIn('status', ['DRAFT', 'DIAJUKAN', 'DITERIMA']);
+    });
+}
+
+
+    const STATUS_BELUM = 'BELUM';
+    const STATUS_DRAFT = 'DRAFT';
+    const STATUS_DIAJUKAN = 'DIAJUKAN';
+    const STATUS_DIPERBAIKI = 'DIPERBAIKI';
+    const STATUS_DITOLAK = 'DITOLAK';
+    const STATUS_DIPINDAHKAN = 'DIPINDAHKAN';
+    const STATUS_DITERIMA = 'DITERIMA';
+    const STATUS_SELESAI = 'SELESAI';
+    const STATUS_NON_ARSIP = 'NON_ARSIP';
+     const STATUS_LANGSUNG = 'LANGSUNG';
+
+    public static function getStatusPindahOptions()
+    {
+        return [
+            self::STATUS_BELUM => 'Belum',
+            self::STATUS_DRAFT => 'Draft',
+            self::STATUS_DIAJUKAN => 'Diajukan',
+            self::STATUS_DIPERBAIKI => 'Diperbaiki',
+            self::STATUS_DITOLAK => 'Ditolak',
+            self::STATUS_DIPINDAHKAN => 'Dipindahkan',
+            self::STATUS_DITERIMA => 'Diterima',
+            self::STATUS_SELESAI => 'Selesai',
+            self::STATUS_NON_ARSIP => 'Non Arsip',
+            self::STATUS_LANGSUNG => 'Langsung',
+        ];
+    }
+
+     /**
+     * Recalculate retensi berdasarkan data saat ini
+     */
+ public function recalculateRetensi()
+    {
+        // Jika aktif_tahun atau inaktif_tahun kosong
+        if (empty($this->aktif_tahun) || empty($this->inaktif_tahun)) {
+            $this->aktif_sampai = null;
+            $this->inaktif_sampai = null;
+            $this->status_arsip = 'AKTIF';
+            return;
+        }
+
+        // Ekstrak angka dari string (contoh: "2 TAHUN" -> 2)
+        $aktifTahun = $this->extractNumber($this->aktif_tahun);
+        $inaktifTahun = $this->extractNumber($this->inaktif_tahun);
+
+        // Jika tidak ada angka, set ke null
+        if (!$aktifTahun || !$inaktifTahun) {
+            $this->aktif_sampai = null;
+            $this->inaktif_sampai = null;
+            $this->status_arsip = 'AKTIF';
+            return;
+        }
+
+        // Tentukan tahun dasar
+        // Jika ada tanggal_arsip, gunakan tahun dari tanggal_arsip
+        // Jika tidak, gunakan tahun sekarang
+        if ($this->tanggal_arsip) {
+            $tahunDasar = Carbon::parse($this->tanggal_arsip)->year;
+        } else {
+            $tahunDasar = Carbon::now()->year;
+        }
+
+        // Cek apakah mengandung kata "SETELAH"
+        $aktifSetelah = stripos($this->aktif_tahun, 'SETELAH') !== false;
+        $inaktifSetelah = stripos($this->inaktif_tahun, 'SETELAH') !== false;
+
+        // Jika mengandung SETELAH dan ada tanggal_referensi, gunakan tahun dari tanggal_referensi
+        if (($aktifSetelah || $inaktifSetelah) && $this->tanggal_referensi) {
+            $tahunDasar = Carbon::parse($this->tanggal_referensi)->year;
+        }
+
+        // HITUNG AKTIF SAMPAI (tahun dasar + aktif_tahun, tanggal 31 Desember)
+        $tahunAktifSampai = $tahunDasar + $aktifTahun;
+        $this->aktif_sampai = Carbon::create($tahunAktifSampai, 12, 31)->format('Y-m-d');
+
+        // HITUNG INAKTIF SAMPAI (tahun aktif + inaktif_tahun, tanggal 31 Desember)
+        $tahunInaktifSampai = $tahunAktifSampai + $inaktifTahun;
+        $this->inaktif_sampai = Carbon::create($tahunInaktifSampai, 12, 31)->format('Y-m-d');
+
+        // TENTUKAN STATUS
+        $tahunSekarang = Carbon::now()->year;
+        $keterangan = strtoupper($this->keterangan_jra ?? '');
+
+        if ($keterangan === 'PERMANEN') {
+            $this->status_arsip = 'PERMANEN';
+        } elseif ($keterangan === 'MUSNAH') {
+            // Untuk MUSNAH: AKTIF -> INAKTIF -> HABIS RETENSI
+            if ($tahunSekarang <= $tahunAktifSampai) {
+                $this->status_arsip = 'AKTIF';
+            } elseif ($tahunSekarang <= $tahunInaktifSampai) {
+                $this->status_arsip = 'INAKTIF';
+            } else {
+                $this->status_arsip = 'HABIS_RETENSI';
+            }
+        } else {
+            // Untuk selain MUSNAH: AKTIF -> INAKTIF
+            if ($tahunSekarang <= $tahunAktifSampai) {
+                $this->status_arsip = 'AKTIF';
+            } else {
+                $this->status_arsip = 'INAKTIF';
+            }
+        }
+    }
+
+    /**
+     * Ekstrak angka dari teks (contoh: "2 TAHUN" -> 2, "5 TAHUN SETELAH KEGIATAN" -> 5)
+     */
+    private function extractNumber($text)
+    {
+        if (empty($text)) {
+            return null;
+        }
+        
+        if (preg_match('/\d+/', $text, $matches)) {
+            return (int) $matches[0];
+        }
+        
+        return null;
+    }
+
+    /**
+     * Update field dan recalculate retensi
+     */
+    public function updateFieldAndRecalculate($field, $value)
+    {
+        $this->$field = $value;
+        
+        // Cek apakah field yang diupdate mempengaruhi retensi
+        $retensiFields = ['aktif_tahun', 'inaktif_tahun', 'keterangan_jra', 'tanggal_arsip', 'tanggal_referensi'];
+        
+        if (in_array($field, $retensiFields)) {
+            $this->recalculateRetensi();
+        }
+        
+        $this->save();
+        
+        return $this;
+    }
+
+    /**
+ * Accessor untuk mendapatkan status arsip
+ * Untuk kompatibilitas dengan view yang menggunakan $arsip->status
+ */
+public function getStatusAttribute()
+{
+    return $this->status_arsip;
+}
+
+/**
+ * Mutator untuk status - simpan ke status_arsip
+ */
+public function setStatusAttribute($value)
+{
+    $this->attributes['status_arsip'] = $value;
+}
+
+public function verifikator(): BelongsTo
+{
+    return $this->belongsTo(User::class, 'diverifikasi_oleh');
+}
 }
