@@ -6,6 +6,8 @@ use App\Models\Arsip;
 use App\Models\SubBagian;
 use App\Models\HistoryPindah;
 use App\Models\User;
+use App\Models\MasterRak;
+use App\Models\MasterBox;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
@@ -14,9 +16,9 @@ use Illuminate\Support\Facades\DB;
 class AdminArsipMasukController extends Controller
 {
 
-    public function index(Request $request)
+     public function index(Request $request)
     {
-        $query = Arsip::with(['kodeKlasifikasi', 'subBagian', 'creator'])
+        $query = Arsip::with(['kodeKlasifikasi', 'subBagian', 'creator', 'rak', 'box'])
             ->where('status_pindah', 'DIAJUKAN')
             ->orderBy('created_at', 'desc');
 
@@ -74,18 +76,31 @@ class AdminArsipMasukController extends Controller
         // Hitung total arsip masuk untuk badge
         $arsipMasukCount = Arsip::where('status_pindah', 'DIAJUKAN')->count();
 
+        // ===================== TAMBAHKAN INI =====================
+        // Ambil data rak dan box untuk dropdown di modal proses multiple
+        $rakOptions = MasterRak::select('id', 'nomor_rak', 'lokasi_arsip')
+            ->orderBy('nomor_rak')
+            ->get();
+
+        $boxOptions = MasterBox::select('id', 'nomor_box', 'rak_id')
+            ->orderBy('nomor_box')
+            ->get();
+        // =======================================================
+
         return view('arsip-masuk.index', compact(
             'arsips', 
             'subBagianOptions',
             'tahunOptions',
-            'arsipMasukCount'
+            'arsipMasukCount',
+            'rakOptions',  // <-- tambahkan ini
+            'boxOptions'   // <-- tambahkan ini
         ));
     }
 
     /**
      * Display the specified arsip.
      */
-    public function show(Arsip $arsip)
+     public function show(Arsip $arsip)
     {
         // Pastikan arsip sudah diajukan pemindahan
         if ($arsip->status_pindah !== 'DIAJUKAN') {
@@ -100,10 +115,21 @@ class AdminArsipMasukController extends Controller
             },
             'beritaAcaraPindah' => function($query) {
                 $query->latest();
-            }
+            },
+            'rak',
+            'box'
         ]);
 
-        return view('arsip-masuk.show', compact('arsip'));
+        // Ambil data rak dan box untuk dropdown
+        $rakOptions = MasterRak::select('id', 'nomor_rak', 'lokasi_arsip')
+            ->orderBy('nomor_rak')
+            ->get();
+
+        $boxOptions = MasterBox::select('id', 'nomor_box', 'rak_id')
+            ->orderBy('nomor_box')
+            ->get();
+
+        return view('arsip-masuk.show', compact('arsip', 'rakOptions', 'boxOptions'));
     }
 
     /**
@@ -112,10 +138,10 @@ class AdminArsipMasukController extends Controller
     public function terima(Request $request, Arsip $arsip)
     {
         $request->validate([
-            'nomor_rak_baru' => 'required|string|max:50',
-            'nomor_box_baru' => 'required|string|max:50',
+            'rak_id_baru' => 'required|exists:master_raks,id',
+            'box_id_baru' => 'required|exists:master_box,id',
             'catatan' => 'nullable|string|max:500',
-            'lokasi_tujuan' => 'nullable|in:RECORD_CENTER_INAKTIF,RECORD_CENTER_PERMANEN',
+            'lokasi_tujuan' => 'required|in:RECORD_CENTER_INAKTIF,RECORD_CENTER_PERMANEN',
         ]);
 
         if ($arsip->status_pindah !== 'DIAJUKAN') {
@@ -125,38 +151,35 @@ class AdminArsipMasukController extends Controller
         DB::beginTransaction();
         try {
             // Simpan lokasi lama
-            $dariRak = $arsip->nomor_rak;
-            $dariBox = $arsip->nomor_box;
+            $dariRak = $arsip->rak_id;
+            $dariBox = $arsip->box_id;
+            $dariRakNomor = $arsip->rak ? $arsip->rak->nomor_rak : null;
+            $dariBoxNomor = $arsip->box ? $arsip->box->nomor_box : null;
 
-            // SIMPAN lokasi baru TANPA mengubah status
-            // $arsip->nomor_rak = $request->nomor_rak_baru;
-            // $arsip->nomor_box = $request->nomor_box_baru;
-            // $arsip->tanggal_diverifikasi = now();
-            // $arsip->diverifikasi_oleh = auth()->id();
-            // $arsip->catatan_verifikasi = $request->catatan;
-            // // status_pindah tetap DIAJUKAN
-            // $arsip->skipHistory = true;
-            // $arsip->save();
+            // Ambil data rak dan box baru
+            $rakBaru = MasterRak::find($request->rak_id_baru);
+            $boxBaru = MasterBox::find($request->box_id_baru);
 
-            $arsip->nomor_rak = $request->nomor_rak_baru;
-            $arsip->nomor_box = $request->nomor_box_baru;
+            // Update arsip
+            $arsip->rak_id = $request->rak_id_baru;
+            $arsip->box_id = $request->box_id_baru;
+            $arsip->lokasi_arsip = $request->lokasi_tujuan;
             $arsip->tanggal_diverifikasi = now();
             $arsip->diverifikasi_oleh = auth()->id();
             $arsip->catatan_verifikasi = $request->catatan;
-             $arsip->lokasi_arsip = $request->lokasi_tujuan ?? $arsip->lokasi_arsip;
 
             $arsip->skipHistory = true;
             $arsip->save();
 
-            // Catat history (opsional tapi bagus)
+            // Catat history
             HistoryPindah::create([
                 'arsip_id' => $arsip->id,
-                'dari_rak' => $dariRak,
-                'dari_box' => $dariBox,
-                'ke_rak' => $request->nomor_rak_baru,
-                'ke_box' => $request->nomor_box_baru,
+                'dari_rak' => $dariRakNomor,
+                'dari_box' => $dariBoxNomor,
+                'ke_rak' => $rakBaru ? $rakBaru->nomor_rak : null,
+                'ke_box' => $boxBaru ? $boxBaru->nomor_box : null,
                 'tanggal_pindah' => now(),
-                'alasan_pindah' => 'Verifikasi lokasi arsip dengan penggantian nomor rak dan box dari subbagian sebelumnya ke nomor rak dan box Unit Kearsipan',
+                'alasan_pindah' => 'Verifikasi lokasi arsip dari Sub Bagian ke Unit Kearsipan',
                 'user_id' => auth()->id()
             ]);
 
@@ -168,9 +191,10 @@ class AdminArsipMasukController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
+
 
     /**
      * Tolak pengajuan pemindahan arsip.
@@ -337,104 +361,106 @@ class AdminArsipMasukController extends Controller
     /**
      * Proses multiple arsip sekaligus.
      */
-    public function prosesMultiple(Request $request)
-    {
-        $request->validate([
-            'arsip_ids'   => 'required|array',
-            'arsip_ids.*' => 'exists:arsips,id',
-            'action'      => 'required|in:set_lokasi,pindahkan',
-            'nomor_rak'   => 'nullable|string|max:50',
-            'nomor_box'   => 'nullable|string|max:50',
-            'catatan'     => 'nullable|string|max:500',
-        ]);
+   /**
+ * Proses multiple arsip sekaligus.
+ */
+public function prosesMultiple(Request $request)
+{
+    $request->validate([
+        'arsip_ids'   => 'required|array',
+        'arsip_ids.*' => 'exists:arsips,id',
+        'action'      => 'required|in:set_lokasi,pindahkan',
+        'rak_id'      => 'nullable|exists:master_raks,id',
+        'box_id'      => 'nullable|exists:master_box,id',
+        'catatan'     => 'nullable|string|max:500',
+    ]);
 
-        DB::beginTransaction();
+    DB::beginTransaction();
 
-        try {
-            $arsips = Arsip::whereIn('id', $request->arsip_ids)
-                ->lockForUpdate()
-                ->get();
+    try {
+        $arsips = Arsip::whereIn('id', $request->arsip_ids)
+            ->lockForUpdate()
+            ->get();
 
-            foreach ($arsips as $arsip) {
+        foreach ($arsips as $arsip) {
 
-                /* ============================
-                 | AKSI 1 : SET LOKASI
-                 | ============================ */
-                if ($request->action === 'set_lokasi') {
+            /* ============================
+             | AKSI 1 : SET LOKASI
+             | ============================ */
+            if ($request->action === 'set_lokasi') {
 
-                    if (!$request->nomor_rak || !$request->nomor_box) {
-                        throw new \Exception('Nomor rak dan box wajib diisi.');
-                    }
-                    // $arsip->skipHistory = true;
-                    // $arsip->update([
-                    //     'nomor_rak' => $request->nomor_rak,
-                    //     'nomor_box' => $request->nomor_box,
-                    // ]);
-
-                    $dariRak = $arsip->nomor_rak;
-                    $dariBox = $arsip->nomor_box;
-
-                    $arsip->skipHistory = true;
-                    $arsip->update([
-                        'nomor_rak'            => $request->nomor_rak,
-                        'nomor_box'            => $request->nomor_box,
-                        'tanggal_diverifikasi' => now(),
-                        'diverifikasi_oleh'    => auth()->id(),
-                        'catatan_verifikasi'   => $request->catatan,
-                    ]);
-
-                    HistoryPindah::create([
-                        'arsip_id' => $arsip->id,
-                        'aksi' => 'SET_LOKASI',
-                        'dari_rak' => $dariRak,
-                        'dari_box' => $dariBox,
-                        'ke_rak' => $request->nomor_rak,
-                        'ke_box' => $request->nomor_box,
-                        'tanggal_pindah' => now(),
-                        'alasan_pindah' => $request->catatan ?? 'Verifikasi lokasi arsip',
-                        'user_id' => auth()->id(),
-                    ]);
+                if (!$request->rak_id || !$request->box_id) {
+                    throw new \Exception('Rak dan box wajib dipilih.');
                 }
 
-                /* ============================
-                 | AKSI 2 : PINDAHKAN KE MASTER
-                 | ============================ */
-                if ($request->action === 'pindahkan') {
+                $dariRak = $arsip->rak_id;
+                $dariBox = $arsip->box_id;
+                $dariRakNomor = $arsip->rak ? $arsip->rak->nomor_rak : null;
+                $dariBoxNomor = $arsip->box ? $arsip->box->nomor_box : null;
 
-                    if (!$arsip->nomor_rak || !$arsip->nomor_box) {
-                        throw new \Exception('Arsip belum memiliki nomor rak dan box.');
-                    }
+                $rakBaru = MasterRak::find($request->rak_id);
+                $boxBaru = MasterBox::find($request->box_id);
 
-                    $arsip->skipHistory = true;
-                    $arsip->update([
-                        'status_pindah'       => 'DIPINDAHKAN',
-                        'tanggal_dipindahkan' => now(),
-                    ]);
+                $arsip->skipHistory = true;
+                $arsip->update([
+                    'rak_id'               => $request->rak_id,
+                    'box_id'               => $request->box_id,
+                    'lokasi_arsip'         => $rakBaru ? $rakBaru->lokasi_arsip : $arsip->lokasi_arsip,
+                    'tanggal_diverifikasi' => now(),
+                    'diverifikasi_oleh'    => auth()->id(),
+                    'catatan_verifikasi'   => $request->catatan,
+                ]);
 
-                    HistoryPindah::create([
-                        'arsip_id' => $arsip->id,
-                        'aksi'     => 'PINDAHKAN',
-                        'dari_rak' => $arsip->nomor_rak,
-                        'dari_box' => $arsip->nomor_box,
-                        'ke_rak'   => $arsip->nomor_rak,
-                        'ke_box'   => $arsip->nomor_box,
-                        'tanggal_pindah' => now(),
-                        'alasan_pindah'  => $request->catatan ?? 'Arsip dipindahkan ke Unit Kearsipan',
-                        'user_id'  => auth()->id(),
-                    ]);
-                }
+                HistoryPindah::create([
+                    'arsip_id' => $arsip->id,
+                    'aksi' => 'SET_LOKASI',
+                    'dari_rak' => $dariRakNomor,
+                    'dari_box' => $dariBoxNomor,
+                    'ke_rak' => $rakBaru ? $rakBaru->nomor_rak : null,
+                    'ke_box' => $boxBaru ? $boxBaru->nomor_box : null,
+                    'tanggal_pindah' => now(),
+                    'alasan_pindah' => $request->catatan ?? 'Verifikasi lokasi arsip',
+                    'user_id' => auth()->id(),
+                ]);
             }
 
-            DB::commit();
-            return back()->with('success', 'Proses arsip berhasil.');
+            /* ============================
+             | AKSI 2 : PINDAHKAN KE MASTER
+             | ============================ */
+            if ($request->action === 'pindahkan') {
 
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return back()->with('error', $e->getMessage());
+                if (!$arsip->rak_id || !$arsip->box_id) {
+                    throw new \Exception('Arsip belum memiliki rak dan box.');
+                }
+
+                $arsip->skipHistory = true;
+                $arsip->update([
+                    'status_pindah'       => 'DIPINDAHKAN',
+                    'tanggal_dipindahkan' => now(),
+                ]);
+
+                HistoryPindah::create([
+                    'arsip_id' => $arsip->id,
+                    'aksi'     => 'PINDAHKAN',
+                    'dari_rak' => $arsip->rak ? $arsip->rak->nomor_rak : null,
+                    'dari_box' => $arsip->box ? $arsip->box->nomor_box : null,
+                    'ke_rak'   => $arsip->rak ? $arsip->rak->nomor_rak : null,
+                    'ke_box'   => $arsip->box ? $arsip->box->nomor_box : null,
+                    'tanggal_pindah' => now(),
+                    'alasan_pindah'  => $request->catatan ?? 'Arsip dipindahkan ke Unit Kearsipan',
+                    'user_id'  => auth()->id(),
+                ]);
+            }
         }
-    }
 
-    // ... (kode lainnya tetap sama) ...
+        DB::commit();
+        return back()->with('success', 'Proses arsip berhasil.');
+
+    } catch (\Throwable $e) {
+        DB::rollBack();
+        return back()->with('error', $e->getMessage());
+    }
+}
 
     /**
      * History perpindahan arsip.

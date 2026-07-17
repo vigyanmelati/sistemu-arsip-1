@@ -36,7 +36,7 @@
                             </tr>
                             <tr>
                                 <th>Tanggal Arsip</th>
-                                <td>{{ $arsip->tanggal_arsip->format('d/m/Y') }}</td>
+                                <td>{{ $arsip->tanggal_arsip ? \Carbon\Carbon::parse($arsip->tanggal_arsip)->format('d/m/Y') : '-' }}</td>
                             </tr>
                             <tr>
                                 <th>Jumlah Berkas</th>
@@ -72,24 +72,39 @@
                             </tr>
                             <tr>
                                 <th>Keterangan JRA</th>
-                                <td>{{ $arsip->keterangan_jra }}</td>
+                                <td>{{ $arsip->keterangan_jra ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <th>Lokasi Asal (Sub Bagian)</th>
                                 <td>
-                                    Rak: <strong>{{ $arsip->nomor_rak ?? '-' }}</strong>, 
-                                    Box: <strong>{{ $arsip->nomor_box ?? '-' }}</strong>
+                                    @php
+                                        $lokasiLabels = [
+                                            'RUANG_SUBBAGIAN_UMUM_LOGISTIK' => 'Subbagian Umum & Logistik',
+                                            'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM' => 'Subbagian Parmas & SDM',
+                                            'RUANG_SUBBAGIAN_KEUANGAN' => 'Subbagian Keuangan',
+                                            'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI' => 'Subbagian Perencanaan, Data & Informasi',
+                                            'RUANG_SUBBAGIAN_TEKNIS' => 'Subbagian Teknis',
+                                            'RUANG_SUBBAGIAN_HUKUM' => 'Subbagian Hukum',
+                                        ];
+                                        $lokasiLabel = $lokasiLabels[$arsip->lokasi_arsip] ?? $arsip->lokasi_arsip ?? '-';
+                                    @endphp
+                                    {{ $lokasiLabel }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Lokasi Rak & Box</th>
+                                <td>
+                                    Rak: <strong>{{ $arsip->rak ? $arsip->rak->nomor_rak : '-' }}</strong>, 
+                                    Box: <strong>{{ $arsip->box ? $arsip->box->nomor_box : '-' }}</strong>
                                 </td>
                             </tr>
                             <tr>
                                 <th>Diajukan Pada</th>
-                                <td>{{ $arsip->created_at->format('d/m/Y H:i') }}</td>
+                                <td>{{ $arsip->created_at ? $arsip->created_at->format('d/m/Y H:i') : '-' }}</td>
                             </tr>
                         </table>
                     </div>
                 </div>
-                
-         
                 
                 <!-- File Dokumen Arsip -->
                 @if($arsip->file_dokumen)
@@ -117,36 +132,33 @@
             </div>
             <div class="card-body">
                 @if($arsip->beritaAcaraPindah->isNotEmpty())
-                 @php $bap = $arsip->beritaAcaraPindah->first(); @endphp
-                <div class="card mt-3">
-                    <!-- <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">Berita Acara Pengajuan</h5>
-                    </div> -->
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <p><strong>Nomor BAP:</strong> {{ $bap->nomor_bap }}</p>
-                                <p><strong>Tanggal BAP:</strong> {{ \Carbon\Carbon::parse($bap->tanggal_bap)->format('d-m-Y') }}</p>
-                            </div>
-                            <div class="col-md-6 text-end">
-                                <a href="{{ route('arsip-masuk.download-berita-acara', $arsip->id) }}" class="btn btn-primary" target="_blank">
-                                    <i class="bi bi-file-earmark-pdf"></i> Download Berita Acara
-                                </a>
+                    @php $bap = $arsip->beritaAcaraPindah->first(); @endphp
+                    <div class="card mt-3">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Nomor BAP:</strong> {{ $bap->nomor_bap }}</p>
+                                    <p><strong>Tanggal BAP:</strong> {{ $bap->tanggal_bap ? \Carbon\Carbon::parse($bap->tanggal_bap)->format('d-m-Y') : '-' }}</p>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <a href="{{ route('arsip-masuk.download-berita-acara', $arsip->id) }}" class="btn btn-primary" target="_blank">
+                                        <i class="bi bi-file-earmark-pdf"></i> Download Berita Acara
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
                 @else
-                <div class="text-center py-5">
-                    <i class="bi bi-file-earmark-excel text-warning" style="font-size: 4rem;"></i>
-                    <h5 class="mt-3">File Berita Acara Tidak Ditemukan</h5>
-                    <p class="text-muted">Sub Bagian belum mengupload file berita acara</p>
-                    
-                    <div class="alert alert-warning mt-4">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Perhatian:</strong> Arsip ini tidak memiliki file berita acara. Disarankan untuk menolak pengajuan.
+                    <div class="text-center py-5">
+                        <i class="bi bi-file-earmark-excel text-warning" style="font-size: 4rem;"></i>
+                        <h5 class="mt-3">File Berita Acara Tidak Ditemukan</h5>
+                        <p class="text-muted">Sub Bagian belum mengupload file berita acara</p>
+                        
+                        <div class="alert alert-warning mt-4">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Perhatian:</strong> Arsip ini tidak memiliki file berita acara. Disarankan untuk menolak pengajuan.
+                        </div>
                     </div>
-                </div>
                 @endif
             </div>
         </div>
@@ -154,7 +166,7 @@
     
     <div class="col-md-4">
         <!-- Panel Verifikasi -->
-       <div class="card mb-4">
+        <div class="card mb-4">
             <div class="card-header bg-warning text-white">
                 <h5 class="mb-0">
                     <i class="bi bi-clipboard-check me-2"></i>
@@ -162,9 +174,9 @@
                 </h5>
             </div>
             <div class="card-body">
-              <form action="{{ route('admin.arsip-masuk.terima', $arsip->id) }}" 
-                method="POST"
-                id="formTerima">
+                <form action="{{ route('admin.arsip-masuk.terima', $arsip->id) }}" 
+                      method="POST"
+                      id="formTerima">
                     @csrf
                     
                     <div class="alert alert-info mb-3">
@@ -173,35 +185,37 @@
                         Pemindahan arsip dilakukan pada tahap selanjutnya.
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold">Nomor Rak Baru <span class="text-danger">*</span></label>
-                            <input type="text" name="nomor_rak_baru" class="form-control" 
-                                placeholder="Contoh: 1" required
-                                value="{{ old('nomor_rak_baru') }}">
-                            @error('nomor_rak_baru')
-                                <div class="text-danger small">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold">Nomor Box Baru <span class="text-danger">*</span></label>
-                            <input type="text" name="nomor_box_baru" class="form-control" 
-                                placeholder="Contoh: 1" required
-                                value="{{ old('nomor_box_baru') }}">
-                            @error('nomor_box_baru')
-                                <div class="text-danger small">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
+                    <!-- Pilih Lokasi Tujuan -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Lokasi Tujuan Arsip <span class="text-danger">*</span></label>
-                        <select name="lokasi_tujuan" class="form-select">
+                        <select name="lokasi_tujuan" id="lokasi_tujuan" class="form-select" required>
                             <option value="">-- Pilih Lokasi --</option>
                             <option value="RECORD_CENTER_PERMANEN">Record Center Permanen</option>
                             <option value="RECORD_CENTER_INAKTIF">Record Center Inaktif</option>
                         </select>
                         @error('lokasi_tujuan')
+                            <div class="text-danger small">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    
+                    <!-- Pilih Rak -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Rak Baru <span class="text-danger">*</span></label>
+                        <select name="rak_id_baru" id="rak_id_baru" class="form-select" required>
+                            <option value="">-- Pilih Lokasi Terlebih Dahulu --</option>
+                        </select>
+                        @error('rak_id_baru')
+                            <div class="text-danger small">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    
+                    <!-- Pilih Box -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Box Baru <span class="text-danger">*</span></label>
+                        <select name="box_id_baru" id="box_id_baru" class="form-select" required>
+                            <option value="">-- Pilih Rak Terlebih Dahulu --</option>
+                        </select>
+                        @error('box_id_baru')
                             <div class="text-danger small">{{ $message }}</div>
                         @enderror
                     </div>
@@ -221,27 +235,6 @@
                         </button>
                     </div>
                 </form>
-                
-                <hr>
-                
-               
-                <!-- <form action="{{ route('admin.arsip-masuk.tolak', $arsip->id) }}" method="POST" id="formTolak">
-                    @csrf
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Alasan Penolakan <span class="text-danger">*</span></label>
-                        <textarea name="alasan" class="form-control" rows="3" 
-                                placeholder="Sebutkan alasan penolakan..." required>{{ old('alasan') }}</textarea>
-                        @error('alasan')
-                            <div class="text-danger small">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('Yakin menolak pengajuan ini?')">
-                            <i class="bi bi-x-circle me-2"></i> Tolak Pengajuan
-                        </button>
-                    </div>
-                </form> -->
             </div>
         </div>
         
@@ -259,8 +252,8 @@
                         <div class="timeline-marker bg-primary"></div>
                         <div class="timeline-content">
                             <h6 class="mb-1">Diajukan oleh Sub Bagian</h6>
-                            <p class="text-muted small mb-0">{{ $arsip->created_at->format('d/m/Y H:i') }}</p>
-                            <p class="small">Lokasi: Rak {{ $arsip->nomor_rak ?? '-' }}, Box {{ $arsip->nomor_box ?? '-' }}</p>
+                            <p class="text-muted small mb-0">{{ $arsip->created_at ? $arsip->created_at->format('d/m/Y H:i') : '-' }}</p>
+                            <p class="small">Lokasi: {{ $arsip->rak ? $arsip->rak->nomor_rak : '-' }}, Box {{ $arsip->box ? $arsip->box->nomor_box : '-' }}</p>
                         </div>
                     </div>
                     
@@ -287,8 +280,8 @@
                             <p class="text-muted small mb-0">
                                 {{ $arsip->tanggal_dipindahkan ? \Carbon\Carbon::parse($arsip->tanggal_dipindahkan)->format('d/m/Y H:i') : '-' }}
                             </p>
-                            @if($arsip->nomor_rak && $arsip->nomor_box)
-                            <p class="small">Lokasi Baru: Rak {{ $arsip->nomor_rak }}, Box {{ $arsip->nomor_box }}</p>
+                            @if($arsip->rak)
+                            <p class="small">Lokasi Baru: Rak {{ $arsip->rak->nomor_rak }}, Box {{ $arsip->box->nomor_box }}</p>
                             @endif
                         </div>
                     </div>
@@ -301,25 +294,6 @@
                     <p class="mb-0">{{ $arsip->catatan_verifikasi }}</p>
                 </div>
                 @endif
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Konfirmasi -->
-<div class="modal fade" id="confirmModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Konfirmasi</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p id="confirmMessage"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary" id="confirmAction">Ya, Lanjutkan</button>
             </div>
         </div>
     </div>
@@ -358,196 +332,107 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const formTerima = document.getElementById('formTerima');
-    // const formTolak = document.getElementById('formTolak');
-    const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
-    const confirmMessage = document.getElementById('confirmMessage');
-    const confirmAction = document.getElementById('confirmAction');
-
-
+    const lokasiTujuan = document.getElementById('lokasi_tujuan');
+    const rakSelect = document.getElementById('rak_id_baru');
+    const boxSelect = document.getElementById('box_id_baru');
     
-    let currentForm = null;
-    let formData = {};
+    // Data rak dan box dari server (dikirim dari controller)
+    const rakData = @json($rakOptions ?? []);
+    const boxData = @json($boxOptions ?? []);
     
-    console.log('Script loaded'); // Debugging
-    
-    // Terima arsip
-    formTerima.addEventListener('submit', function(e) {
-        e.preventDefault();
-        console.log('Form terima submitted'); // Debugging
+    // Filter rak berdasarkan lokasi
+    function filterRak() {
+        const selectedLokasi = lokasiTujuan.value;
+        rakSelect.innerHTML = '<option value="">-- Pilih Rak --</option>';
+        boxSelect.innerHTML = '<option value="">-- Pilih Rak Terlebih Dahulu --</option>';
         
-        // Validasi file berita acara
-        @if(!$arsip->file_berita_acara)
-        if (!confirm('Arsip ini tidak memiliki file berita acara. Yakin ingin menerima?')) {
-            console.log('User cancelled due to missing BA file');
-            return;
-        }
-        @endif
-        
-        const nomorRakBaru = this.querySelector('[name="nomor_rak_baru"]').value;
-        const nomorBoxBaru = this.querySelector('[name="nomor_box_baru"]').value;
-        const catatan = this.querySelector('[name="catatan"]').value;
-        const lokasiTujuan = this.querySelector('[name="lokasi_tujuan"]').value;
-        
-        console.log('Nomor Rak Baru:', nomorRakBaru); // Debugging
-        console.log('Nomor Box Baru:', nomorBoxBaru); // Debugging
-        
-        if (!nomorRakBaru || !nomorBoxBaru) {
-            alert('Harap isi nomor rak baru dan nomor box baru.');
+        if (!selectedLokasi) {
+            rakSelect.innerHTML = '<option value="">-- Pilih Lokasi Terlebih Dahulu --</option>';
             return;
         }
         
-        // Simpan data form
-        formData = {
-            _token: this.querySelector('[name="_token"]').value,
-            nomor_rak_baru: nomorRakBaru,
-            nomor_box_baru: nomorBoxBaru,
-            catatan: catatan,
-             lokasi_tujuan: lokasiTujuan
-        };
+        const filteredRak = rakData.filter(function(rak) {
+            return rak.lokasi_arsip === selectedLokasi;
+        });
         
-        // Tampilkan konfirmasi
-        confirmMessage.innerHTML = `
-            <p><strong>Anda akan menerima perpindahan lokasi arsip ini:</strong></p>
-            <div class="alert alert-info">
-                <strong>Detail Perpindahan:</strong><br>
-                • Dari Lokasi: Rak <strong>${'{{ $arsip->nomor_rak ?? "-" }}'}</strong>, Box <strong>${'{{ $arsip->nomor_box ?? "-" }}'}</strong><br>
-                • Ke Lokasi: Rak <strong>${nomorRakBaru}</strong>, Box <strong>${nomorBoxBaru}</strong>
-            </div>
-            ${catatan ? `<div class="alert alert-light">
-                <strong>Catatan:</strong><br>${catatan}
-            </div>` : ''}
-            <p><strong>Apakah Anda yakin?</strong></p>
-            <small class="text-muted">Catatan perpindahan akan tersimpan di history.</small>
-        `;
-        
-        currentForm = this;
-        confirmAction.textContent = 'Ya, Terima';
-        confirmModal.show();
-    });
-    
-    // Tolak arsip
-    // formTolak.addEventListener('submit', function(e) {
-    //     e.preventDefault();
-    //     console.log('Form tolak submitted'); // Debugging
-        
-    //     const alasan = this.querySelector('[name="alasan"]').value;
-        
-    //     if (!alasan) {
-    //         alert('Harap isi alasan penolakan.');
-    //         return;
-    //     }
-        
-    //     // Simpan data form
-    //     formData = {
-    //         _token: this.querySelector('[name="_token"]').value,
-    //         alasan: alasan
-    //     };
-        
-    //     confirmMessage.innerHTML = `
-    //         <p><strong>Anda akan menolak pengajuan arsip ini:</strong></p>
-    //         <div class="alert alert-warning">
-    //             <strong>Alasan Penolakan:</strong><br>
-    //             ${alasan}
-    //         </div>
-    //         <p><strong>Apakah Anda yakin?</strong></p>
-    //         <small class="text-muted">Arsip akan dikembalikan ke Sub Bagian dengan status DITOLAK.</small>
-    //     `;
-        
-    //     currentForm = this;
-    //     confirmAction.textContent = 'Ya, Tolak';
-    //     confirmModal.show();
-    // });
-    
-    // Handle konfirmasi modal
-    // confirmAction.addEventListener('click', function() {
-    //     console.log('Confirm button clicked'); // Debugging
-        
-    //     if (currentForm) {
-    //         // Tutup modal
-    //         confirmModal.hide();
-            
-    //         // Tampilkan loading
-    //         const submitButton = currentForm.querySelector('button[type="submit"]');
-    //         const originalText = submitButton.innerHTML;
-    //         submitButton.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Memproses...';
-    //         submitButton.disabled = true;
-            
-    //         // Kirim form menggunakan AJAX untuk debugging
-    //         const formUrl = currentForm.action;
-    //         console.log('Submitting to:', formUrl); // Debugging
-    //         console.log('Form data:', formData); // Debugging
-            
-    //         fetch(formUrl, {
-    //             method: 'POST',
-    //             headers: {
-    //                 'Content-Type': 'application/json',
-    //                 'X-CSRF-TOKEN': formData._token,
-    //                 'Accept': 'application/json'
-    //             },
-    //             body: JSON.stringify(formData)
-    //         })
-    //         .then(response => {
-    //             console.log('Response status:', response.status); // Debugging
-    //             return response.json();
-    //         })
-    //         .then(data => {
-    //             console.log('Response data:', data); // Debugging
-                
-    //             if (data.success) {
-    //                 // Redirect ke halaman index dengan pesan sukses
-    //                 window.location.href = "{{ route('arsip-masuk.index') }}";
-    //             } else {
-    //                 // Tampilkan error
-    //                 alert('Terjadi kesalahan: ' + (data.message || 'Tidak diketahui'));
-    //                 submitButton.innerHTML = originalText;
-    //                 submitButton.disabled = false;
-    //             }
-    //         })
-    //         .catch(error => {
-    //             console.error('Error:', error);
-    //             alert('Terjadi kesalahan: ' + error.message);
-    //             submitButton.innerHTML = originalText;
-    //             submitButton.disabled = false;
-    //         });
-            
-    //         // Atau langsung submit form (non-AJAX)
-    //         // currentForm.submit();
-    //     }
-    // });
-
-    // Ganti bagian JavaScript yang mengirim data
-confirmAction.addEventListener('click', function() {
-    console.log('Confirm button clicked');
-    
-    if (currentForm) {
-        // Tutup modal
-        confirmModal.hide();
-        
-        // Tampilkan loading
-        const submitButton = currentForm.querySelector('button[type="submit"]');
-        const originalText = submitButton.innerHTML;
-        submitButton.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Memproses...';
-        submitButton.disabled = true;
-        
-        // Buat FormData
-        const formData = new FormData(currentForm);
-        
-        console.log('FormData entries:');
-        for (let pair of formData.entries()) {
-            console.log(pair[0] + ': ' + pair[1]);
+        if (filteredRak.length === 0) {
+            rakSelect.innerHTML = '<option value="">-- Tidak ada rak di lokasi ini --</option>';
+        } else {
+            filteredRak.forEach(function(rak) {
+                const option = document.createElement('option');
+                option.value = rak.id;
+                option.textContent = rak.nomor_rak;
+                rakSelect.appendChild(option);
+            });
         }
-        
-        // Kirim form secara tradisional (non-AJAX)
-        // Ini lebih reliable untuk form dengan file upload
-        currentForm.submit();
     }
-});
     
-    // Tambahkan event listener untuk bootstrap modal hidden
-    document.getElementById('confirmModal').addEventListener('hidden.bs.modal', function () {
-        console.log('Modal hidden'); // Debugging
-        currentForm = null;
-        formData = {};
+    // Filter box berdasarkan rak
+    function filterBox() {
+        const selectedRakId = rakSelect.value;
+        boxSelect.innerHTML = '<option value="">-- Pilih Box --</option>';
+        
+        if (!selectedRakId) {
+            boxSelect.innerHTML = '<option value="">-- Pilih Rak Terlebih Dahulu --</option>';
+            return;
+        }
+        
+        const filteredBox = boxData.filter(function(box) {
+            return box.rak_id == selectedRakId;
+        });
+        
+        if (filteredBox.length === 0) {
+            boxSelect.innerHTML = '<option value="">-- Tidak ada box di rak ini --</option>';
+        } else {
+            filteredBox.forEach(function(box) {
+                const option = document.createElement('option');
+                option.value = box.id;
+                option.textContent = box.nomor_box;
+                boxSelect.appendChild(option);
+            });
+        }
+    }
+    
+    // Event listeners
+    lokasiTujuan.addEventListener('change', filterRak);
+    rakSelect.addEventListener('change', filterBox);
+    
+    // Submit form
+    formTerima.addEventListener('submit', function(e) {
+        const rakId = rakSelect.value;
+        const boxId = boxSelect.value;
+        const lokasi = lokasiTujuan.value;
+        
+        if (!lokasi) {
+            e.preventDefault();
+            alert('Harap pilih lokasi tujuan terlebih dahulu.');
+            return;
+        }
+        
+        if (!rakId) {
+            e.preventDefault();
+            alert('Harap pilih rak tujuan.');
+            return;
+        }
+        
+        if (!boxId) {
+            e.preventDefault();
+            alert('Harap pilih box tujuan.');
+            return;
+        }
+        
+        // Konfirmasi
+        const rakName = rakSelect.options[rakSelect.selectedIndex]?.text || '-';
+        const boxName = boxSelect.options[boxSelect.selectedIndex]?.text || '-';
+        const lokasiLabel = lokasiTujuan.options[lokasiTujuan.selectedIndex]?.text || '-';
+        
+        if (!confirm('Anda akan memverifikasi arsip ke lokasi:\n' +
+                    'Lokasi: ' + lokasiLabel + '\n' +
+                    'Rak: ' + rakName + '\n' +
+                    'Box: ' + boxName + '\n\n' +
+                    'Lanjutkan?')) {
+            e.preventDefault();
+        }
     });
 });
 </script>
