@@ -177,37 +177,49 @@
                         </td>
                     </tr>
                     <tr>
-                        <td><strong>File Dokumen</strong></td>
-                        <td>: 
-                            @if($arsip->file_dokumen || $arsip->link_foto)
-                                @if(auth()->user()->canDownloadArsip($arsip))
-                                    <div>
-                                        @if($arsip->file_dokumen)
-                                            <a href="{{ route('subbagian.arsip.downloadFile', $arsip->id) }}"
-                                               target="_blank"
-                                               class="btn btn-primary btn-sm">
-                                                Lihat/Unduh Dokumen
-                                            </a>
-                                        @elseif($arsip->link_foto)
-                                            <a href="{{ $arsip->link_foto }}"
-                                               target="_blank"
-                                               class="btn btn-primary btn-sm">
-                                                Lihat Dokumen
-                                            </a>
-                                        @endif
+    <td><strong>File Dokumen</strong></td>
+    <td>:
 
-                                        <small class="text-muted d-block mt-1">
-                                            {{ $arsip->file_dokumen ?? $arsip->link_foto }}
-                                        </small>
-                                    </div>
-                                @else
-                                    <span class="text-muted">File terbatas. Tidak dapat dilihat.</span>
-                                @endif
-                            @else
-                                <span class="text-muted">Tidak ada file</span>
-                            @endif
-                        </td>
-                    </tr>
+        {{-- Arsip yang sudah dimusnahkan tidak boleh dilihat --}}
+        @if($arsip->status_arsip == 'MUSNAH')
+            <span class="text-danger">
+                Dokumen arsip yang telah dimusnahkan tidak dapat ditampilkan.
+            </span>
+
+        @elseif($arsip->file_dokumen || $arsip->link_foto)
+
+            @if(auth()->user()->canDownloadArsip($arsip))
+                <div>
+                    @if($arsip->file_dokumen)
+                        <a href="{{ route('subbagian.arsip.downloadFile', $arsip->id) }}"
+                           target="_blank"
+                           class="btn btn-primary btn-sm">
+                            Lihat/Unduh Dokumen
+                        </a>
+                    @elseif($arsip->link_foto)
+                        <a href="{{ $arsip->link_foto }}"
+                           target="_blank"
+                           class="btn btn-primary btn-sm">
+                            Lihat Dokumen
+                        </a>
+                    @endif
+
+                    <small class="text-muted d-block mt-1">
+                        {{ $arsip->file_dokumen ?? $arsip->link_foto }}
+                    </small>
+                </div>
+            @else
+                <span class="text-muted">
+                    File terbatas. Tidak dapat dilihat.
+                </span>
+            @endif
+
+        @else
+            <span class="text-muted">Tidak ada file</span>
+        @endif
+
+    </td>
+</tr>
                 </table>
             </div>
             

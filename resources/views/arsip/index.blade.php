@@ -276,7 +276,7 @@
         data-keterangan-jra="{{ $arsip->keterangan_jra }}">
         
         <!-- Checkbox -->
-        <td><input type="checkbox" class="arsip-checkbox" value="{{ $arsip->id }}"></td>
+        {{-- <td><input type="checkbox" class="arsip-checkbox" value="{{ $arsip->id }}"></td> --}}
         <td>{{ $loop->iteration + ($arsips->currentPage() - 1) * $arsips->perPage() }}</td>
         
         <!-- Kode Klasifikasi (Select) - disabled jika sudah disetujui musnah -->
@@ -288,15 +288,14 @@
         
         <!-- Judul Arsip -->
         <td>{{ Str::limit($arsip->uraian_arsip, 150) }}</td>
-        
-        <!-- Sub Bagian -->
-        <td>{{ $arsip->subBagian->nama_sub_bagian ?? 'N/A' }}</td>
-        
-        <!-- Tahun -->
+          <!-- Tahun -->
         <td>{{ $arsip->tahun_arsip }}</td>
         
-        <!-- Jumlah -->
-        <td>{{ $arsip->jumlah_berkas }} {{ $arsip->satuan_arsip }}</td>
+        
+        
+        
+      
+   
         
         <!-- Rak -->
         <td class="{{ !$isApprovedForDestruction ? 'editable-select' : '' }}" 
@@ -310,6 +309,13 @@
             data-field="box_id" 
             data-value="{{ $arsip->box_id }}">
             {{ $arsip->box ? $arsip->box->nomor_box : '-' }}
+        </td>
+        
+
+         <td class="{{ !$isApprovedForDestruction ? 'editable-select' : '' }}" 
+            data-field="box_id" 
+            data-value="{{ $arsip->lokasi_arsip }}">
+            {{ $arsip->box ? $arsip->lokasi_arsip : '-' }}
         </td>
         
         <!-- Aktif Tahun -->
@@ -362,48 +368,53 @@
             <span class="badge bg-{{ $color }}">{{ $label }}</span>
         </td>
         
-        <!-- Tanggal Diajukan -->
-        <td>{{ $arsip->created_at->format('d/m/Y H:i') }}</td>
+  
         
-        <!-- File Berita Acara -->
-        <td>
-            @if($arsip->file_berita_acara)
-                <a href="{{ route('arsip-masuk.download-berita-acara', $arsip->id) }}" class="btn btn-sm btn-success">
-                    <i class="bi bi-download"></i> Download
-                </a>
-            @else
-                <span class="badge bg-warning">Tidak ada</span>
-            @endif
-        </td>
+     
         
         <!-- Status Pemindahan -->
-        <td>
+        {{-- <td>
             @php
                 $statusPindahColors = ['DIAJUKAN' => 'warning', 'DITERIMA' => 'success', 'DITOLAK' => 'danger', 'SELESAI' => 'info'];
                 $color = $statusPindahColors[$arsip->status_pindah] ?? 'secondary';
             @endphp
             <span class="badge bg-{{ $color }}">{{ $arsip->status_pindah }}</span>
-        </td>
+        </td> --}}
         
         <!-- Status Lokasi -->
-        <td>
-            @if($arsip->tanggal_diverifikasi)
-                <span class="badge bg-success">
-                    <i class="bi bi-check-circle"></i> Sudah Diverifikasi
-                </span>
-            @else
-                <span class="badge bg-danger">
-                    <i class="bi bi-exclamation-circle"></i> Belum Diverifikasi
-                </span>
-            @endif
-        </td>
+   
         
         <!-- Aksi -->
-        <td>
-            <a href="{{ route('arsip-masuk.show', $arsip->id) }}" class="btn btn-sm btn-info" title="Detail">
-                <i class="bi bi-eye"></i>
-            </a>
-        </td>
+       <td>
+    <!-- Detail -->
+    <a href="{{ route('arsip.show', $arsip->id) }}"
+       class="btn btn-sm btn-info"
+       title="Detail">
+        <i class="bi bi-eye"></i>
+    </a>
+
+    <!-- Edit -->
+    <a href="{{ route('arsip.edit', $arsip->id) }}"
+       class="btn btn-sm btn-warning"
+       title="Edit">
+        <i class="bi bi-pencil"></i>
+    </a>
+
+    <!-- Hapus -->
+    <form action="{{ route('arsip.destroy', $arsip->id) }}"
+          method="POST"
+          class="d-inline"
+          onsubmit="return confirm('Apakah Anda yakin ingin menghapus arsip ini?')">
+        @csrf
+        @method('DELETE')
+
+        <button type="submit"
+                class="btn btn-sm btn-danger"
+                title="Hapus">
+            <i class="bi bi-trash"></i>
+        </button>
+    </form>
+</td>
     </tr>
     @empty
     <tr>
