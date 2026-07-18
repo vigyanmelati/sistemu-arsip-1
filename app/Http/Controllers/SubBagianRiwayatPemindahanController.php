@@ -254,7 +254,7 @@ class SubBagianRiwayatPemindahanController extends Controller
             // Reset arsip menjadi arsip internal Sub Bagian
             // (keluar sepenuhnya dari alur pemindahan ke Unit Kearsipan)
             $arsip->update([
-                'status_pindah'         => null,
+                'status_pindah'         => 'BELUM',
                 'catatan_verifikasi'    => null,
                 'catatan_perbaikan'     => null,
                 'diverifikasi_oleh'     => null,

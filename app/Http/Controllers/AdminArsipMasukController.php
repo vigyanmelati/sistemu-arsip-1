@@ -1385,7 +1385,7 @@ public function updateField(Request $request, $id)
 {
     try {
         $request->validate([
-            'field' => 'required|string|in:kode_klasifikasi,aktif_tahun,inaktif_tahun,keterangan_jra',
+            'field' => 'required|string|in:kode_klasifikasi_id,rak_id,box_id,aktif_tahun,inaktif_tahun,keterangan_jra',
             'value' => 'nullable|string'
         ]);
 
@@ -1393,36 +1393,51 @@ public function updateField(Request $request, $id)
         $field = $request->field;
         $value = $request->value;
 
-        // Mapping field ke database
-        $fieldMapping = [
-            'kode_klasifikasi' => 'kode_klasifikasi_id',
-            'aktif_tahun' => 'aktif_tahun',
-            'inaktif_tahun' => 'inaktif_tahun',
-            'keterangan_jra' => 'keterangan_jra'
-        ];
-
-        $dbField = $fieldMapping[$field];
-
-        // Jika value kosong atau '-', set ke null
+        // Jika value kosong, set ke null
         if ($value === '' || $value === '-' || $value === null) {
             $value = null;
         }
 
-        // Untuk numeric fields, parse ke integer
+        // Untuk numeric fields (kode_klasifikasi_id, rak_id, box_id)
+        if (in_array($field, ['kode_klasifikasi_id', 'rak_id', 'box_id'])) {
+            if ($value !== null) {
+                $value = (int) $value;
+                // Validasi foreign key
+                $tableMap = [
+                    'kode_klasifikasi_id' => 'kode_klasifikasis',
+                    'rak_id' => 'master_raks',
+                    'box_id' => 'master_box',
+                ];
+                if (!DB::table($tableMap[$field])->where('id', $value)->exists()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Data referensi tidak ditemukan.'
+                    ], 422);
+                }
+            }
+        }
+
+        // Untuk aktif_tahun dan inaktif_tahun (string)
         if (in_array($field, ['aktif_tahun', 'inaktif_tahun']) && $value !== null) {
-            $value = (int) $value;
+            // Pastikan mengandung angka
+            if (!preg_match('/\d+/', $value)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Format tahun harus mengandung angka.'
+                ], 422);
+            }
         }
 
         // Update field
-        $arsip->$dbField = $value;
+        $arsip->$field = $value;
         
-        // ====== PERBAIKAN: Recalculate retensi ======
-        // PASTIKAN method ini dipanggil
+        // ====== RECALCULATE RETENSI ======
+        // Panggil method recalculateRetensi di model
         $arsip->recalculateRetensi();
         $arsip->save();
 
         // Load fresh data
-        $arsip->load('kodeKlasifikasi');
+        $arsip->load(['kodeKlasifikasi', 'rak', 'box']);
 
         // Format response
         return response()->json([
@@ -1430,13 +1445,18 @@ public function updateField(Request $request, $id)
             'message' => 'Data berhasil diperbarui',
             'data' => [
                 'id' => $arsip->id,
+                'kode_klasifikasi_id' => $arsip->kode_klasifikasi_id,
+                'kode_klasifikasi' => $arsip->kodeKlasifikasi ? $arsip->kodeKlasifikasi->kode . ' - ' . $arsip->kodeKlasifikasi->uraian : 'N/A',
+                'rak_id' => $arsip->rak_id,
+                'rak_nomor' => $arsip->rak ? $arsip->rak->nomor_rak : null,
+                'box_id' => $arsip->box_id,
+                'box_nomor' => $arsip->box ? $arsip->box->nomor_box : null,
                 'aktif_tahun' => $arsip->aktif_tahun ?? '-',
                 'inaktif_tahun' => $arsip->inaktif_tahun ?? '-',
                 'keterangan_jra' => $arsip->keterangan_jra ?? '-',
                 'aktif_sampai' => $arsip->aktif_sampai ? Carbon::parse($arsip->aktif_sampai)->format('d/m/Y') : '-',
                 'inaktif_sampai' => $arsip->inaktif_sampai ? Carbon::parse($arsip->inaktif_sampai)->format('d/m/Y') : '-',
                 'status_arsip' => $arsip->status_arsip ?? 'AKTIF',
-                'kode_klasifikasi' => $arsip->kodeKlasifikasi->kode ?? 'N/A'
             ]
         ]);
 

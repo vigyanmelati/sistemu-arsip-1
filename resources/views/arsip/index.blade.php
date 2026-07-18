@@ -263,7 +263,7 @@
                         <th style="min-width: 150px;" class="text-center">Aksi</th>
                     </tr>
                 </thead>
-              <tbody>
+             <tbody>
     @forelse($arsips as $arsip)
     @php
         // Cek apakah arsip sudah disetujui untuk dimusnahkan
@@ -275,50 +275,57 @@
         data-inaktif-tahun="{{ $arsip->inaktif_tahun }}"
         data-keterangan-jra="{{ $arsip->keterangan_jra }}">
         
-        <!-- Kolom biasa -->
+        <!-- Checkbox -->
+        <td><input type="checkbox" class="arsip-checkbox" value="{{ $arsip->id }}"></td>
         <td>{{ $loop->iteration + ($arsips->currentPage() - 1) * $arsips->perPage() }}</td>
-        <td><strong>{{ $arsip->kodeKlasifikasi->kode ?? 'N/A' }}</strong></td>
         
-        <!-- Editable: Judul Arsip - disabled jika sudah disetujui musnah -->
-        <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="uraian_arsip">
-            {{ Str::limit($arsip->uraian_arsip, 100) }}
+        <!-- Kode Klasifikasi (Select) - disabled jika sudah disetujui musnah -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable-select' : '' }}" 
+            data-field="kode_klasifikasi_id" 
+            data-value="{{ $arsip->kode_klasifikasi_id }}">
+            {{ $arsip->kodeKlasifikasi->kode ?? 'N/A' }}
         </td>
         
+        <!-- Judul Arsip -->
+        <td>{{ Str::limit($arsip->uraian_arsip, 150) }}</td>
+        
+        <!-- Sub Bagian -->
+        <td>{{ $arsip->subBagian->nama_sub_bagian ?? 'N/A' }}</td>
+        
+        <!-- Tahun -->
         <td>{{ $arsip->tahun_arsip }}</td>
         
-        <!-- Editable: Rak - disabled jika sudah disetujui musnah -->
-        <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="nomor_rak">
+        <!-- Jumlah -->
+        <td>{{ $arsip->jumlah_berkas }} {{ $arsip->satuan_arsip }}</td>
+        
+        <!-- Rak -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable-select' : '' }}" 
+            data-field="rak_id" 
+            data-value="{{ $arsip->rak_id }}">
             {{ $arsip->rak ? $arsip->rak->nomor_rak : '-' }}
         </td>
         
-        <!-- Editable: Box - disabled jika sudah disetujui musnah -->
-        <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="nomor_box">
+        <!-- Box -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable-select' : '' }}" 
+            data-field="box_id" 
+            data-value="{{ $arsip->box_id }}">
             {{ $arsip->box ? $arsip->box->nomor_box : '-' }}
         </td>
         
-        <!-- Editable: Lokasi Arsip (dropdown) - disabled jika sudah disetujui musnah -->
-        <td class="{{ !$isApprovedForDestruction ? 'editable-select' : '' }}" data-field="lokasi_arsip" data-value="{{ $arsip->lokasi_arsip }}">
-            @php
-                $lokasiLabel = [
-                    'RECORD_CENTER_PERMANEN' => 'Record Center (Arsip Permanen)',
-                    'RECORD_CENTER_INAKTIF' => 'Record Center (Arsip Inaktif)',
-                ][$arsip->lokasi_arsip] ?? '-';
-            @endphp
-            {{ $lokasiLabel }}
-        </td>
-        
-        <!-- Editable: Aktif Tahun - disabled jika sudah disetujui musnah -->
+        <!-- Aktif Tahun -->
         <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="aktif_tahun">
             {{ $arsip->aktif_tahun ?? '-' }}
         </td>
         
-        <!-- Editable: Inaktif Tahun - disabled jika sudah disetujui musnah -->
+        <!-- Inaktif Tahun -->
         <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="inaktif_tahun">
             {{ $arsip->inaktif_tahun ?? '-' }}
         </td>
         
-        <!-- Editable: Keterangan JRA (dropdown) - disabled jika sudah disetujui musnah -->
-        <td class="{{ !$isApprovedForDestruction ? 'editable-select' : '' }}" data-field="keterangan_jra" data-value="{{ $arsip->keterangan_jra }}">
+        <!-- Keterangan JRA (Select) -->
+        <td class="{{ !$isApprovedForDestruction ? 'editable-select' : '' }}" 
+            data-field="keterangan_jra" 
+            data-value="{{ $arsip->keterangan_jra }}">
             @php
                 $jraLabel = [
                     'PERMANEN' => 'Permanen',
@@ -328,61 +335,83 @@
             {{ $jraLabel }}
         </td>
         
-        <!-- Otomatis diupdate -->
-        <td class="aktif-sampai-cell">{{ $arsip->aktif_sampai ? \Carbon\Carbon::parse($arsip->aktif_sampai)->format('d/m/Y') : '-' }}</td>
-        <td class="inaktif-sampai-cell">{{ $arsip->inaktif_sampai ? \Carbon\Carbon::parse($arsip->inaktif_sampai)->format('d/m/Y') : '-' }}</td>
+        <!-- Aktif Sampai (Auto-calculated) -->
+        <td class="aktif-sampai-cell">
+            {{ $arsip->aktif_sampai ? \Carbon\Carbon::parse($arsip->aktif_sampai)->format('d/m/Y') : '-' }}
+        </td>
         
-        <!-- Status + badge -->
+        <!-- Inaktif Sampai (Auto-calculated) -->
+        <td class="inaktif-sampai-cell">
+            {{ $arsip->inaktif_sampai ? \Carbon\Carbon::parse($arsip->inaktif_sampai)->format('d/m/Y') : '-' }}
+        </td>
+        
+        <!-- Status -->
         <td class="status-cell">
             @php
                 $statusColors = [
                     'AKTIF' => 'success',
                     'INAKTIF' => 'warning',
-                    'HABIS_RETENSI' => 'danger',
                     'PERMANEN' => 'info',
+                    'MUSNAH' => 'danger',
+                    'HABIS_RETENSI' => 'secondary',
                     'DISETUJUI_MUSNAH' => 'danger'
                 ];
                 $color = $statusColors[$arsip->status_arsip] ?? 'secondary';
                 $label = ($arsip->status_arsip == 'HABIS_RETENSI') ? 'HABIS RETENSI' : $arsip->status_arsip;
-                $label = ($label == 'DISETUJUI_MUSNAH') ? 'DISETUJUI MUSNAH' : $label;
             @endphp
             <span class="badge bg-{{ $color }}">{{ $label }}</span>
         </td>
         
-        <td class="text-center">
-            <div class="btn-group btn-group-sm" style="gap: 6px;">
-                <a href="{{ route('arsip.show', $arsip->id) }}" class="btn btn-info" title="Detail">
-                    <i class="bi bi-eye"></i>
+        <!-- Tanggal Diajukan -->
+        <td>{{ $arsip->created_at->format('d/m/Y H:i') }}</td>
+        
+        <!-- File Berita Acara -->
+        <td>
+            @if($arsip->file_berita_acara)
+                <a href="{{ route('arsip-masuk.download-berita-acara', $arsip->id) }}" class="btn btn-sm btn-success">
+                    <i class="bi bi-download"></i> Download
                 </a>
-                @if(!$isApprovedForDestruction)
-                <a href="{{ route('arsip.edit', $arsip->id) }}" class="btn btn-warning" title="Edit">
-                    <i class="bi bi-pencil"></i>
-                </a>
-                <form action="{{ route('arsip.destroy', $arsip->id) }}" method="POST" data-confirm="delete" class="d-inline">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger" title="Hapus">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </form>
-                @else
-                <span class="text-muted small" style="font-size: 0.7rem;">
-                    <i class="bi bi-lock-fill"></i> Tidak bisa diedit
+            @else
+                <span class="badge bg-warning">Tidak ada</span>
+            @endif
+        </td>
+        
+        <!-- Status Pemindahan -->
+        <td>
+            @php
+                $statusPindahColors = ['DIAJUKAN' => 'warning', 'DITERIMA' => 'success', 'DITOLAK' => 'danger', 'SELESAI' => 'info'];
+                $color = $statusPindahColors[$arsip->status_pindah] ?? 'secondary';
+            @endphp
+            <span class="badge bg-{{ $color }}">{{ $arsip->status_pindah }}</span>
+        </td>
+        
+        <!-- Status Lokasi -->
+        <td>
+            @if($arsip->tanggal_diverifikasi)
+                <span class="badge bg-success">
+                    <i class="bi bi-check-circle"></i> Sudah Diverifikasi
                 </span>
-                @endif
-            </div>
+            @else
+                <span class="badge bg-danger">
+                    <i class="bi bi-exclamation-circle"></i> Belum Diverifikasi
+                </span>
+            @endif
+        </td>
+        
+        <!-- Aksi -->
+        <td>
+            <a href="{{ route('arsip-masuk.show', $arsip->id) }}" class="btn btn-sm btn-info" title="Detail">
+                <i class="bi bi-eye"></i>
+            </a>
         </td>
     </tr>
     @empty
-        <tr>
-            <td colspan="14" class="text-center py-4">
-                <i class="bi bi-folder-x fa-2x text-muted mb-2"></i>
-                <p class="text-muted">Belum ada data arsip</p>
-                <a href="{{ route('arsip.create') }}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Tambah Arsip Pertama
-                </a>
-            </td>
-        </tr>
+    <tr>
+        <td colspan="20" class="text-center py-4">
+            <i class="bi bi-inbox fs-1 text-muted mb-2"></i>
+            <p class="text-muted">Tidak ada arsip masuk yang perlu diverifikasi</p>
+        </td>
+    </tr>
     @endforelse
 </tbody>
             </table>
@@ -1550,9 +1579,71 @@ function showNotification(type, message) {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // ==================== GLOBAL VARIABLES ====================
+    const modalOverlay = document.getElementById('modalOverlay');
+    const filterModalContainer = document.getElementById('filterModalContainer');
+    const prosesMultipleModalContainer = document.getElementById('prosesMultipleModalContainer');
+    
+    // ==================== UTILITY FUNCTIONS ====================
+    function openModal(modalContainer) {
+        filterModalContainer.style.display = 'none';
+        prosesMultipleModalContainer.style.display = 'none';
+        modalOverlay.style.display = 'block';
+        modalContainer.style.display = 'flex';
+        modalContainer.classList.add('active');
+        document.body.classList.add('modal-open');
+    }
+
+    function closeAllModals() {
+        modalOverlay.style.display = 'none';
+        filterModalContainer.style.display = 'none';
+        prosesMultipleModalContainer.style.display = 'none';
+        document.body.classList.remove('modal-open');
+    }
+    
+    // ==================== FILTER MODAL ====================
+    const openFilterBtn = document.getElementById('openFilterModal');
+    const closeFilterBtn = document.getElementById('closeFilterModal');
+    const resetFilterBtn = document.getElementById('resetFilter');
+    
+    if (openFilterBtn) {
+        openFilterBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal(filterModalContainer);
+        });
+    }
+    if (closeFilterBtn) closeFilterBtn.addEventListener('click', closeAllModals);
+    if (resetFilterBtn) {
+        resetFilterBtn.addEventListener('click', () => {
+            window.location.href = "{{ route('arsip-masuk.index') }}";
+        });
+    }
+    
+    // ==================== MODAL OVERLAY CLOSE ====================
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', closeAllModals);
+    }
+    
+    // ESC key to close modals
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && modalOverlay.style.display === 'block') {
+            closeAllModals();
+        }
+    });
+    
+    // ==================== INLINE EDITING ====================
+    // Data untuk dropdown options (diambil dari server)
+    const kodeKlasifikasiOptions = @json($kodeKlasifikasiOptions ?? []);
+    const rakOptions = @json($rakOptions ?? []);
+    const boxOptions = @json($boxOptions ?? []);
+    const keteranganJraOptions = ['MUSNAH', 'PERMANEN'];
+    
     // ========== INLINE EDITING UNTUK TEXT BIASA ==========
     document.querySelectorAll('.editable').forEach(cell => {
         cell.addEventListener('dblclick', function(e) {
+            // Cegah jika sudah dalam mode edit
+            if (this.querySelector('input')) return;
+            
             const currentText = this.innerText.trim();
             const field = this.dataset.field;
             const rowId = this.closest('tr').dataset.id;
@@ -1562,60 +1653,118 @@ document.addEventListener('DOMContentLoaded', function() {
             input.value = currentText === '-' ? '' : currentText;
             input.classList.add('form-control', 'form-control-sm');
             input.style.width = '100%';
+            input.style.minHeight = '30px';
             
             this.innerHTML = '';
             this.appendChild(input);
             input.focus();
+            input.select();
             
             const save = () => {
                 const newValue = input.value.trim();
-                this.innerText = newValue === '' ? '-' : newValue;
+                const displayValue = newValue === '' ? '-' : newValue;
+                this.innerText = displayValue;
                 if (newValue !== currentText) {
                     sendUpdate(rowId, field, newValue, this);
+                } else {
+                    this.classList.remove('editing');
                 }
             };
             
+            const cancel = () => {
+                this.innerText = currentText || '-';
+                this.classList.remove('editing');
+            };
+            
             input.addEventListener('blur', save);
-            input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') input.blur();
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    input.blur();
+                }
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancel();
+                }
             });
+            
+            this.classList.add('editing');
         });
     });
     
-    // ========== INLINE EDITING UNTUK DROPDOWN (LOKASI & JRA) ==========
+    // ========== INLINE EDITING UNTUK DROPDOWN (SELECT) ==========
     document.querySelectorAll('.editable-select').forEach(cell => {
         cell.addEventListener('dblclick', function(e) {
+            // Cegah jika sudah dalam mode edit
+            if (this.querySelector('select')) return;
+            
             const currentValue = this.dataset.value || '';
+            const currentLabel = this.innerText.trim();
             const field = this.dataset.field;
             const rowId = this.closest('tr').dataset.id;
-            const currentLabel = this.innerText.trim();
             
             // Tentukan pilihan dropdown berdasarkan field
             let options = [];
-            if (field === 'lokasi_arsip') {
-                options = [
-                    { value: '', label: 'Pilih Lokasi' },
-                    { value: 'RECORD_CENTER_PERMANEN', label: 'Record Center (Arsip Permanen)' },
-                    { value: 'RECORD_CENTER_INAKTIF', label: 'Record Center (Arsip Inaktif)' }
-                ];
+            let optionLabelMap = {};
+            
+            if (field === 'kode_klasifikasi_id') {
+                options = kodeKlasifikasiOptions.map(item => ({
+                    value: item.id,
+                    label: item.kode + ' - ' + item.uraian
+                }));
+                optionLabelMap = options.reduce((acc, opt) => {
+                    acc[opt.value] = opt.label;
+                    return acc;
+                }, {});
+            } else if (field === 'rak_id') {
+                options = rakOptions.map(item => ({
+                    value: item.id,
+                    label: item.nomor_rak + ' (' + (item.lokasi_arsip || '-') + ')'
+                }));
+                optionLabelMap = options.reduce((acc, opt) => {
+                    acc[opt.value] = opt.label;
+                    return acc;
+                }, {});
+            } else if (field === 'box_id') {
+                options = boxOptions.map(item => ({
+                    value: item.id,
+                    label: item.nomor_box
+                }));
+                optionLabelMap = options.reduce((acc, opt) => {
+                    acc[opt.value] = opt.label;
+                    return acc;
+                }, {});
             } else if (field === 'keterangan_jra') {
-                options = [
-                    { value: '', label: 'Pilih Keterangan' },
-                    { value: 'PERMANEN', label: 'Permanen' },
-                    { value: 'MUSNAH', label: 'Musnah' }
-                ];
+                options = keteranganJraOptions.map(item => ({
+                    value: item,
+                    label: item
+                }));
+                optionLabelMap = options.reduce((acc, opt) => {
+                    acc[opt.value] = opt.label;
+                    return acc;
+                }, {});
             } else {
-                return; // Jika bukan kedua field, abaikan
+                return;
             }
             
             // Buat elemen select
             const select = document.createElement('select');
             select.classList.add('form-select', 'form-select-sm');
+            select.style.width = '100%';
+            select.style.minHeight = '30px';
+            
+            // Tambahkan opsi kosong
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.textContent = '-- Pilih --';
+            select.appendChild(emptyOption);
+            
+            // Tambahkan opsi
             options.forEach(opt => {
                 const option = document.createElement('option');
                 option.value = opt.value;
                 option.textContent = opt.label;
-                if (opt.value === currentValue) {
+                if (String(opt.value) === String(currentValue)) {
                     option.selected = true;
                 }
                 select.appendChild(option);
@@ -1638,75 +1787,356 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Jika nilai berubah, kirim ke server
                 if (newValue !== currentValue) {
                     sendUpdate(rowId, field, newValue, this);
-                } else if (newValue === '' && currentValue !== '') {
-                    // Jika memilih opsi kosong (Pilih Lokasi/Keterangan) maka kirim nilai kosong
-                    sendUpdate(rowId, field, '', this);
+                } else {
+                    this.classList.remove('editing');
                 }
             };
             
             select.addEventListener('blur', save);
             select.addEventListener('change', () => select.blur());
+            
+            this.classList.add('editing');
         });
     });
     
     // ========== FUNGSI AJAX UNTUK UPDATE ==========
     function sendUpdate(id, field, value, cellElement) {
-        fetch(`/arsip/${id}/inline-update`, {
-            method: 'PATCH',
+        const url = `/arsip-masuk/${id}/update-field`;
+        
+        // Siapkan data dengan format yang benar
+        let data = {
+            field: field,
+            value: value
+        };
+        
+        // Tampilkan loading
+        const originalText = cellElement.innerText;
+        cellElement.innerHTML = '<span class="text-muted"><i class="bi bi-hourglass-split"></i> Menyimpan...</span>';
+        
+        fetch(url, {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                'X-Requested-With': 'XMLHttpRequest'
             },
-            body: JSON.stringify({ field: field, value: value })
+            body: JSON.stringify(data)
         })
         .then(async response => {
-            const data = await response.json();
+            const result = await response.json();
             if (!response.ok) {
-                throw new Error(data.error || `HTTP ${response.status}`);
+                throw new Error(result.message || `HTTP ${response.status}`);
             }
-            return data;
+            return result;
         })
         .then(data => {
             if (data.success) {
                 const row = cellElement.closest('tr');
-                if (data.new_values.aktif_sampai) {
-                    row.querySelector('.aktif-sampai-cell').innerText = data.new_values.aktif_sampai;
+                const resultData = data.data;
+                
+                // Update field yang diedit
+                if (field === 'aktif_tahun') {
+                    cellElement.textContent = resultData.aktif_tahun || '-';
+                    // Update kolom Aktif Sampai
+                    updateRelatedField(row, 'aktif_sampai', resultData.aktif_sampai);
+                    // Update Status
+                    updateRelatedField(row, 'status', resultData.status_arsip);
+                } else if (field === 'inaktif_tahun') {
+                    cellElement.textContent = resultData.inaktif_tahun || '-';
+                    // Update kolom Inaktif Sampai
+                    updateRelatedField(row, 'inaktif_sampai', resultData.inaktif_sampai);
+                    // Update Status
+                    updateRelatedField(row, 'status', resultData.status_arsip);
+                } else if (field === 'kode_klasifikasi_id') {
+                    cellElement.textContent = resultData.kode_klasifikasi || 'N/A';
+                    cellElement.dataset.value = resultData.kode_klasifikasi_id || '';
+                } else if (field === 'keterangan_jra') {
+                    cellElement.textContent = resultData.keterangan_jra || '-';
+                    cellElement.dataset.value = resultData.keterangan_jra || '';
+                } else if (field === 'rak_id') {
+                    // Cari nama rak dari options
+                    const rak = rakOptions.find(r => String(r.id) === String(resultData.rak_id));
+                    cellElement.textContent = rak ? rak.nomor_rak : '-';
+                    cellElement.dataset.value = resultData.rak_id || '';
+                } else if (field === 'box_id') {
+                    const box = boxOptions.find(b => String(b.id) === String(resultData.box_id));
+                    cellElement.textContent = box ? box.nomor_box : '-';
+                    cellElement.dataset.value = resultData.box_id || '';
                 }
-                if (data.new_values.inaktif_sampai) {
-                    row.querySelector('.inaktif-sampai-cell').innerText = data.new_values.inaktif_sampai;
-                }
-                if (data.new_values.status_arsip) {
-                    row.querySelector('.status-cell').innerHTML = data.new_values.status_arsip;
-                }
-                showNotification('✅ Data berhasil diupdate', 'success');
+                
+                cellElement.classList.remove('editing');
+                showNotification('✅ Data berhasil diperbarui', 'success');
             } else {
-                showNotification('❌ Gagal: ' + (data.error || 'Unknown error'), 'danger');
-                // Kembalikan tampilan ke nilai semula
-                location.reload();
+                throw new Error(data.message || 'Gagal memperbarui data');
             }
         })
         .catch(error => {
-            console.error('Fetch error:', error);
+            console.error('Error:', error);
+            cellElement.textContent = originalText || '-';
+            cellElement.classList.remove('editing');
             showNotification('❌ ' + error.message, 'danger');
-            location.reload();
         });
     }
     
-    // Notifikasi sementara
+    // ========== UPDATE FIELD TERKAIT ==========
+    function updateRelatedField(row, fieldName, value) {
+        if (!row) return;
+        
+        // Cari cell berdasarkan class
+        let cell;
+        if (fieldName === 'aktif_sampai') {
+            cell = row.querySelector('.aktif-sampai-cell');
+        } else if (fieldName === 'inaktif_sampai') {
+            cell = row.querySelector('.inaktif-sampai-cell');
+        } else if (fieldName === 'status') {
+            cell = row.querySelector('.status-cell');
+        }
+        
+        if (!cell) return;
+        
+        if (fieldName === 'status') {
+            // Untuk status, tampilkan badge
+            const statusColors = {
+                'AKTIF': 'success',
+                'INAKTIF': 'warning',
+                'PERMANEN': 'info',
+                'MUSNAH': 'danger',
+                'HABIS_RETENSI': 'secondary',
+                'DISETUJUI_MUSNAH': 'danger'
+            };
+            const color = statusColors[value] || 'secondary';
+            const label = value === 'HABIS_RETENSI' ? 'HABIS RETENSI' : value;
+            cell.innerHTML = `<span class="badge bg-${color}">${label}</span>`;
+        } else {
+            cell.textContent = value || '-';
+        }
+    }
+    
+    // ========== NOTIFICATION ==========
     function showNotification(message, type) {
+        // Hapus notifikasi yang sudah ada
+        const existingAlert = document.querySelector('.alert-notification');
+        if (existingAlert) {
+            existingAlert.remove();
+        }
+        
         const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+        alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show alert-notification position-fixed top-0 start-50 translate-middle-x mt-3`;
         alertDiv.style.zIndex = '9999';
-        alertDiv.style.minWidth = '250px';
-        alertDiv.style.zIndex = '9999';
+        alertDiv.style.minWidth = '300px';
+        alertDiv.style.maxWidth = '500px';
+        alertDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
         alertDiv.innerHTML = `
             <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-${type === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill'} fs-5"></i>
                 <span>${message}</span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
         document.body.appendChild(alertDiv);
-        setTimeout(() => alertDiv.remove(), 2000);
+        
+        // Auto close setelah 3 detik
+        setTimeout(() => {
+            if (alertDiv) alertDiv.remove();
+        }, 3000);
+    }
+    
+    // ==================== MULTIPLE SELECTION ====================
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const arsipCheckboxes = document.querySelectorAll('.arsip-checkbox');
+    const selectedCounter = document.getElementById('selectedCounter');
+    const selectedCount = document.getElementById('selectedCount');
+    const prosesMultipleBtn = document.getElementById('prosesMultipleBtn');
+    let selectedArsips = new Set();
+    
+    function updateSelectionUI() {
+        const count = selectedArsips.size;
+        selectedCount.textContent = count;
+        
+        if (count > 0) {
+            selectedCounter.style.display = 'flex';
+            prosesMultipleBtn.style.display = 'flex';
+        } else {
+            selectedCounter.style.display = 'none';
+            prosesMultipleBtn.style.display = 'none';
+        }
+        
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = count === arsipCheckboxes.length && count > 0;
+        }
+    }
+    
+    // Event listener untuk checkbox individual
+    arsipCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                selectedArsips.add(this.value);
+            } else {
+                selectedArsips.delete(this.value);
+            }
+            updateSelectionUI();
+        });
+    });
+    
+    // Event listener untuk select all
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            arsipCheckboxes.forEach(cb => {
+                cb.checked = this.checked;
+                if (this.checked) {
+                    selectedArsips.add(cb.value);
+                } else {
+                    selectedArsips.delete(cb.value);
+                }
+            });
+            updateSelectionUI();
+        });
+    }
+    
+    // Clear selection
+    const clearSelectionBtn = document.getElementById('clearSelection');
+    if (clearSelectionBtn) {
+        clearSelectionBtn.addEventListener('click', function() {
+            arsipCheckboxes.forEach(cb => {
+                cb.checked = false;
+            });
+            selectedArsips.clear();
+            updateSelectionUI();
+        });
+    }
+    
+    // ==================== PROSES MULTIPLE MODAL ====================
+    const prosesMultipleBtnMain = document.getElementById('prosesMultipleBtn');
+    const closeProsesMultipleBtn = document.getElementById('closeProsesMultipleModal');
+    const cancelProsesMultipleBtn = document.getElementById('cancelProsesMultiple');
+    const multipleActionSelect = document.getElementById('multipleActionSelect');
+    const setLokasiFields = document.getElementById('setLokasiFields');
+    const pindahkanFields = document.getElementById('pindahkanFields');
+    const lokasiTujuanMultiple = document.getElementById('lokasi_tujuan_multiple');
+    const rakSelectMultiple = document.getElementById('rak_id_multiple');
+    const boxSelectMultiple = document.getElementById('box_id_multiple');
+    const selectedCountModal = document.getElementById('selectedCountModal');
+    const selectedArsipList = document.getElementById('selectedArsipList');
+    
+    // Filter rak berdasarkan lokasi
+    function filterRakMultiple() {
+        const selectedLokasi = lokasiTujuanMultiple.value;
+        rakSelectMultiple.innerHTML = '<option value="">-- Pilih Rak --</option>';
+        boxSelectMultiple.innerHTML = '<option value="">-- Pilih Rak Terlebih Dahulu --</option>';
+        
+        if (!selectedLokasi) {
+            rakSelectMultiple.innerHTML = '<option value="">-- Pilih Lokasi Terlebih Dahulu --</option>';
+            return;
+        }
+        
+        const filteredRak = rakOptions.filter(function(rak) {
+            return rak.lokasi_arsip === selectedLokasi;
+        });
+        
+        if (filteredRak.length === 0) {
+            rakSelectMultiple.innerHTML = '<option value="">-- Tidak ada rak di lokasi ini --</option>';
+        } else {
+            filteredRak.forEach(function(rak) {
+                const option = document.createElement('option');
+                option.value = rak.id;
+                option.textContent = rak.nomor_rak;
+                rakSelectMultiple.appendChild(option);
+            });
+        }
+    }
+    
+    // Filter box berdasarkan rak
+    function filterBoxMultiple() {
+        const selectedRakId = rakSelectMultiple.value;
+        boxSelectMultiple.innerHTML = '<option value="">-- Pilih Box --</option>';
+        
+        if (!selectedRakId) {
+            boxSelectMultiple.innerHTML = '<option value="">-- Pilih Rak Terlebih Dahulu --</option>';
+            return;
+        }
+        
+        const filteredBox = boxOptions.filter(function(box) {
+            return box.rak_id == selectedRakId;
+        });
+        
+        if (filteredBox.length === 0) {
+            boxSelectMultiple.innerHTML = '<option value="">-- Tidak ada box di rak ini --</option>';
+        } else {
+            filteredBox.forEach(function(box) {
+                const option = document.createElement('option');
+                option.value = box.id;
+                option.textContent = box.nomor_box;
+                boxSelectMultiple.appendChild(option);
+            });
+        }
+    }
+    
+    if (lokasiTujuanMultiple) {
+        lokasiTujuanMultiple.addEventListener('change', filterRakMultiple);
+    }
+    if (rakSelectMultiple) {
+        rakSelectMultiple.addEventListener('change', filterBoxMultiple);
+    }
+    
+    // Tampilkan/sembunyikan fields berdasarkan aksi
+    if (multipleActionSelect) {
+        multipleActionSelect.addEventListener('change', function() {
+            setLokasiFields.style.display = 'none';
+            pindahkanFields.style.display = 'none';
+
+            if (this.value === 'set_lokasi') {
+                setLokasiFields.style.display = 'block';
+            }
+
+            if (this.value === 'pindahkan') {
+                pindahkanFields.style.display = 'block';
+            }
+        });
+    }
+    
+    if (prosesMultipleBtnMain) {
+        prosesMultipleBtnMain.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (selectedArsips.size === 0) {
+                alert('Pilih setidaknya satu arsip terlebih dahulu.');
+                return;
+            }
+            
+            // Update daftar arsip di modal
+            selectedCountModal.textContent = selectedArsips.size;
+            selectedArsipList.innerHTML = '';
+            
+            selectedArsips.forEach(id => {
+                const checkbox = document.querySelector(`.arsip-checkbox[value="${id}"]`);
+                if (checkbox) {
+                    const row = checkbox.closest('tr');
+                    const kode = row.cells[2]?.textContent.trim() || '-';
+                    const judul = row.cells[3]?.textContent.trim() || '-';
+                    const subBagian = row.cells[4]?.textContent.trim() || '-';
+                    
+                    const item = document.createElement('div');
+                    item.className = 'mb-2 p-2 border rounded bg-white';
+                    item.innerHTML = `
+                        <div>
+                            <strong>${kode}</strong>
+                            <div class="small text-muted">${judul}</div>
+                            <div class="small">Sub Bagian: ${subBagian}</div>
+                        </div>
+                        <input type="hidden" name="arsip_ids[]" value="${id}">
+                    `;
+                    selectedArsipList.appendChild(item);
+                }
+            });
+            
+            openModal(prosesMultipleModalContainer);
+        });
+    }
+    
+    if (closeProsesMultipleBtn) {
+        closeProsesMultipleBtn.addEventListener('click', closeAllModals);
+    }
+    if (cancelProsesMultipleBtn) {
+        cancelProsesMultipleBtn.addEventListener('click', closeAllModals);
     }
 });
 </script>
