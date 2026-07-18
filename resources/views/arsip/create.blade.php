@@ -71,7 +71,21 @@
                 
                 <!-- Judul/Uraian Arsip -->
                 <div class="col-md-12 mb-3">
-                    <label for="uraian_arsip" class="form-label">Uraian/Judul Arsip <span class="text-danger">*</span></label>
+                   <label for="uraian_arsip" class="form-label">
+    Uraian/Judul Arsip <span class="text-danger">*</span>
+    <i class="bi bi-info-circle text-primary"
+       data-bs-toggle="tooltip"
+       data-bs-html="true"
+       title="
+       Isi uraian arsip sesuai dengan judul, maksud, atau tujuan dokumen berdasarkan ketentuan naskah dinas KPU.<br><br>
+       <b>Minimal 30 karakter.</b><br><br>
+       <b>Contoh Benar:</b><br>
+       Surat Undangan KPU Provinsi Bali Nomor: 1245/RT.01.2-Und/51/1/2026, perihal Rapat Koordinasi Pengelolaan Aset Tanah melalui Sistem Informasi Manajemen Tanah Pemerintah.<br><br>
+       <b>Contoh Salah:</b><br>
+       Surat Undangan tentang Rapat Koordinasi.
+       ">
+    </i>
+</label>
                     <input type="text" class="form-control @error('uraian_arsip') is-invalid @enderror" 
                         id="uraian_arsip" name="uraian_arsip" 
                         value="{{ old('uraian_arsip') }}" required>
@@ -636,6 +650,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
         }
+    });
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tooltipTriggerList = [].slice.call(
+        document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
+
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 });
 </script>
