@@ -500,78 +500,78 @@ public function scopeWithActiveBap($query)
      /**
      * Recalculate retensi berdasarkan data saat ini
      */
- public function recalculateRetensi()
-    {
-        // Jika aktif_tahun atau inaktif_tahun kosong
-        if (empty($this->aktif_tahun) || empty($this->inaktif_tahun)) {
-            $this->aktif_sampai = null;
-            $this->inaktif_sampai = null;
-            $this->status_arsip = 'AKTIF';
-            return;
-        }
+//  public function recalculateRetensi()
+//     {
+//         // Jika aktif_tahun atau inaktif_tahun kosong
+//         if (empty($this->aktif_tahun) || empty($this->inaktif_tahun)) {
+//             $this->aktif_sampai = null;
+//             $this->inaktif_sampai = null;
+//             $this->status_arsip = 'AKTIF';
+//             return;
+//         }
 
-        // Ekstrak angka dari string (contoh: "2 TAHUN" -> 2)
-        $aktifTahun = $this->extractNumber($this->aktif_tahun);
-        $inaktifTahun = $this->extractNumber($this->inaktif_tahun);
+//         // Ekstrak angka dari string (contoh: "2 TAHUN" -> 2)
+//         $aktifTahun = $this->extractNumber($this->aktif_tahun);
+//         $inaktifTahun = $this->extractNumber($this->inaktif_tahun);
 
-        // Jika tidak ada angka, set ke null
-        if (!$aktifTahun || !$inaktifTahun) {
-            $this->aktif_sampai = null;
-            $this->inaktif_sampai = null;
-            $this->status_arsip = 'AKTIF';
-            return;
-        }
+//         // Jika tidak ada angka, set ke null
+//         if (!$aktifTahun || !$inaktifTahun) {
+//             $this->aktif_sampai = null;
+//             $this->inaktif_sampai = null;
+//             $this->status_arsip = 'AKTIF';
+//             return;
+//         }
 
-        // Tentukan tahun dasar
-        // Jika ada tanggal_arsip, gunakan tahun dari tanggal_arsip
-        // Jika tidak, gunakan tahun sekarang
-        if ($this->tanggal_arsip) {
-            $tahunDasar = Carbon::parse($this->tanggal_arsip)->year;
-        } else {
-            $tahunDasar = Carbon::now()->year;
-        }
+//         // Tentukan tahun dasar
+//         // Jika ada tanggal_arsip, gunakan tahun dari tanggal_arsip
+//         // Jika tidak, gunakan tahun sekarang
+//         if ($this->tanggal_arsip) {
+//             $tahunDasar = Carbon::parse($this->tanggal_arsip)->year;
+//         } else {
+//             $tahunDasar = Carbon::now()->year;
+//         }
 
-        // Cek apakah mengandung kata "SETELAH"
-        $aktifSetelah = stripos($this->aktif_tahun, 'SETELAH') !== false;
-        $inaktifSetelah = stripos($this->inaktif_tahun, 'SETELAH') !== false;
+//         // Cek apakah mengandung kata "SETELAH"
+//         $aktifSetelah = stripos($this->aktif_tahun, 'SETELAH') !== false;
+//         $inaktifSetelah = stripos($this->inaktif_tahun, 'SETELAH') !== false;
 
-        // Jika mengandung SETELAH dan ada tanggal_referensi, gunakan tahun dari tanggal_referensi
-        if (($aktifSetelah || $inaktifSetelah) && $this->tanggal_referensi) {
-            $tahunDasar = Carbon::parse($this->tanggal_referensi)->year;
-        }
+//         // Jika mengandung SETELAH dan ada tanggal_referensi, gunakan tahun dari tanggal_referensi
+//         if (($aktifSetelah || $inaktifSetelah) && $this->tanggal_referensi) {
+//             $tahunDasar = Carbon::parse($this->tanggal_referensi)->year;
+//         }
 
-        // HITUNG AKTIF SAMPAI (tahun dasar + aktif_tahun, tanggal 31 Desember)
-        $tahunAktifSampai = $tahunDasar + $aktifTahun;
-        $this->aktif_sampai = Carbon::create($tahunAktifSampai, 12, 31)->format('Y-m-d');
+//         // HITUNG AKTIF SAMPAI (tahun dasar + aktif_tahun, tanggal 31 Desember)
+//         $tahunAktifSampai = $tahunDasar + $aktifTahun;
+//         $this->aktif_sampai = Carbon::create($tahunAktifSampai, 12, 31)->format('Y-m-d');
 
-        // HITUNG INAKTIF SAMPAI (tahun aktif + inaktif_tahun, tanggal 31 Desember)
-        $tahunInaktifSampai = $tahunAktifSampai + $inaktifTahun;
-        $this->inaktif_sampai = Carbon::create($tahunInaktifSampai, 12, 31)->format('Y-m-d');
+//         // HITUNG INAKTIF SAMPAI (tahun aktif + inaktif_tahun, tanggal 31 Desember)
+//         $tahunInaktifSampai = $tahunAktifSampai + $inaktifTahun;
+//         $this->inaktif_sampai = Carbon::create($tahunInaktifSampai, 12, 31)->format('Y-m-d');
 
-        // TENTUKAN STATUS
-        $tahunSekarang = Carbon::now()->year;
-        $keterangan = strtoupper($this->keterangan_jra ?? '');
+//         // TENTUKAN STATUS
+//         $tahunSekarang = Carbon::now()->year;
+//         $keterangan = strtoupper($this->keterangan_jra ?? '');
 
-        if ($keterangan === 'PERMANEN') {
-            $this->status_arsip = 'PERMANEN';
-        } elseif ($keterangan === 'MUSNAH') {
-            // Untuk MUSNAH: AKTIF -> INAKTIF -> HABIS RETENSI
-            if ($tahunSekarang <= $tahunAktifSampai) {
-                $this->status_arsip = 'AKTIF';
-            } elseif ($tahunSekarang <= $tahunInaktifSampai) {
-                $this->status_arsip = 'INAKTIF';
-            } else {
-                $this->status_arsip = 'HABIS_RETENSI';
-            }
-        } else {
-            // Untuk selain MUSNAH: AKTIF -> INAKTIF
-            if ($tahunSekarang <= $tahunAktifSampai) {
-                $this->status_arsip = 'AKTIF';
-            } else {
-                $this->status_arsip = 'INAKTIF';
-            }
-        }
-    }
+//         if ($keterangan === 'PERMANEN') {
+//             $this->status_arsip = 'PERMANEN';
+//         } elseif ($keterangan === 'MUSNAH') {
+//             // Untuk MUSNAH: AKTIF -> INAKTIF -> HABIS RETENSI
+//             if ($tahunSekarang <= $tahunAktifSampai) {
+//                 $this->status_arsip = 'AKTIF';
+//             } elseif ($tahunSekarang <= $tahunInaktifSampai) {
+//                 $this->status_arsip = 'INAKTIF';
+//             } else {
+//                 $this->status_arsip = 'HABIS_RETENSI';
+//             }
+//         } else {
+//             // Untuk selain MUSNAH: AKTIF -> INAKTIF
+//             if ($tahunSekarang <= $tahunAktifSampai) {
+//                 $this->status_arsip = 'AKTIF';
+//             } else {
+//                 $this->status_arsip = 'INAKTIF';
+//             }
+//         }
+//     }
 
     /**
      * Ekstrak angka dari teks (contoh: "2 TAHUN" -> 2, "5 TAHUN SETELAH KEGIATAN" -> 5)
@@ -629,4 +629,83 @@ public function verifikator(): BelongsTo
 {
     return $this->belongsTo(User::class, 'diverifikasi_oleh');
 }
+
+
+public function recalculateRetensi()
+    {
+        // Pastikan tahun_arsip ada
+        if (empty($this->tahun_arsip)) {
+            return $this;
+        }
+
+        $tahunArsip = (int) $this->tahun_arsip;
+        $aktifTahun = $this->aktif_tahun ? (int) $this->aktif_tahun : 0;
+        $inaktifTahun = $this->inaktif_tahun ? (int) $this->inaktif_tahun : 0;
+
+        // Hitung aktif_sampai
+        $tahunAktifSampai = $tahunArsip + $aktifTahun;
+        if ($aktifTahun > 0) {
+            $this->aktif_sampai = Carbon::createFromDate($tahunAktifSampai, 12, 31)->format('Y-m-d');
+        } else {
+            $this->aktif_sampai = Carbon::createFromDate($tahunArsip, 12, 31)->format('Y-m-d');
+        }
+
+        // Hitung inaktif_sampai (jika ada)
+        if ($inaktifTahun > 0) {
+            $tahunInaktifSampai = $tahunAktifSampai + $inaktifTahun;
+            $this->inaktif_sampai = Carbon::createFromDate($tahunInaktifSampai, 12, 31)->format('Y-m-d');
+        } else {
+            $this->inaktif_sampai = null;
+        }
+
+        // Hitung status_arsip
+        $this->status_arsip = $this->calculateStatus();
+
+        return $this;
+    }
+
+    /**
+     * Calculate status arsip berdasarkan tanggal sekarang
+     */
+    public function calculateStatus()
+    {
+        $now = Carbon::now();
+        $aktifSampai = $this->aktif_sampai ? Carbon::parse($this->aktif_sampai) : null;
+        $inaktifSampai = $this->inaktif_sampai ? Carbon::parse($this->inaktif_sampai) : null;
+
+        if (!$aktifSampai) {
+            return 'AKTIF';
+        }
+
+        // Cek berdasarkan Keterangan JRA
+        if ($this->keterangan_jra === 'Musnah') {
+            if ($now->gt($aktifSampai) && $inaktifSampai && $now->gt($inaktifSampai)) {
+                return 'MUSNAH';
+            }
+            if ($now->gt($aktifSampai)) {
+                return 'INAKTIF';
+            }
+            return 'AKTIF';
+        }
+
+        if ($this->keterangan_jra === 'Permanen') {
+            if ($now->gt($aktifSampai) && $inaktifSampai && $now->gt($inaktifSampai)) {
+                return 'PERMANEN';
+            }
+            if ($now->gt($aktifSampai)) {
+                return 'INAKTIF';
+            }
+            return 'AKTIF';
+        }
+
+        // Default
+        if ($now->gt($aktifSampai) && $inaktifSampai && $now->gt($inaktifSampai)) {
+            return 'HABIS_RETENSI';
+        }
+        if ($now->gt($aktifSampai)) {
+            return 'INAKTIF';
+        }
+
+        return 'AKTIF';
+    }
 }

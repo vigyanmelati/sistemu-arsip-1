@@ -23,7 +23,7 @@
                     <span class="badge bg-{{ 
                         $berita_acara->status == 'DRAFT' ? 'secondary' : 
                         ($berita_acara->status == 'DIAJUKAN' ? 'warning' : 
-                        ($berita_acara->status == 'DITERIMA' ? 'success' : 'danger')) 
+                        ($berita_acara->status == 'DISETUJUI' ? 'success' : 'danger')) 
                     }}">
                         {{ $berita_acara->status }}
                     </span>
@@ -145,15 +145,16 @@
                                 <td><span class="badge bg-secondary">{{ $detail->arsip->kodeKlasifikasi->kode ?? '-' }}</span></td>
                                 <td>{{ Str::limit($detail->arsip->uraian_arsip, 80) }}</td>
                                 <td>{{ $detail->arsip->tahun_arsip }}</td>
-                                <td>
-                                    <span class="badge bg-{{ 
-                                        $detail->arsip->status_pindah == 'DIAJUKAN' ? 'warning' :
-                                        ($detail->arsip->status_pindah == 'DITERIMA' ? 'success' :
-                                        ($detail->arsip->status_pindah == 'DITOLAK' ? 'danger' : 'secondary'))
-                                    }}">
-                                        {{ $detail->arsip->status_pindah ?? 'BELUM' }}
-                                    </span>
-                                </td>
+                              <td>
+                                <span class="badge bg-{{ 
+                                    $detail->arsip->status_pindah == 'DIAJUKAN' ? 'warning' :
+                                    ($detail->arsip->status_pindah == 'DITERIMA' ? 'success' :
+                                    ($detail->arsip->status_pindah == 'DITOLAK' ? 'danger' : 'secondary'))
+                                }}">
+                                    {{ $detail->arsip->status_pindah ?? 'BELUM' }}
+                                </span>
+                            </td>
+
                                 <td class="text-center">
                                     <a href="{{ route('subbagian.arsip.show', $detail->arsip->id) }}"
                                        class="btn btn-sm btn-outline-info">

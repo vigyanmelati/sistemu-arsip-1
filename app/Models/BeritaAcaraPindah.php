@@ -9,6 +9,11 @@ class BeritaAcaraPindah extends Model
 {
     protected $table = 'berita_acara_pindah';
     
+    const STATUS_DRAFT = 'DRAFT';
+    const STATUS_DIAJUKAN = 'DIAJUKAN';
+    const STATUS_DISETUJUI = 'DISETUJUI';
+    const STATUS_DITOLAK = 'DITOLAK';
+
     protected $fillable = [
         'nomor_bap',
         'tanggal_bap',
@@ -17,18 +22,19 @@ class BeritaAcaraPindah extends Model
         'status',
         'file_bap',
         'tanggal_kirim',
-        'tanggal_diterima',
-        'diterima_by',
+        'tanggal_disetujui',
+        'disetujui_by',
+        'alasan_ditolak',
         'tanggal_ditolak',
-        'ditolak_by',
-        'alasan_ditolak'
+        'ditolak_by'
     ];
 
-    // Constants
-    const STATUS_DRAFT = 'DRAFT';
-    const STATUS_DIAJUKAN = 'DIAJUKAN';
-    const STATUS_DITERIMA = 'DITERIMA';
-    const STATUS_DITOLAK = 'DITOLAK';
+    protected $casts = [
+        'tanggal_bap' => 'date',
+        'tanggal_kirim' => 'datetime',
+        'tanggal_disetujui' => 'datetime',
+        'tanggal_ditolak' => 'datetime',
+    ];
 
     // Relationships
     public function details()
@@ -41,14 +47,14 @@ class BeritaAcaraPindah extends Model
         return $this->belongsTo(SubBagian::class, 'sub_bagian_id');
     }
 
-    public function createdBy()
+    public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function diterimaBy()
+    public function disetujuiBy()
     {
-        return $this->belongsTo(User::class, 'diterima_by');
+        return $this->belongsTo(User::class, 'disetujui_by');
     }
 
     public function ditolakBy()
@@ -57,6 +63,11 @@ class BeritaAcaraPindah extends Model
     }
 
     // Methods
+    public function canSend()
+    {
+        return $this->status === self::STATUS_DRAFT;
+    }
+
     public function canEdit()
     {
         return $this->status === self::STATUS_DRAFT;
@@ -67,13 +78,47 @@ class BeritaAcaraPindah extends Model
         return $this->status === self::STATUS_DRAFT;
     }
 
-    public function canSend()
-    {
-        return $this->status === self::STATUS_DRAFT && $this->details()->count() > 0;
-    }
-
-    public function canReceive()
+    public function canApprove()
     {
         return $this->status === self::STATUS_DIAJUKAN;
+    }
+
+    /**
+     * Update status BAP berdasarkan status arsip di dalamnya
+     */
+    public function updateStatusFromArsip()
+    {
+        $details = $this->details()->with('arsip')->get();
+        
+        if ($details->isEmpty()) {
+            return;
+        }
+
+        $statuses = $details->pluck('arsip.status_pindah')->unique()->values();
+        
+        // Jika semua arsip sudah DITERIMA
+        if ($statuses->count() === 1 && $statuses->first() === 'DITERIMA') {
+            $this->status = self::STATUS_DISETUJUI;
+            $this->tanggal_disetujui = now();
+            $this->disetujui_by = auth()->id();
+            $this->save();
+            return;
+        }
+        
+        // Jika ada arsip yang DITOLAK
+        if ($statuses->contains('DITOLAK')) {
+            $this->status = self::STATUS_DITOLAK;
+            $this->tanggal_ditolak = now();
+            $this->ditolak_by = auth()->id();
+            $this->save();
+            return;
+        }
+        
+        // Jika ada arsip yang DIAJUKAN (belum semua selesai)
+        if ($statuses->contains('DIAJUKAN')) {
+            $this->status = self::STATUS_DIAJUKAN;
+            $this->save();
+            return;
+        }
     }
 }

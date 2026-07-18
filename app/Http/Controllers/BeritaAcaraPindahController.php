@@ -153,208 +153,190 @@ class BeritaAcaraPindahController extends Controller
     /**
      * Upload file dan kirim ke unit kearsipan
      */
-    public function kirim(Request $request, BeritaAcaraPindah $berita_acara)
-    {
-        // Debug: Log request
-        \Log::info('Kirim BAP - Start', ['bap_id' => $berita_acara->id]);
+
+public function kirim(Request $request, BeritaAcaraPindah $berita_acara)
+{
+
+ // DEBUG - Log semua data yang masuk
+    \Log::info('=== KIRIM BAP - START ===');
+    \Log::info('BAP ID: ' . $berita_acara->id);
+    \Log::info('BAP Status: ' . $berita_acara->status);
+    \Log::info('Request all: ', $request->all());
+    \Log::info('Request files: ', $request->allFiles());
+    try {
+        $this->authorizeAccess($berita_acara);
+
+        if (!$berita_acara->canSend()) {
+            return redirect()->route('berita-acara.index')
+                ->with('error', 'Berita Acara sudah dikirim atau tidak dapat dikirim.');
+        }
+
+        $validator = \Validator::make($request->all(), [
+            'file_bap' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240'
+        ], [
+            'file_bap.required' => 'File Berita Acara yang sudah ditandatangani wajib diunggah.',
+            'file_bap.mimes' => 'File harus berformat PDF, JPG, JPEG, atau PNG.',
+            'file_bap.max' => 'Ukuran file maksimal 10 MB.',
+        ]);
+
+        if ($validator->fails()) {
+            return back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('error', 'Validasi gagal. Silakan periksa file yang diupload.');
+        }
+
+        DB::beginTransaction();
+
+        // Upload file
+        $file = $request->file('file_bap');
+        $fileName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+        $filePath = $file->storeAs('berita_acara', $fileName, 'public');
         
-        try {
-            $this->authorizeAccess($berita_acara);
-
-            if (!$berita_acara->canSend()) {
-                \Log::warning('Kirim BAP - Cannot send', ['status' => $berita_acara->status]);
-                return redirect()->route('berita-acara.index')
-                    ->with('error', 'Berita Acara sudah dikirim atau tidak dapat dikirim.');
-            }
-
-            // Validasi
-            $validator = \Validator::make($request->all(), [
-                'file_bap' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240'
-            ], [
-                'file_bap.required' => 'File Berita Acara yang sudah ditandatangani wajib diunggah.',
-                'file_bap.mimes' => 'File harus berformat PDF, JPG, JPEG, atau PNG.',
-                'file_bap.max' => 'Ukuran file maksimal 10 MB.',
-            ]);
-
-            if ($validator->fails()) {
-                \Log::warning('Kirim BAP - Validation failed', ['errors' => $validator->errors()->all()]);
-                return back()
-                    ->withErrors($validator)
-                    ->withInput()
-                    ->with('error', 'Validasi gagal. Silakan periksa file yang diupload.');
-            }
-
-            DB::beginTransaction();
-
-            // Upload file
-            $file = $request->file('file_bap');
-            $fileName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
-            $filePath = $file->storeAs('berita_acara', $fileName, 'public');
-            
-            if (!$filePath) {
-                throw new \Exception('Gagal upload file.');
-            }
-
-            // Update BAP
-            $updated = $berita_acara->update([
-                'file_bap' => $fileName,
-                'status' => BeritaAcaraPindah::STATUS_DIAJUKAN,
-                // 'tanggal_kirim' => Carbon::now()
-            ]);
-
-            if (!$updated) {
-                throw new \Exception('Gagal update BAP.');
-            }
-
-            // Update detail BAP menjadi DIAJUKAN
-            BeritaAcaraDetail::where('bap_id', $berita_acara->id)
-                ->update(['status' => 'DIAJUKAN']);
-
-            // Update status arsip menjadi DIAJUKAN
-            foreach ($berita_acara->details as $detail) {
-                if ($detail->arsip) {
-                    $detail->arsip->update([
-                        'status_pindah' => 'DIAJUKAN',
-                        'file_berita_acara' => $fileName
-                    ]);
-                }
-            }
-
-            DB::commit();
-            
-            \Log::info('Kirim BAP - Success', ['bap_id' => $berita_acara->id, 'file' => $fileName]);
-
-            return redirect()->route('berita-acara.show', $berita_acara->id)
-                ->with('success', 'Berita Acara berhasil dikirim ke Unit Kearsipan.');
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            DB::rollBack();
-            \Log::error('Kirim BAP - Validation Exception', ['errors' => $e->errors()]);
-            return back()
-                ->withErrors($e->errors())
-                ->withInput()
-                ->with('error', 'Validasi gagal: ' . $e->getMessage());
-                
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Kirim BAP - Error', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return back()
-                ->withInput()
-                ->with('error', 'Gagal mengirim Berita Acara: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Terima BAP (dari Unit Kearsipan)
-     */
-    public function terima(Request $request, BeritaAcaraPindah $berita_acara)
-    {
-        // Hanya unit kearsipan yang bisa menerima
-        if (!Auth::user()->isAdmin()) {
-            abort(403, 'Hanya Unit Kearsipan yang dapat menerima Berita Acara.');
+        if (!$filePath) {
+            throw new \Exception('Gagal upload file.');
         }
 
-        if ($berita_acara->status !== BeritaAcaraPindah::STATUS_DIAJUKAN) {
-            return back()->with('error', 'Berita Acara tidak dalam status diajukan.');
-        }
-
-        $request->validate([
-            'masa_retensi_aktif' => 'nullable|integer|min:0',
-            'masa_retensi_inaktif' => 'nullable|integer|min:0',
-            'tanggal_mulai_retensi' => 'nullable|date',
+        // Update BAP
+        $berita_acara->update([
+            'file_bap' => $fileName,
+            'status' => BeritaAcaraPindah::STATUS_DIAJUKAN,
+            // 'tanggal_kirim' => Carbon::now()
         ]);
 
-        try {
-            DB::beginTransaction();
+        // Update detail BAP menjadi DIAJUKAN
+        BeritaAcaraDetail::where('bap_id', $berita_acara->id)
+            ->update(['status' => BeritaAcaraDetail::STATUS_DIAJUKAN]);
 
-            $berita_acara->update([
-                'status' => BeritaAcaraPindah::STATUS_DITERIMA,
-                'tanggal_diterima' => Carbon::now(),
-                'diterima_by' => Auth::id(),
-            ]);
-
-            // Update arsip dengan masa retensi dan status pindah
-            foreach ($berita_acara->details as $detail) {
-                $arsip = $detail->arsip;
-                if ($arsip) {
-                    $arsip->status_pindah = 'DITERIMA';
-                    $arsip->masa_retensi_aktif = $request->masa_retensi_aktif;
-                    $arsip->masa_retensi_inaktif = $request->masa_retensi_inaktif;
-                    $arsip->tanggal_mulai_retensi = $request->tanggal_mulai_retensi;
-                    $arsip->status_arsip = $this->hitungStatusArsip(
-                        $request->masa_retensi_aktif,
-                        $request->masa_retensi_inaktif,
-                        $request->tanggal_mulai_retensi
-                    );
-                    $arsip->save();
-                }
-
-                // Update detail status
-                $detail->update(['status' => 'DITERIMA']);
+        // Update status arsip menjadi DIAJUKAN
+        foreach ($berita_acara->details as $detail) {
+            if ($detail->arsip) {
+                $detail->arsip->update([
+                    'status_pindah' => 'DIAJUKAN',
+                    'file_berita_acara' => $fileName
+                ]);
             }
-
-            DB::commit();
-
-            return redirect()->route('kearsipan.berita-acara.show', $berita_acara->id)
-                ->with('success', 'Berita Acara berhasil diterima.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Gagal menerima: ' . $e->getMessage());
         }
+
+        DB::commit();
+
+        return redirect()->route('berita-acara.show', $berita_acara->id)
+            ->with('success', 'Berita Acara berhasil dikirim ke Unit Kearsipan.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Kirim BAP - Error:', [
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return back()
+            ->withInput()
+            ->with('error', 'Gagal mengirim Berita Acara: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Setujui BAP (dari Unit Kearsipan)
+ */
+public function setujui(Request $request, BeritaAcaraPindah $berita_acara)
+{
+    // Hanya unit kearsipan yang bisa menyetujui
+    if (!Auth::user()->isAdmin()) {
+        abort(403, 'Hanya Unit Kearsipan yang dapat menyetujui Berita Acara.');
     }
 
-    /**
-     * Tolak BAP (dari Unit Kearsipan)
-     */
-    public function tolak(Request $request, BeritaAcaraPindah $berita_acara)
-    {
-        // Hanya unit kearsipan yang bisa menolak
-        if (!Auth::user()->isAdmin()) {
-            abort(403, 'Hanya Unit Kearsipan yang dapat menolak Berita Acara.');
-        }
+    if ($berita_acara->status !== BeritaAcaraPindah::STATUS_DIAJUKAN) {
+        return back()->with('error', 'Berita Acara tidak dalam status diajukan.');
+    }
 
-        if ($berita_acara->status !== BeritaAcaraPindah::STATUS_DIAJUKAN) {
-            return back()->with('error', 'Berita Acara tidak dalam status diajukan.');
-        }
+    try {
+        DB::beginTransaction();
 
-        $request->validate([
-            'alasan_ditolak' => 'required|string|max:1000'
+        // Update BAP
+        $berita_acara->update([
+            'status' => BeritaAcaraPindah::STATUS_DISETUJUI,
+            'tanggal_disetujui' => Carbon::now(),
+            'disetujui_by' => Auth::id(),
         ]);
 
-        try {
-            DB::beginTransaction();
+        // Update detail BAP menjadi DITERIMA
+        BeritaAcaraDetail::where('bap_id', $berita_acara->id)
+            ->update(['status' => BeritaAcaraDetail::STATUS_DITERIMA]);
 
-            $berita_acara->update([
-                'status' => BeritaAcaraPindah::STATUS_DITOLAK,
-                'tanggal_ditolak' => Carbon::now(),
-                'ditolak_by' => Auth::id(),
-                'alasan_ditolak' => $request->alasan_ditolak
-            ]);
-
-            // Update arsip kembali ke BELUM
-            foreach ($berita_acara->details as $detail) {
-                if ($detail->arsip) {
-                    $detail->arsip->update(['status_pindah' => 'BELUM']);
-                }
-                $detail->update(['status' => 'DITOLAK']);
+        // Update semua arsip di dalam BAP menjadi DITERIMA
+        foreach ($berita_acara->details as $detail) {
+            if ($detail->arsip) {
+                $detail->arsip->update([
+                    'status_pindah' => 'DITERIMA',
+                    'tanggal_diverifikasi' => now(),
+                    'diverifikasi_oleh' => Auth::id(),
+                ]);
             }
-
-            DB::commit();
-
-            return redirect()->route('kearsipan.berita-acara.show', $berita_acara->id)
-                ->with('success', 'Berita Acara ditolak.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Gagal menolak: ' . $e->getMessage());
         }
+
+        DB::commit();
+
+        return redirect()->route('kearsipan.berita-acara.show', $berita_acara->id)
+            ->with('success', 'Berita Acara berhasil disetujui. Semua arsip diterima.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->with('error', 'Gagal menyetujui: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Tolak BAP (dari Unit Kearsipan)
+ */
+public function tolak(Request $request, BeritaAcaraPindah $berita_acara)
+{
+    // Hanya unit kearsipan yang bisa menolak
+    if (!Auth::user()->isAdmin()) {
+        abort(403, 'Hanya Unit Kearsipan yang dapat menolak Berita Acara.');
     }
 
+    if ($berita_acara->status !== BeritaAcaraPindah::STATUS_DIAJUKAN) {
+        return back()->with('error', 'Berita Acara tidak dalam status diajukan.');
+    }
+
+    $request->validate([
+        'alasan_ditolak' => 'required|string|max:1000'
+    ]);
+
+    try {
+        DB::beginTransaction();
+
+        $berita_acara->update([
+            'status' => BeritaAcaraPindah::STATUS_DITOLAK,
+            'tanggal_ditolak' => Carbon::now(),
+            'ditolak_by' => Auth::id(),
+            'alasan_ditolak' => $request->alasan_ditolak
+        ]);
+
+        // Update detail BAP menjadi DITOLAK
+        BeritaAcaraDetail::where('bap_id', $berita_acara->id)
+            ->update(['status' => BeritaAcaraDetail::STATUS_DITOLAK]);
+
+        // Update arsip kembali ke BELUM
+        foreach ($berita_acara->details as $detail) {
+            if ($detail->arsip) {
+                $detail->arsip->update(['status_pindah' => 'BELUM']);
+            }
+        }
+
+        DB::commit();
+
+        return redirect()->route('kearsipan.berita-acara.show', $berita_acara->id)
+            ->with('success', 'Berita Acara ditolak.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->with('error', 'Gagal menolak: ' . $e->getMessage());
+    }
+}
+
+   
     /**
      * Helper untuk menghitung status arsip berdasarkan masa retensi
      */

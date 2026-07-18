@@ -115,16 +115,19 @@
                                 {{ $arsip->keterangan_jra ?? '-' }}
                             </span>
                         </td>
-                        <td>
-                            <span class="editable-field" data-field="aktif_sampai" data-id="{{ $arsip->id }}">
-                                {{ $arsip->aktif_sampai ? \Carbon\Carbon::parse($arsip->aktif_sampai)->format('d/m/Y') : '-' }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="editable-field" data-field="inaktif_sampai" data-id="{{ $arsip->id }}">
-                                {{ $arsip->inaktif_sampai ? \Carbon\Carbon::parse($arsip->inaktif_sampai)->format('d/m/Y') : '-' }}
-                            </span>
-                        </td>
+                       {{-- Kolom Aktif Sampai --}}
+<td>
+    <span class="editable-field" data-field="aktif_sampai" data-id="{{ $arsip->id }}">
+        {{ $arsip->aktif_sampai ? \Carbon\Carbon::parse($arsip->aktif_sampai)->format('d/m/Y') : '-' }}
+    </span>
+</td>
+
+{{-- Kolom Inaktif Sampai --}}
+<td>
+    <span class="editable-field" data-field="inaktif_sampai" data-id="{{ $arsip->id }}">
+        {{ $arsip->inaktif_sampai ? \Carbon\Carbon::parse($arsip->inaktif_sampai)->format('d/m/Y') : '-' }}
+    </span>
+</td>
                         <td>
                            <span class="editable-field" data-field="status" data-id="{{ $arsip->id }}">
     @if($arsip->status_arsip)
@@ -563,7 +566,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Data untuk dropdown options
     const kodeKlasifikasiOptions = @json($kodeKlasifikasiOptions ?? []);
-    const keteranganJraOptions = ['Musnah', 'Permanen', 'Dimusnahkan'];
+    const keteranganJraOptions = ['Musnah', 'Permanen'];
     
     // Selection Management
     let selectedArsips = new Set();
@@ -998,12 +1001,23 @@ function saveInlineEdit(element, fieldName, arsipId, originalText) {
             const result = data.data;
             
             // Update field yang diedit
-            if (fieldName === 'kode_klasifikasi') {
-                element.textContent = result.kode_klasifikasi || '-';
-            } else if (fieldName === 'aktif_tahun') {
-                element.textContent = result.aktif_tahun || '-';
-                // Update kolom Aktif Sampai di baris yang sama
-                updateRelatedField(arsipId, 'aktif_sampai', result.aktif_sampai);
+             if (fieldName === 'aktif_tahun') {
+            element.textContent = result.aktif_tahun || '-';
+            // Update kolom Aktif Sampai
+            updateRelatedField(arsipId, 'aktif_sampai', result.aktif_sampai);
+            // Update kolom Status (jika berubah)
+            if (result.status_arsip) {
+                updateRelatedField(arsipId, 'status', result.status_arsip);
+            }
+        } else if (fieldName === 'inaktif_tahun') {
+            element.textContent = result.inaktif_tahun || '-';
+            // Update kolom Inaktif Sampai
+            updateRelatedField(arsipId, 'inaktif_sampai', result.inaktif_sampai);
+            // Update kolom Status (jika berubah)
+            if (result.status_arsip) {
+                updateRelatedField(arsipId, 'status', result.status_arsip);
+            }
+        
             } else if (fieldName === 'inaktif_tahun') {
                 element.textContent = result.inaktif_tahun || '-';
                 // Update kolom Inaktif Sampai di baris yang sama

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Arsip;
 use App\Models\SubBagian;
 use App\Models\HistoryPindah;
+use App\Models\BeritaAcaraDetail;
+use App\Models\BeritaAcaraPindah;
 use App\Models\User;
 use App\Models\MasterRak;
 use App\Models\MasterBox;
@@ -600,6 +602,105 @@ public function pindahkan(Request $request, Arsip $arsip)
    /**
  * Proses multiple arsip sekaligus.
  */
+// public function prosesMultiple(Request $request)
+// {
+//     $request->validate([
+//         'arsip_ids'   => 'required|array',
+//         'arsip_ids.*' => 'exists:arsips,id',
+//         'action'      => 'required|in:set_lokasi,pindahkan',
+//         'rak_id'      => 'nullable|exists:master_raks,id',
+//         'box_id'      => 'nullable|exists:master_box,id',
+//         'catatan'     => 'nullable|string|max:500',
+//     ]);
+
+//     DB::beginTransaction();
+
+//     try {
+//         $arsips = Arsip::whereIn('id', $request->arsip_ids)
+//             ->lockForUpdate()
+//             ->get();
+
+//         foreach ($arsips as $arsip) {
+
+//             /* ============================
+//              | AKSI 1 : SET LOKASI
+//              | ============================ */
+//             if ($request->action === 'set_lokasi') {
+
+//                 if (!$request->rak_id || !$request->box_id) {
+//                     throw new \Exception('Rak dan box wajib dipilih.');
+//                 }
+
+//                 $dariRak = $arsip->rak_id;
+//                 $dariBox = $arsip->box_id;
+//                 $dariRakNomor = $arsip->rak ? $arsip->rak->nomor_rak : null;
+//                 $dariBoxNomor = $arsip->box ? $arsip->box->nomor_box : null;
+
+//                 $rakBaru = MasterRak::find($request->rak_id);
+//                 $boxBaru = MasterBox::find($request->box_id);
+
+//                 $arsip->skipHistory = true;
+//                 $arsip->update([
+//                     'rak_id'               => $request->rak_id,
+//                     'box_id'               => $request->box_id,
+//                     'lokasi_arsip'         => $rakBaru ? $rakBaru->lokasi_arsip : $arsip->lokasi_arsip,
+//                     'tanggal_diverifikasi' => now(),
+//                     'diverifikasi_oleh'    => auth()->id(),
+//                     'catatan_verifikasi'   => $request->catatan,
+//                 ]);
+
+//                 HistoryPindah::create([
+//                     'arsip_id' => $arsip->id,
+//                     'aksi' => 'SET_LOKASI',
+//                     'dari_rak' => $dariRakNomor,
+//                     'dari_box' => $dariBoxNomor,
+//                     'ke_rak' => $rakBaru ? $rakBaru->nomor_rak : null,
+//                     'ke_box' => $boxBaru ? $boxBaru->nomor_box : null,
+//                     'tanggal_pindah' => now(),
+//                     'alasan_pindah' => $request->catatan ?? 'Verifikasi lokasi arsip',
+//                     'user_id' => auth()->id(),
+//                 ]);
+//             }
+
+//             /* ============================
+//              | AKSI 2 : PINDAHKAN KE MASTER
+//              | ============================ */
+//             if ($request->action === 'pindahkan') {
+
+//                 if (!$arsip->rak_id || !$arsip->box_id) {
+//                     throw new \Exception('Arsip belum memiliki rak dan box.');
+//                 }
+
+//                 $arsip->skipHistory = true;
+//                 $arsip->update([
+//                     'status_pindah'       => 'DIPINDAHKAN',
+//                     'tanggal_dipindahkan' => now(),
+//                 ]);
+
+//                 HistoryPindah::create([
+//                     'arsip_id' => $arsip->id,
+//                     'aksi'     => 'PINDAHKAN',
+//                     'dari_rak' => $arsip->rak ? $arsip->rak->nomor_rak : null,
+//                     'dari_box' => $arsip->box ? $arsip->box->nomor_box : null,
+//                     'ke_rak'   => $arsip->rak ? $arsip->rak->nomor_rak : null,
+//                     'ke_box'   => $arsip->box ? $arsip->box->nomor_box : null,
+//                     'tanggal_pindah' => now(),
+//                     'alasan_pindah'  => $request->catatan ?? 'Arsip dipindahkan ke Unit Kearsipan',
+//                     'user_id'  => auth()->id(),
+//                 ]);
+//             }
+//         }
+
+//         DB::commit();
+//         return back()->with('success', 'Proses arsip berhasil.');
+
+//     } catch (\Throwable $e) {
+//         DB::rollBack();
+//         return back()->with('error', $e->getMessage());
+//     }
+// }
+
+
 public function prosesMultiple(Request $request)
 {
     $request->validate([
@@ -618,7 +719,14 @@ public function prosesMultiple(Request $request)
             ->lockForUpdate()
             ->get();
 
+        $bapIds = [];
+
         foreach ($arsips as $arsip) {
+            // Kumpulkan BAP IDs untuk update nanti
+            $bapDetail = BeritaAcaraDetail::where('arsip_id', $arsip->id)->first();
+            if ($bapDetail) {
+                $bapIds[] = $bapDetail->bap_id;
+            }
 
             /* ============================
              | AKSI 1 : SET LOKASI
@@ -644,8 +752,14 @@ public function prosesMultiple(Request $request)
                     'lokasi_arsip'         => $rakBaru ? $rakBaru->lokasi_arsip : $arsip->lokasi_arsip,
                     'tanggal_diverifikasi' => now(),
                     'diverifikasi_oleh'    => auth()->id(),
-                    'catatan_verifikasi'   => $request->catatan,
+                    'catatan_verifikasi'   => $request->catatan ?? 'Verifikasi lokasi arsip',
+                    'status_pindah'        => 'DITERIMA', // Set DITERIMA
                 ]);
+
+                // Update BAP detail
+                if ($bapDetail) {
+                    $bapDetail->update(['status' => BeritaAcaraDetail::STATUS_DITERIMA]);
+                }
 
                 HistoryPindah::create([
                     'arsip_id' => $arsip->id,
@@ -671,9 +785,15 @@ public function prosesMultiple(Request $request)
 
                 $arsip->skipHistory = true;
                 $arsip->update([
-                    'status_pindah'       => 'DIPINDAHKAN',
-                    'tanggal_dipindahkan' => now(),
+                    'status_pindah'       => 'DITERIMA', // Set DITERIMA
+                    'tanggal_diverifikasi' => now(),
+                    'diverifikasi_oleh' => auth()->id(),
                 ]);
+
+                // Update BAP detail
+                if ($bapDetail) {
+                    $bapDetail->update(['status' => BeritaAcaraDetail::STATUS_DITERIMA]);
+                }
 
                 HistoryPindah::create([
                     'arsip_id' => $arsip->id,
@@ -689,15 +809,36 @@ public function prosesMultiple(Request $request)
             }
         }
 
+        // ========== UPDATE STATUS BAP ==========
+        // Proses update status BAP untuk semua BAP yang terpengaruh
+        $uniqueBapIds = array_unique($bapIds);
+        foreach ($uniqueBapIds as $bapId) {
+            $bap = BeritaAcaraPindah::find($bapId);
+            if ($bap) {
+                // Cek apakah semua arsip di BAP sudah DITERIMA
+                $allDiterima = BeritaAcaraDetail::where('bap_id', $bapId)
+                    ->whereHas('arsip', function($q) {
+                        $q->where('status_pindah', '!=', 'DITERIMA');
+                    })
+                    ->doesntExist();
+                
+                if ($allDiterima) {
+                    $bap->status = BeritaAcaraPindah::STATUS_DISETUJUI;
+                    // $bap->tanggal_disetujui = now();
+                    // $bap->disetujui_by = auth()->id();
+                    $bap->save();
+                }
+            }
+        }
+
         DB::commit();
-        return back()->with('success', 'Proses arsip berhasil.');
+        return back()->with('success', 'Proses arsip berhasil. Semua arsip diterima.');
 
     } catch (\Throwable $e) {
         DB::rollBack();
         return back()->with('error', $e->getMessage());
     }
 }
-
     /**
      * History perpindahan arsip.
      */
@@ -734,18 +875,112 @@ public function prosesMultiple(Request $request)
 
 // app/Http/Controllers/AdminArsipMasukController.php
 
+// public function verifikasi(Request $request, Arsip $arsip)
+// {
+//     // Debug - lihat data yang masuk
+//     \Log::info('Verifikasi data:', $request->all());
+    
+//   $request->validate([
+//     'tindakan' => 'required|in:setujui,tolak',
+//     'alasan' => 'nullable|required_if:tindakan,tolak|string|max:500',
+//     'lokasi_tujuan' => 'nullable|required_if:tindakan,setujui|in:RECORD_CENTER_INAKTIF,RECORD_CENTER_PERMANEN',
+//     'rak_id_baru' => 'nullable|required_if:tindakan,setujui|exists:master_raks,id',
+//     'box_id_baru' => 'nullable|required_if:tindakan,setujui|exists:master_box,id',
+// ]);
+//     if ($arsip->status_pindah !== 'DIAJUKAN') {
+//         return back()->with('error', 'Status arsip tidak valid.');
+//     }
+
+//     DB::beginTransaction();
+//     try {
+//         if ($request->tindakan === 'setujui') {
+//             // ========== SETUJUI ==========
+//             $dariRak = $arsip->rak_id;
+//             $dariBox = $arsip->box_id;
+//             $dariRakNomor = $arsip->rak ? $arsip->rak->nomor_rak : null;
+//             $dariBoxNomor = $arsip->box ? $arsip->box->nomor_box : null;
+
+//             $rakBaru = MasterRak::find($request->rak_id_baru);
+//             $boxBaru = MasterBox::find($request->box_id_baru);
+
+//             $arsip->rak_id = $request->rak_id_baru;
+//             $arsip->box_id = $request->box_id_baru;
+//             $arsip->lokasi_arsip = $request->lokasi_tujuan;
+//             $arsip->tanggal_diverifikasi = now();
+//             $arsip->diverifikasi_oleh = auth()->id();
+//             $arsip->status_pindah = 'DIPINDAHKAN';
+//             $arsip->catatan_verifikasi = '✅ DISETUJUI: Arsip diverifikasi dan diterima.';
+
+//             $arsip->skipHistory = true;
+//             $arsip->save();
+
+//             HistoryPindah::create([
+//                 'arsip_id' => $arsip->id,
+//                 'dari_rak' => $dariRakNomor,
+//                 'dari_box' => $dariBoxNomor,
+//                 'ke_rak' => $rakBaru ? $rakBaru->nomor_rak : null,
+//                 'ke_box' => $boxBaru ? $boxBaru->nomor_box : null,
+//                 'tanggal_pindah' => now(),
+//                 'alasan_pindah' => '✅ DISETUJUI: Arsip diterima dan siap dipindahkan',
+//                 'user_id' => auth()->id()
+//             ]);
+
+//             DB::commit();
+
+//             return redirect()
+//                 ->route('arsip-masuk.index')
+//                 ->with('success', 'Arsip berhasil disetujui. Status: DITERIMA.');
+
+//         } else {
+//             // ========== TOLAK ==========
+//             $arsip->status_pindah = 'DITOLAK';
+//             $arsip->tanggal_diverifikasi = now();
+//             $arsip->diverifikasi_oleh = auth()->id();
+//             $arsip->catatan_verifikasi = '❌ DITOLAK: ' . $request->alasan;
+//             $arsip->save();
+
+//             HistoryPindah::create([
+//                 'arsip_id' => $arsip->id,
+//                 'tanggal_pindah' => now(),
+//                 'alasan_pindah' => '❌ DITOLAK: ' . $request->alasan,
+//                 'user_id' => auth()->id()
+//             ]);
+
+//             DB::commit();
+
+//             return redirect()
+//                 ->route('arsip-masuk.index')
+//                 ->with('success', 'Arsip telah ditolak.');
+//         }
+
+//     } catch (\Exception $e) {
+//          dd([
+//             'error_message' => $e->getMessage(),
+//             'error_file' => $e->getFile(),
+//             'error_line' => $e->getLine(),
+//             'request_data' => $request->all(),
+//             'trace' => $e->getTraceAsString()
+//         ]);
+//         DB::rollBack();
+//         \Log::error('Verifikasi error:', ['error' => $e->getMessage()]);
+//         return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+//     }
+// }
+
+
+
 public function verifikasi(Request $request, Arsip $arsip)
 {
-    // Debug - lihat data yang masuk
     \Log::info('Verifikasi data:', $request->all());
     
-  $request->validate([
-    'tindakan' => 'required|in:setujui,tolak',
-    'alasan' => 'nullable|required_if:tindakan,tolak|string|max:500',
-    'lokasi_tujuan' => 'nullable|required_if:tindakan,setujui|in:RECORD_CENTER_INAKTIF,RECORD_CENTER_PERMANEN',
-    'rak_id_baru' => 'nullable|required_if:tindakan,setujui|exists:master_raks,id',
-    'box_id_baru' => 'nullable|required_if:tindakan,setujui|exists:master_box,id',
-]);
+    $request->validate([
+        'tindakan' => 'required|in:setujui,tolak',
+        'alasan' => 'nullable|required_if:tindakan,tolak|string|max:500',
+        'lokasi_tujuan' => 'nullable|required_if:tindakan,setujui|in:RECORD_CENTER_INAKTIF,RECORD_CENTER_PERMANEN',
+        'rak_id_baru' => 'nullable|required_if:tindakan,setujui|exists:master_raks,id',
+        'box_id_baru' => 'nullable|required_if:tindakan,setujui|exists:master_box,id',
+    ]);
+
     if ($arsip->status_pindah !== 'DIAJUKAN') {
         return back()->with('error', 'Status arsip tidak valid.');
     }
@@ -762,17 +997,19 @@ public function verifikasi(Request $request, Arsip $arsip)
             $rakBaru = MasterRak::find($request->rak_id_baru);
             $boxBaru = MasterBox::find($request->box_id_baru);
 
+            // Update arsip
             $arsip->rak_id = $request->rak_id_baru;
             $arsip->box_id = $request->box_id_baru;
             $arsip->lokasi_arsip = $request->lokasi_tujuan;
             $arsip->tanggal_diverifikasi = now();
             $arsip->diverifikasi_oleh = auth()->id();
-            $arsip->status_pindah = 'DIPINDAHKAN';
+            $arsip->status_pindah = 'DITERIMA'; // Set DITERIMA
             $arsip->catatan_verifikasi = '✅ DISETUJUI: Arsip diverifikasi dan diterima.';
 
             $arsip->skipHistory = true;
             $arsip->save();
 
+            // Catat history
             HistoryPindah::create([
                 'arsip_id' => $arsip->id,
                 'dari_rak' => $dariRakNomor,
@@ -780,15 +1017,42 @@ public function verifikasi(Request $request, Arsip $arsip)
                 'ke_rak' => $rakBaru ? $rakBaru->nomor_rak : null,
                 'ke_box' => $boxBaru ? $boxBaru->nomor_box : null,
                 'tanggal_pindah' => now(),
-                'alasan_pindah' => '✅ DISETUJUI: Arsip diterima dan siap dipindahkan',
+                'alasan_pindah' => '✅ DISETUJUI: Arsip diterima di Unit Kearsipan',
                 'user_id' => auth()->id()
             ]);
+
+            // ========== UPDATE BAP DETAIL STATUS ==========
+            // Update detail BAP menjadi DITERIMA
+            BeritaAcaraDetail::where('arsip_id', $arsip->id)
+                ->update(['status' => BeritaAcaraDetail::STATUS_DITERIMA]);
+
+            // ========== UPDATE STATUS BAP ==========
+            // Cari BAP yang terkait
+            $bapDetail = BeritaAcaraDetail::where('arsip_id', $arsip->id)->first();
+            if ($bapDetail) {
+                $bap = $bapDetail->beritaAcara;
+                
+                // Cek apakah semua arsip di BAP sudah DITERIMA
+                $allDiterima = BeritaAcaraDetail::where('bap_id', $bap->id)
+                    ->whereHas('arsip', function($q) {
+                        $q->where('status_pindah', '!=', 'DITERIMA');
+                    })
+                    ->doesntExist();
+                
+                // Jika semua arsip sudah DITERIMA, update BAP menjadi DISETUJUI
+                if ($allDiterima) {
+                    $bap->status = BeritaAcaraPindah::STATUS_DISETUJUI;
+                    // $bap->tanggal_disetujui = now();
+                    // $bap->disetujui_by = auth()->id();
+                    $bap->save();
+                }
+            }
 
             DB::commit();
 
             return redirect()
                 ->route('arsip-masuk.index')
-                ->with('success', 'Arsip berhasil disetujui. Status: DITERIMA.');
+                ->with('success', 'Arsip berhasil disetujui dan diterima.');
 
         } else {
             // ========== TOLAK ==========
@@ -797,6 +1061,13 @@ public function verifikasi(Request $request, Arsip $arsip)
             $arsip->diverifikasi_oleh = auth()->id();
             $arsip->catatan_verifikasi = '❌ DITOLAK: ' . $request->alasan;
             $arsip->save();
+
+            // Update BAP detail status
+            $bapDetail = BeritaAcaraDetail::where('arsip_id', $arsip->id)->first();
+            if ($bapDetail) {
+                $bapDetail->status = BeritaAcaraDetail::STATUS_DITOLAK;
+                $bapDetail->save();
+            }
 
             HistoryPindah::create([
                 'arsip_id' => $arsip->id,
@@ -813,13 +1084,6 @@ public function verifikasi(Request $request, Arsip $arsip)
         }
 
     } catch (\Exception $e) {
-         dd([
-            'error_message' => $e->getMessage(),
-            'error_file' => $e->getFile(),
-            'error_line' => $e->getLine(),
-            'request_data' => $request->all(),
-            'trace' => $e->getTraceAsString()
-        ]);
         DB::rollBack();
         \Log::error('Verifikasi error:', ['error' => $e->getMessage()]);
         return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
@@ -876,73 +1140,73 @@ public function verifikasi(Request $request, Arsip $arsip)
 //     return redirect()->route('arsip-masuk.index')->with('success', 'Arsip berhasil diperbarui');
 // }
 
- public function updateField(Request $request, $id)
-{
-    try {
-        $request->validate([
-            'field' => 'required|string|in:kode_klasifikasi,aktif_tahun,inaktif_tahun,keterangan_jra',
-            'value' => 'nullable|string'
-        ]);
+//  public function updateField(Request $request, $id)
+// {
+//     try {
+//         $request->validate([
+//             'field' => 'required|string|in:kode_klasifikasi,aktif_tahun,inaktif_tahun,keterangan_jra',
+//             'value' => 'nullable|string'
+//         ]);
 
-        $arsip = Arsip::findOrFail($id);
-        $field = $request->field;
-        $value = $request->value;
+//         $arsip = Arsip::findOrFail($id);
+//         $field = $request->field;
+//         $value = $request->value;
 
-        // Mapping field ke database
-        $fieldMapping = [
-            'kode_klasifikasi' => 'kode_klasifikasi_id',
-            'aktif_tahun' => 'aktif_tahun',
-            'inaktif_tahun' => 'inaktif_tahun',
-            'keterangan_jra' => 'keterangan_jra'
-        ];
+//         // Mapping field ke database
+//         $fieldMapping = [
+//             'kode_klasifikasi' => 'kode_klasifikasi_id',
+//             'aktif_tahun' => 'aktif_tahun',
+//             'inaktif_tahun' => 'inaktif_tahun',
+//             'keterangan_jra' => 'keterangan_jra'
+//         ];
 
-        $dbField = $fieldMapping[$field];
+//         $dbField = $fieldMapping[$field];
 
-        // Jika value kosong atau '-', set ke null
-        if ($value === '' || $value === '-' || $value === null) {
-            $value = null;
-        }
+//         // Jika value kosong atau '-', set ke null
+//         if ($value === '' || $value === '-' || $value === null) {
+//             $value = null;
+//         }
 
-        // Update field
-        $arsip->$dbField = $value;
+//         // Update field
+//         $arsip->$dbField = $value;
         
-        // Recalculate retensi (hitung ulang aktif_sampai, inaktif_sampai, status)
-        $arsip->recalculateRetensi();
-        $arsip->save();
+//         // Recalculate retensi (hitung ulang aktif_sampai, inaktif_sampai, status)
+//         $arsip->recalculateRetensi();
+//         $arsip->save();
 
-        // Load fresh data
-        $arsip->load('kodeKlasifikasi');
+//         // Load fresh data
+//         $arsip->load('kodeKlasifikasi');
 
-        // Format response
-        return response()->json([
-            'success' => true,
-            'message' => 'Data berhasil diperbarui',
-            'data' => [
-                'id' => $arsip->id,
-                'aktif_tahun' => $arsip->aktif_tahun ?? '-',
-                'inaktif_tahun' => $arsip->inaktif_tahun ?? '-',
-                'keterangan_jra' => $arsip->keterangan_jra ?? '-',
-                'aktif_sampai' => $arsip->aktif_sampai ? Carbon::parse($arsip->aktif_sampai)->format('d/m/Y') : '-',
-                'inaktif_sampai' => $arsip->inaktif_sampai ? Carbon::parse($arsip->inaktif_sampai)->format('d/m/Y') : '-',
-                'status_arsip' => $arsip->status_arsip ?? 'AKTIF',
-                'kode_klasifikasi' => $arsip->kodeKlasifikasi->kode ?? 'N/A'
-            ]
-        ]);
+//         // Format response
+//         return response()->json([
+//             'success' => true,
+//             'message' => 'Data berhasil diperbarui',
+//             'data' => [
+//                 'id' => $arsip->id,
+//                 'aktif_tahun' => $arsip->aktif_tahun ?? '-',
+//                 'inaktif_tahun' => $arsip->inaktif_tahun ?? '-',
+//                 'keterangan_jra' => $arsip->keterangan_jra ?? '-',
+//                 'aktif_sampai' => $arsip->aktif_sampai ? Carbon::parse($arsip->aktif_sampai)->format('d/m/Y') : '-',
+//                 'inaktif_sampai' => $arsip->inaktif_sampai ? Carbon::parse($arsip->inaktif_sampai)->format('d/m/Y') : '-',
+//                 'status_arsip' => $arsip->status_arsip ?? 'AKTIF',
+//                 'kode_klasifikasi' => $arsip->kodeKlasifikasi->kode ?? 'N/A'
+//             ]
+//         ]);
 
-    } catch (\Exception $e) {
-        \Log::error('Update Field Error:', [
-            'id' => $id,
-            'field' => $request->field,
-            'value' => $request->value,
-            'error' => $e->getMessage()
-        ]);
+//     } catch (\Exception $e) {
+//         \Log::error('Update Field Error:', [
+//             'id' => $id,
+//             'field' => $request->field,
+//             'value' => $request->value,
+//             'error' => $e->getMessage()
+//         ]);
 
-        return response()->json([
-            'success' => false,
-            'message' => 'Terjadi kesalahan: ' . $e->getMessage()
-        ], 500);
-    }
-}
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+//         ], 500);
+//     }
+// }
 
     /**
      * Edit - untuk modal edit (AJAX)
@@ -1113,5 +1377,81 @@ private function getContentType($extension)
     ];
     
     return $types[$extension] ?? 'application/octet-stream';
+}
+
+
+
+public function updateField(Request $request, $id)
+{
+    try {
+        $request->validate([
+            'field' => 'required|string|in:kode_klasifikasi,aktif_tahun,inaktif_tahun,keterangan_jra',
+            'value' => 'nullable|string'
+        ]);
+
+        $arsip = Arsip::findOrFail($id);
+        $field = $request->field;
+        $value = $request->value;
+
+        // Mapping field ke database
+        $fieldMapping = [
+            'kode_klasifikasi' => 'kode_klasifikasi_id',
+            'aktif_tahun' => 'aktif_tahun',
+            'inaktif_tahun' => 'inaktif_tahun',
+            'keterangan_jra' => 'keterangan_jra'
+        ];
+
+        $dbField = $fieldMapping[$field];
+
+        // Jika value kosong atau '-', set ke null
+        if ($value === '' || $value === '-' || $value === null) {
+            $value = null;
+        }
+
+        // Untuk numeric fields, parse ke integer
+        if (in_array($field, ['aktif_tahun', 'inaktif_tahun']) && $value !== null) {
+            $value = (int) $value;
+        }
+
+        // Update field
+        $arsip->$dbField = $value;
+        
+        // ====== PERBAIKAN: Recalculate retensi ======
+        // PASTIKAN method ini dipanggil
+        $arsip->recalculateRetensi();
+        $arsip->save();
+
+        // Load fresh data
+        $arsip->load('kodeKlasifikasi');
+
+        // Format response
+        return response()->json([
+            'success' => true,
+            'message' => 'Data berhasil diperbarui',
+            'data' => [
+                'id' => $arsip->id,
+                'aktif_tahun' => $arsip->aktif_tahun ?? '-',
+                'inaktif_tahun' => $arsip->inaktif_tahun ?? '-',
+                'keterangan_jra' => $arsip->keterangan_jra ?? '-',
+                'aktif_sampai' => $arsip->aktif_sampai ? Carbon::parse($arsip->aktif_sampai)->format('d/m/Y') : '-',
+                'inaktif_sampai' => $arsip->inaktif_sampai ? Carbon::parse($arsip->inaktif_sampai)->format('d/m/Y') : '-',
+                'status_arsip' => $arsip->status_arsip ?? 'AKTIF',
+                'kode_klasifikasi' => $arsip->kodeKlasifikasi->kode ?? 'N/A'
+            ]
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('Update Field Error:', [
+            'id' => $id,
+            'field' => $request->field,
+            'value' => $request->value,
+            'error' => $e->getMessage()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+        ], 500);
+    }
 }
 }
