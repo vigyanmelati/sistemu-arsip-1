@@ -313,7 +313,7 @@ if ($request->show_duplicates == 1) {
 
         $validated = $request->validate([
             'kode_klasifikasi_id'=>'required|exists:kode_klasifikasis,id',
-            'uraian_arsip'=>'required|string|max:500',
+            'uraian_arsip'=>'required|string|min:30',
             'tahun_arsip'=>'required|integer|min:2000|max:'.(date('Y')+1),
             'tanggal_arsip'=>'required|date',
             'jumlah_berkas'=>'required|integer|min:1',
@@ -455,7 +455,7 @@ if (!$user->canViewArsip($arsip)) {
 
         $validated = $request->validate([
             'kode_klasifikasi_id'=>'required|exists:kode_klasifikasis,id',
-            'uraian_arsip'=>'required|string|max:500',
+            'uraian_arsip'=>'required|string|min:30',
             'tahun_arsip'=>'required|integer|min:2000|max:'.(date('Y')+1),
             'tanggal_arsip'=>'required|date',
             'jumlah_berkas'=>'required|integer|min:1',

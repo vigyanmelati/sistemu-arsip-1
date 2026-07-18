@@ -144,7 +144,7 @@ class SubBagianRiwayatPemindahanController extends Controller
 
         $validated = $request->validate([
             'kode_klasifikasi_id' => 'required|exists:kode_klasifikasis,id',
-            'uraian_arsip'        => 'required|string|max:500',
+            'uraian_arsip'        => 'required|string|min:30',
             'tahun_arsip'         => 'required|integer|min:1900|max:' . (date('Y') + 1),
             'tanggal_arsip'       => 'required|date',
             'jumlah_berkas'       => 'required|integer|min:1',

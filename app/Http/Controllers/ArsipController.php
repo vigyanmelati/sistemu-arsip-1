@@ -305,7 +305,7 @@ public function store(Request $request)
     $validated = $request->validate([
         // WAJIB
         'kode_klasifikasi_id' => 'required|exists:kode_klasifikasis,id',
-        'uraian_arsip' => 'required|string|max:500',
+        'uraian_arsip' => 'required|string|min:30',
         'sub_bagian_id' => 'required|exists:sub_bagians,id',
         'tahun_arsip' => 'required|integer|min:2000|max:' . (date('Y') + 1),
         'tanggal_arsip' => 'required|date',
@@ -638,7 +638,7 @@ private function extractNumberFromText($text)
     $validated = $request->validate([
         // WAJIB - Data Dasar
         'kode_klasifikasi_id' => 'required|exists:kode_klasifikasis,id',
-        'uraian_arsip'        => 'required|string|max:500',
+        'uraian_arsip'        => 'required|string|min:30',
         'sub_bagian_id'       => 'required|exists:sub_bagians,id',
         'tahun_arsip'         => 'required|integer|min:2000|max:' . (date('Y') + 1),
         'tanggal_arsip'       => 'required|date',

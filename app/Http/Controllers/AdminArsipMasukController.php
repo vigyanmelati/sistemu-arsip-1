@@ -1242,7 +1242,7 @@ public function verifikasi(Request $request, Arsip $arsip)
             $validated = $request->validate([
                 'kode_klasifikasi_id' => 'nullable|exists:kode_klasifikasis,id',
                 'sub_bagian_id' => 'nullable|exists:sub_bagians,id',
-                'uraian_arsip' => 'required|string|max:1000',
+                'uraian_arsip' => 'required|string|min:30',
                 'tahun_arsip' => 'required|integer|min:1900|max:2100',
                 'jumlah_berkas' => 'required|integer|min:1',
                 'satuan_arsip' => 'required|string|max:50',
