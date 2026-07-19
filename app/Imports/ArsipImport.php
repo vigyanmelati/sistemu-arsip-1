@@ -19,263 +19,453 @@ use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Validators\ValidationException;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as SpreadsheetException;
 
-class ArsipImport implements 
-    ToModel, 
-    WithHeadingRow, 
-    WithValidation, 
-    SkipsOnFailure, 
+class ArsipImport implements
+    ToModel,
+    WithHeadingRow,
+    WithValidation,
+    SkipsOnFailure,
     SkipsEmptyRows
 {
     public array $errors = [];
     use SkipsFailures;
     public int $importedRows = 0;
 
+    // Jumlah baris yang di-skip karena terdeteksi duplikat (dalam file / database)
+    public int $duplicateRows = 0;
+
+    // Menyimpan key duplikat yang sudah dilihat saat fase VALIDASI (validateExcel)
+    // format: [key => nomor_baris]
+    protected array $seenKeysValidation = [];
+
+    // Menyimpan key duplikat yang sudah dilihat saat fase IMPORT beneran (model())
+    // dipisah dari $seenKeysValidation supaya tidak bentrok kalau instance dipakai ulang
+    protected array $seenKeysImport = [];
+
+    // Penghitung baris kasar untuk fase model() (mulai dari 2 karena baris 1 = header)
+    protected int $currentRow = 1;
+
     public function rules(): array
-{
-    return [
-        'kode_klasifikasi' => [
-            'required',
-            function ($attribute, $value, $fail) {
-                $kode = \App\Models\KodeKlasifikasi::whereRaw('REPLACE(kode, " ", "") = ?', [str_replace(' ', '', strtoupper($value))])->first();
+    {
+        return [
+            'kode_klasifikasi' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    $kode = \App\Models\KodeKlasifikasi::whereRaw('REPLACE(kode, " ", "") = ?', [str_replace(' ', '', strtoupper($value))])->first();
 
-                if (!$kode) {
-                    $fail('Kode klasifikasi tidak ditemukan');
+                    if (!$kode) {
+                        $fail('Kode klasifikasi tidak ditemukan');
+                    }
                 }
-            }
-        ],
-        'uraian_arsip' => 'required',
-        'tahun_arsip'  => 'required|numeric',
-    ];
-}
+            ],
+            'uraian_arsip' => 'required',
+            'tahun_arsip'  => 'required|numeric',
+        ];
+    }
 
-public function isEmptyWhen(array $row): bool
-{
-    return
-        empty(trim($row['kode_klasifikasi'] ?? '')) &&
-        empty(trim($row['jenis_arsip'] ?? '')) &&
-        empty(trim($row['kurun_waktu'] ?? ''));
-}
+    public function isEmptyWhen(array $row): bool
+    {
+        return
+            empty(trim($row['kode_klasifikasi'] ?? '')) &&
+            empty(trim($row['jenis_arsip'] ?? '')) &&
+            empty(trim($row['kurun_waktu'] ?? ''));
+    }
 
 
-public function customValidationMessages()
-{
-    return [
-        'kode_klasifikasi.required' => 'Kode klasifikasi kosong',
-        'uraian_arsip.required'     => 'Jenis arsip kosong',
-        'tahun_arsip.required'      => 'Tahun arsip kosong',
-    ];
-}
+    public function customValidationMessages()
+    {
+        return [
+            'kode_klasifikasi.required' => 'Kode klasifikasi kosong',
+            'uraian_arsip.required'     => 'Jenis arsip kosong',
+            'tahun_arsip.required'      => 'Tahun arsip kosong',
+        ];
+    }
 
     public function headingRow(): int
     {
         return 1;
     }
-private function validateRow(array $row, int $rowNumber): void
-{
-    $requiredFields = [
-        'kode_klasifikasi' => 'Kode Klasifikasi',
-        'uraian_arsip'     => 'Uraian Arsip',
-        'sub_bagian'      => 'Sub Bagian',
-        'tahun_arsip'      => 'Tahun Arsip',
-        'tanggal_arsip'    => 'Tanggal Arsip',
-        'jumlah_berkas'    => 'Jumlah Berkas',
-        'nomor_rak'    => 'Nomor Rak',
-        'nomor_box'    => 'Nomor Box',
-        'keterangan'    => 'Keterangan',
-    ];
 
-    foreach ($requiredFields as $field => $label) {
+    /*
+    |--------------------------------------------------------------------------
+    | HELPER: BANGUN KEY UNIK UNTUK DETEKSI DUPLIKAT
+    |--------------------------------------------------------------------------
+    | Kombinasi field yang dianggap "sama" / duplikat:
+    | kode_klasifikasi + sub_bagian + uraian_arsip (dinormalisasi) + tahun_arsip
+    | + tanggal_arsip (kalau ada).
+    | Sesuaikan kombinasi ini kalau definisi "duplikat" di bisnis kamu beda.
+    |--------------------------------------------------------------------------
+    */
+    private function buildDuplicateKey(
+        int $kodeId,
+        int $subBagianId,
+        string $uraianArsip,
+        $tahunArsip,
+        ?string $tanggalArsip
+    ): string {
+        $uraianNormalized = strtolower(trim(preg_replace('/\s+/', ' ', $uraianArsip)));
 
-        if (
-            !isset($row[$field]) ||
-            trim((string)$row[$field]) === ''
-        ) {
-            $this->errors[] =
-                "Baris {$rowNumber}: {$label} wajib diisi.";
-        }
+        return implode('|', [
+            $kodeId,
+            $subBagianId,
+            $uraianNormalized,
+            (string) $tahunArsip,
+            $tanggalArsip ?? '',
+        ]);
     }
 
     /*
     |--------------------------------------------------------------------------
-    | KODE KLASIFIKASI
+    | HELPER: RESOLVE KODE KLASIFIKASI & SUB BAGIAN DARI SATU BARIS
     |--------------------------------------------------------------------------
     */
+    private function resolveKode(string $kodeRaw): ?KodeKlasifikasi
+    {
+        $kodeInput = strtoupper(str_replace(' ', '', trim($kodeRaw)));
 
-    if (!empty($row['kode_klasifikasi'])) {
-
-        $kodeInput = strtoupper(
-            str_replace(
-                ' ',
-                '',
-                trim($row['kode_klasifikasi'])
-            )
-        );
-
-        $kode = KodeKlasifikasi::whereRaw(
-            'REPLACE(kode," ","") = ?',
-            [$kodeInput]
-        )->first();
-
-        if (!$kode) {
-            $this->errors[] =
-                "Baris {$rowNumber}: Kode klasifikasi '{$row['kode_klasifikasi']}' tidak ditemukan.";
+        if (!$kodeInput) {
+            return null;
         }
+
+        return KodeKlasifikasi::whereRaw('REPLACE(kode, " ", "") = ?', [$kodeInput])->first();
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | TAHUN ARSIP
-    |--------------------------------------------------------------------------
-    */
+    private function resolveSubBagian(?string $namaSubBagian): ?SubBagian
+    {
+        $user = Auth::user();
+        $subBagian = $user?->subBagian;
 
-    if (!empty($row['tahun_arsip'])) {
-
-        if (!is_numeric($row['tahun_arsip'])) {
-            $this->errors[] =
-                "Baris {$rowNumber}: Tahun arsip harus berupa angka.";
+        if (!$subBagian && $namaSubBagian) {
+            $subBagian = SubBagian::where('nama_sub_bagian', trim($namaSubBagian))->first();
         }
+
+        return $subBagian;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | TANGGAL ARSIP
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-        !empty($row['tanggal_arsip']) &&
-        !empty($row['tahun_arsip']) &&
-        is_numeric($row['tahun_arsip'])
-    ) {
+    private function resolveTanggalKey($tanggalArsipRaw): ?string
+    {
+        if (empty($tanggalArsipRaw)) {
+            return null;
+        }
 
         try {
-
-            if (is_numeric($row['tanggal_arsip'])) {
-
-                $tanggal = Carbon::instance(
-                    Date::excelToDateTimeObject(
-                        $row['tanggal_arsip']
-                    )
-                );
-
-            } else {
-
-                $tanggal = Carbon::parse(
-                    $row['tanggal_arsip']
-                );
+            if (is_numeric($tanggalArsipRaw)) {
+                return Carbon::instance(
+                    Date::excelToDateTimeObject($tanggalArsipRaw)
+                )->format('Y-m-d');
             }
+
+            return Carbon::parse($tanggalArsipRaw)->format('Y-m-d');
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | HELPER: CEK APAKAH KEY SUDAH ADA DI DATABASE
+    |--------------------------------------------------------------------------
+    */
+    private function existsInDatabase(
+        int $kodeId,
+        int $subBagianId,
+        string $uraianArsip,
+        $tahunArsip,
+        ?string $tanggalKey
+    ): bool {
+        return Arsip::where('kode_klasifikasi_id', $kodeId)
+            ->where('sub_bagian_id', $subBagianId)
+            ->where('tahun_arsip', (string) $tahunArsip)
+            ->whereRaw('LOWER(TRIM(uraian_arsip)) = ?', [strtolower(trim(preg_replace('/\s+/', ' ', $uraianArsip)))])
+            ->when($tanggalKey, function ($query) use ($tanggalKey) {
+                $query->whereDate('tanggal_arsip', $tanggalKey);
+            })
+            ->exists();
+    }
+
+    private function validateRow(array $row, int $rowNumber): void
+    {
+        $requiredFields = [
+            'kode_klasifikasi' => 'Kode Klasifikasi',
+            'uraian_arsip'     => 'Uraian Arsip',
+            'sub_bagian'      => 'Sub Bagian',
+            'tahun_arsip'      => 'Tahun Arsip',
+            'tanggal_arsip'    => 'Tanggal Arsip',
+            'jumlah_berkas'    => 'Jumlah Berkas',
+            'nomor_rak'    => 'Nomor Rak',
+            'nomor_box'    => 'Nomor Box',
+            'keterangan'    => 'Keterangan',
+        ];
+
+        foreach ($requiredFields as $field => $label) {
 
             if (
-                $tanggal->year !=
-                (int)$row['tahun_arsip']
+                !isset($row[$field]) ||
+                trim((string)$row[$field]) === ''
             ) {
+                $this->errors[] =
+                    "Baris {$rowNumber}: {$label} wajib diisi.";
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | KODE KLASIFIKASI
+        |--------------------------------------------------------------------------
+        */
+
+        $kode = null;
+
+        if (!empty($row['kode_klasifikasi'])) {
+
+            $kode = $this->resolveKode($row['kode_klasifikasi']);
+
+            if (!$kode) {
+                $this->errors[] =
+                    "Baris {$rowNumber}: Kode klasifikasi '{$row['kode_klasifikasi']}' tidak ditemukan.";
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | TAHUN ARSIP
+        |--------------------------------------------------------------------------
+        */
+
+        if (!empty($row['tahun_arsip'])) {
+
+            if (!is_numeric($row['tahun_arsip'])) {
+                $this->errors[] =
+                    "Baris {$rowNumber}: Tahun arsip harus berupa angka.";
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | TANGGAL ARSIP
+        |--------------------------------------------------------------------------
+        */
+
+        $tanggalKey = null;
+
+        if (
+            !empty($row['tanggal_arsip']) &&
+            !empty($row['tahun_arsip']) &&
+            is_numeric($row['tahun_arsip'])
+        ) {
+
+            try {
+
+                if (is_numeric($row['tanggal_arsip'])) {
+
+                    $tanggal = Carbon::instance(
+                        Date::excelToDateTimeObject(
+                            $row['tanggal_arsip']
+                        )
+                    );
+
+                } else {
+
+                    $tanggal = Carbon::parse(
+                        $row['tanggal_arsip']
+                    );
+                }
+
+                $tanggalKey = $tanggal->format('Y-m-d');
+
+                if (
+                    $tanggal->year !=
+                    (int)$row['tahun_arsip']
+                ) {
+
+                    $this->errors[] =
+                        "Baris {$rowNumber}: Tahun arsip harus sama dengan tahun pada tanggal arsip.";
+                }
+
+            } catch (\Exception $e) {
 
                 $this->errors[] =
-                    "Baris {$rowNumber}: Tahun arsip harus sama dengan tahun pada tanggal arsip.";
+                    "Baris {$rowNumber}: Format tanggal arsip tidak valid.";
             }
+        }
 
-        } catch (\Exception $e) {
+        /*
+        |--------------------------------------------------------------------------
+        | SATUAN ARSIP
+        |--------------------------------------------------------------------------
+        */
 
-            $this->errors[] =
-                "Baris {$rowNumber}: Format tanggal arsip tidak valid.";
+        if (!empty($row['jumlah_berkas'])) {
+
+            $jumlah = strtoupper(
+                trim((string)$row['jumlah_berkas'])
+            );
+
+            preg_match('/[A-Z]+/', $jumlah, $match);
+
+            $satuan = $match[0] ?? '';
+
+            $allowed = [
+                'BENDEL',
+                'LEMBAR',
+            ];
+
+            if (!in_array($satuan, $allowed)) {
+
+                $this->errors[] =
+                    "Baris {$rowNumber}: Satuan arsip hanya boleh BENDEL atau LEMBAR .";
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | TINGKAT PERKEMBANGAN
+        |--------------------------------------------------------------------------
+        */
+
+        if (!empty($row['tingkat_perkembangan'])) {
+
+            $allowed = [
+                'ASLI',
+                'COPY',
+                'SALINAN'
+            ];
+
+            $value = strtoupper(
+                trim($row['tingkat_perkembangan'])
+            );
+
+            if (!in_array($value, $allowed)) {
+
+                $this->errors[] =
+                    "Baris {$rowNumber}: Tingkat perkembangan hanya boleh ASLI, COPY atau SALINAN.";
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | KETERANGAN JRA
+        |--------------------------------------------------------------------------
+        */
+
+        if (!empty($row['keterangan_jra'])) {
+
+            $allowed = [
+                'MUSNAH',
+                'PERMANEN',
+                'BELUM DITENTUKAN'
+            ];
+
+            $value = strtoupper(
+                trim($row['keterangan_jra'])
+            );
+
+            if (!in_array($value, $allowed)) {
+
+                $this->errors[] =
+                    "Baris {$rowNumber}: Keterangan JRA tidak valid.";
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | CEK DUPLIKAT (ANTAR BARIS DALAM FILE & DI DATABASE)
+        |--------------------------------------------------------------------------
+        | Hanya dicek kalau field kunci (kode, uraian, tahun) sudah lolos & sub
+        | bagian bisa ditemukan, supaya tidak menumpuk error yang sama dengan
+        | validasi wajib diisi di atas.
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $kode &&
+            !empty($row['uraian_arsip']) &&
+            !empty($row['tahun_arsip'])
+        ) {
+
+            $subBagian = $this->resolveSubBagian($row['sub_bagian'] ?? null);
+
+            if (!$subBagian) {
+                $this->errors[] =
+                    "Baris {$rowNumber}: Sub bagian '{$row['sub_bagian']}' tidak ditemukan, duplikat tidak bisa dicek.";
+            } else {
+
+                $uraianArsip = trim(preg_replace('/\s+/', ' ', $row['uraian_arsip']));
+
+                $key = $this->buildDuplicateKey(
+                    $kode->id,
+                    $subBagian->id,
+                    $uraianArsip,
+                    $row['tahun_arsip'],
+                    $tanggalKey
+                );
+
+                // 1) Cek duplikat ANTAR BARIS dalam file Excel
+                if (isset($this->seenKeysValidation[$key])) {
+
+                    $baseline = $this->seenKeysValidation[$key];
+
+                    $this->errors[] =
+                        "Baris {$rowNumber}: Data duplikat dengan baris {$baseline} pada file yang sama (kode klasifikasi, uraian arsip, tahun & sub bagian sama).";
+
+                } else {
+
+                    $this->seenKeysValidation[$key] = $rowNumber;
+
+                    // 2) Cek duplikat di DATABASE
+                    if ($this->existsInDatabase($kode->id, $subBagian->id, $uraianArsip, $row['tahun_arsip'], $tanggalKey)) {
+
+                        $this->errors[] =
+                            "Baris {$rowNumber}: Data arsip sudah ada di database (kode klasifikasi, uraian arsip, tahun & sub bagian sama).";
+                    }
+                }
+            }
         }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | SATUAN ARSIP
-    |--------------------------------------------------------------------------
-    */
+    public function validateExcel(array $rows): void
+    {
+        $rowNumber = 2;
 
-    if (!empty($row['jumlah_berkas'])) {
+        // Reset supaya validateExcel bisa dipanggil ulang tanpa membawa state lama
+        $this->seenKeysValidation = [];
 
-        $jumlah = strtoupper(
-            trim((string)$row['jumlah_berkas'])
-        );
+        foreach ($rows as $row) {
 
-        preg_match('/[A-Z]+/', $jumlah, $match);
+            $this->validateRow(
+                $row,
+                $rowNumber
+            );
 
-        $satuan = $match[0] ?? '';
-
-        $allowed = [
-            'BENDEL',
-            'LEMBAR',
-        ];
-
-        if (!in_array($satuan, $allowed)) {
-
-            $this->errors[] =
-                "Baris {$rowNumber}: Satuan arsip hanya boleh BENDEL atau LEMBAR .";
+            $rowNumber++;
         }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | TINGKAT PERKEMBANGAN
-    |--------------------------------------------------------------------------
-    */
-
-    if (!empty($row['tingkat_perkembangan'])) {
-
-        $allowed = [
-            'ASLI',
-            'COPY',
-            'SALINAN'
-        ];
-
-        $value = strtoupper(
-            trim($row['tingkat_perkembangan'])
-        );
-
-        if (!in_array($value, $allowed)) {
-
-            $this->errors[] =
-                "Baris {$rowNumber}: Tingkat perkembangan hanya boleh ASLI, COPY atau SALINAN.";
-        }
+    /**
+     * Helper untuk dipakai di controller:
+     * cek dulu apakah ada error (termasuk duplikat) sebelum menjalankan Excel::import().
+     *
+     * Contoh pemakaian di controller:
+     *
+     *   $rows = Excel::toArray(new ArsipImport, $file)[0];
+     *   $import = new ArsipImport();
+     *   $import->validateExcel($rows);
+     *
+     *   if ($import->hasErrors()) {
+     *       return back()->withErrors($import->errors);
+     *       // import TIDAK dilanjutkan ke database
+     *   }
+     *
+     *   Excel::import($import, $file);
+     */
+    public function hasErrors(): bool
+    {
+        return !empty($this->errors);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | KETERANGAN JRA
-    |--------------------------------------------------------------------------
-    */
-
-    if (!empty($row['keterangan_jra'])) {
-
-        $allowed = [
-            'MUSNAH',
-            'PERMANEN',
-            'BELUM DITENTUKAN'
-        ];
-
-        $value = strtoupper(
-            trim($row['keterangan_jra'])
-        );
-
-        if (!in_array($value, $allowed)) {
-
-            $this->errors[] =
-                "Baris {$rowNumber}: Keterangan JRA tidak valid.";
-        }
-    }
-}
-
-public function validateExcel(array $rows): void
-{
-    $rowNumber = 2;
-
-    foreach ($rows as $row) {
-
-        $this->validateRow(
-            $row,
-            $rowNumber
-        );
-
-        $rowNumber++;
-    }
-}
     public function model(array $row)
     {
+        $this->currentRow++;
+
         if (
             empty(trim($row['kode_klasifikasi'] ?? '')) &&
             empty(trim($row['uraian_arsip'] ?? '')) &&
@@ -292,17 +482,12 @@ public function validateExcel(array $rows): void
             $kodeInput = strtoupper(trim($row['kode_klasifikasi'] ?? ''));
             $kodeInput = str_replace(' ', '', $kodeInput);
 
-            // if (!$kodeInput) return null;
             if (!$kodeInput) {
                 return null;
             }
 
             $kode = KodeKlasifikasi::whereRaw('REPLACE(kode, " ", "") = ?', [$kodeInput])->first();
 
-            // if (!$kode) {
-            //     Log::warning('Kode tidak ditemukan: ' . $kodeInput);
-            //     return null;
-            // }
             if (!$kode) {
                return null;
             }
@@ -323,9 +508,6 @@ public function validateExcel(array $rows): void
                 return null;
             }
 
-            // if (!$subBagian) {
-            //     throw new \Exception('Sub bagian tidak ditemukan untuk user');
-            // }
             // =======================
             // MAPPING EXCEL
             // =======================
@@ -333,7 +515,6 @@ public function validateExcel(array $rows): void
             if (empty($uraianArsip)) {
                 Log::warning('Uraian arsip kosong');
                 return null;
-                //    throw new \Exception('Uraian Arsip Kosong');
             }
 
             $tingkatPerkembangan = strtoupper(trim($row['tingkat_perkembangan'] ?? 'ASLI'));
@@ -350,12 +531,6 @@ public function validateExcel(array $rows): void
 
             $tahunArsip = $row['tahun_arsip'] ?? date('Y');
 
-            // $tanggalArsip = !empty($row['tanggal_arsip'])
-            //     ? (is_numeric($row['tanggal_arsip'])
-            //         ? Date::excelToDateTimeObject($row['tanggal_arsip'])
-            //         : Carbon::parse($row['tanggal_arsip']))
-            //     : Carbon::createFromDate((int)$tahunArsip, 1, 1);
-
             if (!empty($row['tanggal_arsip'])) {
                 if (is_numeric($row['tanggal_arsip'])) {
                     $tanggalArsip = Carbon::instance(
@@ -370,6 +545,44 @@ public function validateExcel(array $rows): void
 
             $nomorRak = $row['nomor_rak'] ?? null;
             $nomorBox = $row['nomor_box'] ?? null;
+
+            // =======================
+            // CEK DUPLIKAT (SAFETY NET SAAT IMPORT BENERAN)
+            // =======================
+            // Catatan: pengecekan utama sebaiknya sudah dilakukan lewat
+            // validateExcel() SEBELUM Excel::import() dipanggil, supaya kalau
+            // ada duplikat import bisa dibatalkan total sebelum menyentuh
+            // database. Blok ini hanya jaring pengaman terakhir: kalau tetap
+            // ketemu duplikat di sini, baris ini di-skip (tidak di-insert),
+            // tapi baris-baris lain yang valid tetap lanjut diproses karena
+            // commit dilakukan per baris.
+            $tanggalKeyImport = $tanggalArsip->format('Y-m-d');
+
+            $duplicateKey = $this->buildDuplicateKey(
+                $kode->id,
+                $subBagian->id,
+                $uraianArsip,
+                $tahunArsip,
+                $tanggalKeyImport
+            );
+
+            if (isset($this->seenKeysImport[$duplicateKey])) {
+                $pesan = "Baris {$this->currentRow}: Data duplikat dengan baris {$this->seenKeysImport[$duplicateKey]} dalam file yang sama, data tidak diimport.";
+                $this->errors[] = $pesan;
+                $this->duplicateRows++;
+                Log::warning($pesan);
+                return null;
+            }
+
+            $this->seenKeysImport[$duplicateKey] = $this->currentRow;
+
+            if ($this->existsInDatabase($kode->id, $subBagian->id, $uraianArsip, $tahunArsip, $tanggalKeyImport)) {
+                $pesan = "Baris {$this->currentRow}: Data arsip sudah ada di database, data tidak diimport.";
+                $this->errors[] = $pesan;
+                $this->duplicateRows++;
+                Log::warning($pesan);
+                return null;
+            }
 
             // =======================
             // JUMLAH BERKAS
@@ -404,20 +617,12 @@ public function validateExcel(array $rows): void
                 $keteranganJRA = 'MUSNAH';
             }
 
-            // Ambil angka dari retensi (jika ada)
-            // $aktifText = $kode->aktif_tahun ?? null;
-            // $inaktifText = $kode->inaktif_tahun ?? null;
-            
-            // $aktifTahun = $aktifText ? (int) preg_replace('/[^0-9]/', '', $aktifText) : null;
-            // $inaktifTahun = $inaktifText ? (int) preg_replace('/[^0-9]/', '', $inaktifText) : null;
             $aktifText = $this->parseRetensi($row['aktif_tahun'] ?? null);
             $inaktifText = $this->parseRetensi($row['inaktif_tahun'] ?? null);
 
             $aktifTahun = $this->ambilAngka($aktifText);
             $inaktifTahun = $this->ambilAngka($inaktifText);
 
-            // Hitung retensi
-            // $aktifSampai = $aktifTahun ? (clone $tanggalArsip)->addYears($aktifTahun) : null;
             $isAfterCondition = str_contains($aktifText, 'SETELAH');
 
             if ($isAfterCondition) {
@@ -433,22 +638,11 @@ public function validateExcel(array $rows): void
 
             // Status
             $now = now();
-            // if ($keteranganJRA === 'PERMANEN') {
-            //     $status = 'PERMANEN';
-            // } elseif ($aktifSampai && $now <= $aktifSampai) {
-            //     $status = 'AKTIF';
-            // } elseif ($inaktifSampai && $now <= $inaktifSampai) {
-            //     $status = 'INAKTIF';
-            // } elseif ($inaktifSampai) {
-            //     $status = 'HABIS_RETENSI';
-            // } else {
-            //     $status = 'AKTIF';
-            // }
 
             if ($keteranganJRA === 'PERMANEN') {
                 $status = 'PERMANEN';
             } elseif ($isAfterCondition) {
-                $status = 'AKTIF'; // 🔥 paksa aktif
+                $status = 'AKTIF';
             } elseif ($aktifSampai && $now <= $aktifSampai) {
                 $status = 'AKTIF';
             } elseif ($inaktifSampai && $now <= $inaktifSampai) {
@@ -463,7 +657,7 @@ public function validateExcel(array $rows): void
             // SIMPAN DATA - PAKAI DB TRANSACTION
             // =======================
             DB::beginTransaction();
-            
+
             try {
                 $arsip = Arsip::create([
                     'kode_klasifikasi_id' => $kode->id,
@@ -492,20 +686,19 @@ public function validateExcel(array $rows): void
                 $this->importedRows++;
                 DB::commit();
                 Log::info('SUCCESS: Data saved with ID: ' . $arsip->id);
-                
+
                 return $arsip;
-                
+
             } catch (\Exception $e) {
                 DB::rollBack();
                 Log::error('DB Error: ' . $e->getMessage());
                 throw $e;
             }
-            
+
         } catch (\Exception $e) {
             Log::error('Import Error: ' . $e->getMessage());
             Log::error($e->getTraceAsString());
             return null;
-            //    throw new \Exception('Import Error: ' . $e->getMessage());
         }
     }
 
