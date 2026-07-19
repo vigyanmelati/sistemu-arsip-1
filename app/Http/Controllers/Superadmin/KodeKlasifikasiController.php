@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Superadmin;
 use App\Http\Controllers\Controller;
 use App\Models\KodeKlasifikasi;
 use Illuminate\Http\Request;
+use App\Models\Arsip;
 
 class KodeKlasifikasiController extends Controller
 {
@@ -39,8 +40,29 @@ class KodeKlasifikasiController extends Controller
     }
 
     public function destroy(KodeKlasifikasi $kodeKlasifikasi)
-    {
-        $kodeKlasifikasi->delete();
-        return redirect()->back()->with('success', 'Kode klasifikasi berhasil dihapus');
+{
+    // Cek apakah masih digunakan oleh arsip
+    $digunakanArsip = Arsip::where(
+        'kode_klasifikasi_id',
+        $kodeKlasifikasi->id
+    )->exists();
+
+    if ($digunakanArsip) {
+        return redirect()
+            ->back()
+            ->with(
+                'error',
+                'Kode klasifikasi tidak dapat dihapus karena masih digunakan oleh data arsip.'
+            );
     }
+
+    $kodeKlasifikasi->delete();
+
+    return redirect()
+        ->back()
+        ->with(
+            'success',
+            'Kode klasifikasi berhasil dihapus.'
+        );
+}
 }
