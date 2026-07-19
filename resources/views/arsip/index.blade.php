@@ -267,7 +267,13 @@
     @forelse($arsips as $arsip)
     @php
         // Cek apakah arsip sudah disetujui untuk dimusnahkan
-        $isApprovedForDestruction = in_array($arsip->status_arsip, ['DISETUJUI_MUSNAH','MUSNAH']);
+$isApprovedForDestruction = in_array($arsip->status_arsip, [
+        'MUSNAH',
+        'NON_ARSIP',
+        'DIAJUKAN_MUSNAH',
+        'DISETUJUI_MUSNAH',
+        'DIMUSNAHKAN',
+    ]);
     @endphp
     <tr data-id="{{ $arsip->id }}"
         data-tanggal-arsip="{{ $arsip->tanggal_arsip }}"
@@ -385,7 +391,7 @@
    
         
         <!-- Aksi -->
-       <td>
+      <td>
     <!-- Detail -->
     <a href="{{ route('arsip.show', $arsip->id) }}"
        class="btn btn-sm btn-info"
@@ -393,27 +399,29 @@
         <i class="bi bi-eye"></i>
     </a>
 
-    <!-- Edit -->
-    <a href="{{ route('arsip.edit', $arsip->id) }}"
-       class="btn btn-sm btn-warning"
-       title="Edit">
-        <i class="bi bi-pencil"></i>
-    </a>
+    @if(!$isApprovedForDestruction)
+        <!-- Edit -->
+        <a href="{{ route('arsip.edit', $arsip->id) }}"
+           class="btn btn-sm btn-warning"
+           title="Edit">
+            <i class="bi bi-pencil"></i>
+        </a>
 
-    <!-- Hapus -->
-    <form action="{{ route('arsip.destroy', $arsip->id) }}"
-          method="POST"
-          class="d-inline"
-          onsubmit="return confirm('Apakah Anda yakin ingin menghapus arsip ini?')">
-        @csrf
-        @method('DELETE')
+        <!-- Hapus -->
+        <form action="{{ route('arsip.destroy', $arsip->id) }}"
+              method="POST"
+              class="d-inline"
+              onsubmit="return confirm('Apakah Anda yakin ingin menghapus arsip ini?')">
+            @csrf
+            @method('DELETE')
 
-        <button type="submit"
-                class="btn btn-sm btn-danger"
-                title="Hapus">
-            <i class="bi bi-trash"></i>
-        </button>
-    </form>
+            <button type="submit"
+                    class="btn btn-sm btn-danger"
+                    title="Hapus">
+                <i class="bi bi-trash"></i>
+            </button>
+        </form>
+    @endif
 </td>
     </tr>
     @empty

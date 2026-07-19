@@ -357,6 +357,10 @@ class PemusnahanController extends Controller
                     'keputusan' => 'belum_dinilai',
                 ]
             );
+               Arsip::where('id', $arsipId)
+            ->update([
+                'status_arsip' => 'DIAJUKAN_MUSNAH',
+            ]);
         }
 
         return back()->with('success', 'Arsip berhasil ditambahkan ke pemusnahan');
@@ -369,7 +373,9 @@ class PemusnahanController extends Controller
         PemusnahanDetail::where('pemusnahan_id', $pemusnahan->id)
             ->where('arsip_id', $arsip->id)
             ->delete();
-
+    $arsip->update([
+        'status_arsip' => 'INAKTIF',
+    ]);
         return back()->with('success', 'Arsip dikeluarkan dari daftar');
     }
 
