@@ -591,6 +591,77 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <style>
     /* ===== STYLE UNTUK SORTING ===== */
+
+ /* =========================
+   MODAL IMPORT
+========================= */
+#importModalContainer .modal-content {
+    max-height: 90vh;
+    overflow: hidden;
+}
+
+#importModalContainer .modal-body {
+    overflow-y: auto;
+    max-height: calc(90vh - 140px);
+}
+
+#importModalContainer {
+    overflow-y: auto;
+}
+
+
+/* =========================
+   MODAL FILTER
+========================= */
+#filterModalContainer .modal-content {
+    max-height: 90vh;
+    overflow: hidden;
+}
+
+#filterModalContainer .modal-body {
+    overflow-y: auto;
+    max-height: calc(90vh - 140px);
+}
+
+#filterModalContainer {
+    overflow-y: auto;
+}
+
+
+/* =========================
+   MODAL EXPORT
+========================= */
+#exportModalContainer .modal-content {
+    max-height: 90vh;
+    overflow: hidden;
+}
+
+#exportModalContainer .modal-body {
+    overflow-y: auto;
+    max-height: calc(90vh - 140px);
+}
+
+#exportModalContainer {
+    overflow-y: auto;
+}
+
+
+/* =========================
+   MODAL AJUKAN PINDAH
+========================= */
+#ajukanPindahModalContainer .modal-content {
+    max-height: 90vh;
+    overflow: hidden;
+}
+
+#ajukanPindahModalContainer .modal-body {
+    overflow-y: auto;
+    max-height: calc(90vh - 140px);
+}
+
+#ajukanPindahModalContainer {
+    overflow-y: auto;
+}
     .sortable-header {
         cursor: pointer;
         transition: all 0.2s;
