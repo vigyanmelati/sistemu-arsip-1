@@ -1228,6 +1228,16 @@ td:not(.editable):not(.editable-select) {
 </style>
 
 <script>
+
+    if (openFilterBtn) {
+    openFilterBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        console.log("BUTTON FILTER DIKLIK");
+
+        openModal(filterModalContainer);
+    });
+}
 const openExportBtn = document.getElementById('openExportModal');
 const exportModal = document.getElementById('exportModalContainer');
 const closeExportBtn = document.getElementById('closeExportModal');
@@ -1386,30 +1396,43 @@ checkAll.addEventListener('change', function () {
         const filterModalContainer = document.getElementById('filterModalContainer');
         const importModalContainer = document.getElementById('importModalContainer');
         const exportModalContainer = document.getElementById('exportModalContainer');
+
+        function hideModal(modal){
+    if(modal){
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+    }
+}
         // const duplicateModalContainer = document.getElementById('duplicateModalContainer');
 
         // ==================== UTILITY FUNCTIONS ====================
-        function openModal(modalContainer) {
-            // Hide all modals first
-            filterModalContainer.style.display = 'none';
-            importModalContainer.style.display = 'none';
-            exportModalContainer.style.display = 'none';
-            duplicateModalContainer.style.display = 'none';
+       function openModal(modalContainer){
 
-            modalOverlay.style.display = 'block';
-            modalContainer.style.display = 'flex';
-            modalContainer.classList.add('active');
-            document.body.classList.add('modal-open');
-        }
+    hideModal(filterModalContainer);
+    hideModal(importModalContainer);
+    hideModal(exportModalContainer);
+    hideModal(duplicateModalContainer);
 
-        function closeAllModals() {
-            modalOverlay.style.display = 'none';
-            filterModalContainer.style.display = 'none';
-            importModalContainer.style.display = 'none';
-            exportModalContainer.style.display = 'none';
-            duplicateModalContainer.style.display = 'none';
-            document.body.classList.remove('modal-open');
-        }
+    modalOverlay.style.display = 'block';
+
+    if(modalContainer){
+        modalContainer.style.display = 'flex';
+        modalContainer.classList.add('active');
+    }
+
+    document.body.classList.add('modal-open');
+}
+     function closeAllModals(){
+
+    modalOverlay.style.display = 'none';
+
+    hideModal(filterModalContainer);
+    hideModal(importModalContainer);
+    hideModal(exportModalContainer);
+    hideModal(duplicateModalContainer);
+
+    document.body.classList.remove('modal-open');
+}
 
         // ==================== EXPORT MODAL ====================
         const openExportBtn = document.getElementById('openExportModal');
@@ -1745,87 +1768,33 @@ function showNotification(type, message) {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // ==================== GLOBAL VARIABLES ====================
-    const modalOverlay = document.getElementById('modalOverlay');
-    const filterModalContainer = document.getElementById('filterModalContainer');
-    const prosesMultipleModalContainer = document.getElementById('prosesMultipleModalContainer');
-    
-    // ==================== UTILITY FUNCTIONS ====================
-    function openModal(modalContainer) {
-        filterModalContainer.style.display = 'none';
-        prosesMultipleModalContainer.style.display = 'none';
-        modalOverlay.style.display = 'block';
-        modalContainer.style.display = 'flex';
-        modalContainer.classList.add('active');
-        document.body.classList.add('modal-open');
-    }
-
-    function closeAllModals() {
-        modalOverlay.style.display = 'none';
-        filterModalContainer.style.display = 'none';
-        prosesMultipleModalContainer.style.display = 'none';
-        document.body.classList.remove('modal-open');
-    }
-    
-    // ==================== FILTER MODAL ====================
-    const openFilterBtn = document.getElementById('openFilterModal');
-    const closeFilterBtn = document.getElementById('closeFilterModal');
-    const resetFilterBtn = document.getElementById('resetFilter');
-    
-    if (openFilterBtn) {
-        openFilterBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            openModal(filterModalContainer);
-        });
-    }
-    if (closeFilterBtn) closeFilterBtn.addEventListener('click', closeAllModals);
-    if (resetFilterBtn) {
-        resetFilterBtn.addEventListener('click', () => {
-            window.location.href = "{{ route('arsip-masuk.index') }}";
-        });
-    }
-    
-    // ==================== MODAL OVERLAY CLOSE ====================
-    if (modalOverlay) {
-        modalOverlay.addEventListener('click', closeAllModals);
-    }
-    
-    // ESC key to close modals
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && modalOverlay.style.display === 'block') {
-            closeAllModals();
-        }
-    });
-    
     // ==================== INLINE EDITING ====================
-    // Data untuk dropdown options (diambil dari server)
     const kodeKlasifikasiOptions = @json($kodeKlasifikasiOptions ?? []);
     const rakOptions = @json($rakOptions ?? []);
     const boxOptions = @json($boxOptions ?? []);
     const keteranganJraOptions = ['MUSNAH', 'PERMANEN'];
-    
+
     // ========== INLINE EDITING UNTUK TEXT BIASA ==========
     document.querySelectorAll('.editable').forEach(cell => {
         cell.addEventListener('dblclick', function(e) {
-            // Cegah jika sudah dalam mode edit
             if (this.querySelector('input')) return;
-            
+
             const currentText = this.innerText.trim();
             const field = this.dataset.field;
             const rowId = this.closest('tr').dataset.id;
-            
+
             const input = document.createElement('input');
             input.type = 'text';
             input.value = currentText === '-' ? '' : currentText;
             input.classList.add('form-control', 'form-control-sm');
             input.style.width = '100%';
             input.style.minHeight = '30px';
-            
+
             this.innerHTML = '';
             this.appendChild(input);
             input.focus();
             input.select();
-            
+
             const save = () => {
                 const newValue = input.value.trim();
                 const displayValue = newValue === '' ? '-' : newValue;
@@ -1836,12 +1805,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     this.classList.remove('editing');
                 }
             };
-            
+
             const cancel = () => {
                 this.innerText = currentText || '-';
                 this.classList.remove('editing');
             };
-            
+
             input.addEventListener('blur', save);
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
@@ -1853,79 +1822,56 @@ document.addEventListener('DOMContentLoaded', function() {
                     cancel();
                 }
             });
-            
+
             this.classList.add('editing');
         });
     });
-    
+
     // ========== INLINE EDITING UNTUK DROPDOWN (SELECT) ==========
     document.querySelectorAll('.editable-select').forEach(cell => {
         cell.addEventListener('dblclick', function(e) {
-            // Cegah jika sudah dalam mode edit
             if (this.querySelector('select')) return;
-            
+
             const currentValue = this.dataset.value || '';
-            const currentLabel = this.innerText.trim();
             const field = this.dataset.field;
             const rowId = this.closest('tr').dataset.id;
-            
-            // Tentukan pilihan dropdown berdasarkan field
+
             let options = [];
-            let optionLabelMap = {};
-            
+
             if (field === 'kode_klasifikasi_id') {
                 options = kodeKlasifikasiOptions.map(item => ({
                     value: item.id,
                     label: item.kode + ' - ' + item.uraian
                 }));
-                optionLabelMap = options.reduce((acc, opt) => {
-                    acc[opt.value] = opt.label;
-                    return acc;
-                }, {});
             } else if (field === 'rak_id') {
                 options = rakOptions.map(item => ({
                     value: item.id,
                     label: item.nomor_rak + ' (' + (item.lokasi_arsip || '-') + ')'
                 }));
-                optionLabelMap = options.reduce((acc, opt) => {
-                    acc[opt.value] = opt.label;
-                    return acc;
-                }, {});
             } else if (field === 'box_id') {
                 options = boxOptions.map(item => ({
                     value: item.id,
                     label: item.nomor_box
                 }));
-                optionLabelMap = options.reduce((acc, opt) => {
-                    acc[opt.value] = opt.label;
-                    return acc;
-                }, {});
             } else if (field === 'keterangan_jra') {
                 options = keteranganJraOptions.map(item => ({
                     value: item,
                     label: item
                 }));
-                optionLabelMap = options.reduce((acc, opt) => {
-                    acc[opt.value] = opt.label;
-                    return acc;
-                }, {});
             } else {
                 return;
             }
-            
-            // Buat elemen select
+
             const select = document.createElement('select');
             select.classList.add('form-select', 'form-select-sm');
             select.style.width = '100%';
             select.style.minHeight = '30px';
-            
-            // Tambahkan opsi kosong
+
             const emptyOption = document.createElement('option');
             emptyOption.value = '';
             emptyOption.textContent = '-- Pilih --';
             select.appendChild(emptyOption);
-            
-            // Tambahkan opsi
+
             options.forEach(opt => {
                 const option = document.createElement('option');
                 option.value = opt.value;
@@ -1935,50 +1881,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 select.appendChild(option);
             });
-            
-            // Kosongkan cell dan tampilkan select
+
             this.innerHTML = '';
             this.appendChild(select);
             select.focus();
-            
+
             const save = () => {
                 const newValue = select.value;
                 const selectedOption = select.options[select.selectedIndex];
                 const newLabel = selectedOption ? selectedOption.textContent : '-';
-                
-                // Update tampilan cell dengan label yang dipilih
+
                 this.innerText = newLabel;
                 this.dataset.value = newValue;
-                
-                // Jika nilai berubah, kirim ke server
+
                 if (newValue !== currentValue) {
                     sendUpdate(rowId, field, newValue, this);
                 } else {
                     this.classList.remove('editing');
                 }
             };
-            
+
             select.addEventListener('blur', save);
             select.addEventListener('change', () => select.blur());
-            
+
             this.classList.add('editing');
         });
     });
-    
+
     // ========== FUNGSI AJAX UNTUK UPDATE ==========
     function sendUpdate(id, field, value, cellElement) {
-        const url = `/arsip-masuk/${id}/update-field`;
-        
-        // Siapkan data dengan format yang benar
-        let data = {
-            field: field,
-            value: value
-        };
-        
-        // Tampilkan loading
+        const url = `/arsip/${id}/update-field`;
+        let data = { field: field, value: value };
+
         const originalText = cellElement.innerText;
         cellElement.innerHTML = '<span class="text-muted"><i class="bi bi-hourglass-split"></i> Menyimpan...</span>';
-        
+
         fetch(url, {
             method: 'POST',
             headers: {
@@ -1990,28 +1927,21 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(async response => {
             const result = await response.json();
-            if (!response.ok) {
-                throw new Error(result.message || `HTTP ${response.status}`);
-            }
+            if (!response.ok) throw new Error(result.message || `HTTP ${response.status}`);
             return result;
         })
         .then(data => {
             if (data.success) {
                 const row = cellElement.closest('tr');
                 const resultData = data.data;
-                
-                // Update field yang diedit
+
                 if (field === 'aktif_tahun') {
                     cellElement.textContent = resultData.aktif_tahun || '-';
-                    // Update kolom Aktif Sampai
                     updateRelatedField(row, 'aktif_sampai', resultData.aktif_sampai);
-                    // Update Status
                     updateRelatedField(row, 'status', resultData.status_arsip);
                 } else if (field === 'inaktif_tahun') {
                     cellElement.textContent = resultData.inaktif_tahun || '-';
-                    // Update kolom Inaktif Sampai
                     updateRelatedField(row, 'inaktif_sampai', resultData.inaktif_sampai);
-                    // Update Status
                     updateRelatedField(row, 'status', resultData.status_arsip);
                 } else if (field === 'kode_klasifikasi_id') {
                     cellElement.textContent = resultData.kode_klasifikasi || 'N/A';
@@ -2020,7 +1950,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     cellElement.textContent = resultData.keterangan_jra || '-';
                     cellElement.dataset.value = resultData.keterangan_jra || '';
                 } else if (field === 'rak_id') {
-                    // Cari nama rak dari options
                     const rak = rakOptions.find(r => String(r.id) === String(resultData.rak_id));
                     cellElement.textContent = rak ? rak.nomor_rak : '-';
                     cellElement.dataset.value = resultData.rak_id || '';
@@ -2029,7 +1958,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     cellElement.textContent = box ? box.nomor_box : '-';
                     cellElement.dataset.value = resultData.box_id || '';
                 }
-                
+
                 cellElement.classList.remove('editing');
                 showNotification('✅ Data berhasil diperbarui', 'success');
             } else {
@@ -2043,32 +1972,20 @@ document.addEventListener('DOMContentLoaded', function() {
             showNotification('❌ ' + error.message, 'danger');
         });
     }
-    
-    // ========== UPDATE FIELD TERKAIT ==========
+
     function updateRelatedField(row, fieldName, value) {
         if (!row) return;
-        
-        // Cari cell berdasarkan class
         let cell;
-        if (fieldName === 'aktif_sampai') {
-            cell = row.querySelector('.aktif-sampai-cell');
-        } else if (fieldName === 'inaktif_sampai') {
-            cell = row.querySelector('.inaktif-sampai-cell');
-        } else if (fieldName === 'status') {
-            cell = row.querySelector('.status-cell');
-        }
-        
+        if (fieldName === 'aktif_sampai') cell = row.querySelector('.aktif-sampai-cell');
+        else if (fieldName === 'inaktif_sampai') cell = row.querySelector('.inaktif-sampai-cell');
+        else if (fieldName === 'status') cell = row.querySelector('.status-cell');
+
         if (!cell) return;
-        
+
         if (fieldName === 'status') {
-            // Untuk status, tampilkan badge
             const statusColors = {
-                'AKTIF': 'success',
-                'INAKTIF': 'warning',
-                'PERMANEN': 'info',
-                'MUSNAH': 'danger',
-                'HABIS_RETENSI': 'secondary',
-                'DISETUJUI_MUSNAH': 'danger'
+                'AKTIF': 'success', 'INAKTIF': 'warning', 'PERMANEN': 'info',
+                'MUSNAH': 'danger', 'HABIS_RETENSI': 'secondary', 'DISETUJUI_MUSNAH': 'danger'
             };
             const color = statusColors[value] || 'secondary';
             const label = value === 'HABIS_RETENSI' ? 'HABIS RETENSI' : value;
@@ -2077,15 +1994,11 @@ document.addEventListener('DOMContentLoaded', function() {
             cell.textContent = value || '-';
         }
     }
-    
-    // ========== NOTIFICATION ==========
+
     function showNotification(message, type) {
-        // Hapus notifikasi yang sudah ada
         const existingAlert = document.querySelector('.alert-notification');
-        if (existingAlert) {
-            existingAlert.remove();
-        }
-        
+        if (existingAlert) existingAlert.remove();
+
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show alert-notification position-fixed top-0 start-50 translate-middle-x mt-3`;
         alertDiv.style.zIndex = '9999';
@@ -2100,210 +2013,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
         document.body.appendChild(alertDiv);
-        
-        // Auto close setelah 3 detik
-        setTimeout(() => {
-            if (alertDiv) alertDiv.remove();
-        }, 3000);
-    }
-    
-    // ==================== MULTIPLE SELECTION ====================
-    const selectAllCheckbox = document.getElementById('selectAll');
-    const arsipCheckboxes = document.querySelectorAll('.arsip-checkbox');
-    const selectedCounter = document.getElementById('selectedCounter');
-    const selectedCount = document.getElementById('selectedCount');
-    const prosesMultipleBtn = document.getElementById('prosesMultipleBtn');
-    let selectedArsips = new Set();
-    
-    function updateSelectionUI() {
-        const count = selectedArsips.size;
-        selectedCount.textContent = count;
-        
-        if (count > 0) {
-            selectedCounter.style.display = 'flex';
-            prosesMultipleBtn.style.display = 'flex';
-        } else {
-            selectedCounter.style.display = 'none';
-            prosesMultipleBtn.style.display = 'none';
-        }
-        
-        if (selectAllCheckbox) {
-            selectAllCheckbox.checked = count === arsipCheckboxes.length && count > 0;
-        }
-    }
-    
-    // Event listener untuk checkbox individual
-    arsipCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            if (this.checked) {
-                selectedArsips.add(this.value);
-            } else {
-                selectedArsips.delete(this.value);
-            }
-            updateSelectionUI();
-        });
-    });
-    
-    // Event listener untuk select all
-    if (selectAllCheckbox) {
-        selectAllCheckbox.addEventListener('change', function() {
-            arsipCheckboxes.forEach(cb => {
-                cb.checked = this.checked;
-                if (this.checked) {
-                    selectedArsips.add(cb.value);
-                } else {
-                    selectedArsips.delete(cb.value);
-                }
-            });
-            updateSelectionUI();
-        });
-    }
-    
-    // Clear selection
-    const clearSelectionBtn = document.getElementById('clearSelection');
-    if (clearSelectionBtn) {
-        clearSelectionBtn.addEventListener('click', function() {
-            arsipCheckboxes.forEach(cb => {
-                cb.checked = false;
-            });
-            selectedArsips.clear();
-            updateSelectionUI();
-        });
-    }
-    
-    // ==================== PROSES MULTIPLE MODAL ====================
-    const prosesMultipleBtnMain = document.getElementById('prosesMultipleBtn');
-    const closeProsesMultipleBtn = document.getElementById('closeProsesMultipleModal');
-    const cancelProsesMultipleBtn = document.getElementById('cancelProsesMultiple');
-    const multipleActionSelect = document.getElementById('multipleActionSelect');
-    const setLokasiFields = document.getElementById('setLokasiFields');
-    const pindahkanFields = document.getElementById('pindahkanFields');
-    const lokasiTujuanMultiple = document.getElementById('lokasi_tujuan_multiple');
-    const rakSelectMultiple = document.getElementById('rak_id_multiple');
-    const boxSelectMultiple = document.getElementById('box_id_multiple');
-    const selectedCountModal = document.getElementById('selectedCountModal');
-    const selectedArsipList = document.getElementById('selectedArsipList');
-    
-    // Filter rak berdasarkan lokasi
-    function filterRakMultiple() {
-        const selectedLokasi = lokasiTujuanMultiple.value;
-        rakSelectMultiple.innerHTML = '<option value="">-- Pilih Rak --</option>';
-        boxSelectMultiple.innerHTML = '<option value="">-- Pilih Rak Terlebih Dahulu --</option>';
-        
-        if (!selectedLokasi) {
-            rakSelectMultiple.innerHTML = '<option value="">-- Pilih Lokasi Terlebih Dahulu --</option>';
-            return;
-        }
-        
-        const filteredRak = rakOptions.filter(function(rak) {
-            return rak.lokasi_arsip === selectedLokasi;
-        });
-        
-        if (filteredRak.length === 0) {
-            rakSelectMultiple.innerHTML = '<option value="">-- Tidak ada rak di lokasi ini --</option>';
-        } else {
-            filteredRak.forEach(function(rak) {
-                const option = document.createElement('option');
-                option.value = rak.id;
-                option.textContent = rak.nomor_rak;
-                rakSelectMultiple.appendChild(option);
-            });
-        }
-    }
-    
-    // Filter box berdasarkan rak
-    function filterBoxMultiple() {
-        const selectedRakId = rakSelectMultiple.value;
-        boxSelectMultiple.innerHTML = '<option value="">-- Pilih Box --</option>';
-        
-        if (!selectedRakId) {
-            boxSelectMultiple.innerHTML = '<option value="">-- Pilih Rak Terlebih Dahulu --</option>';
-            return;
-        }
-        
-        const filteredBox = boxOptions.filter(function(box) {
-            return box.rak_id == selectedRakId;
-        });
-        
-        if (filteredBox.length === 0) {
-            boxSelectMultiple.innerHTML = '<option value="">-- Tidak ada box di rak ini --</option>';
-        } else {
-            filteredBox.forEach(function(box) {
-                const option = document.createElement('option');
-                option.value = box.id;
-                option.textContent = box.nomor_box;
-                boxSelectMultiple.appendChild(option);
-            });
-        }
-    }
-    
-    if (lokasiTujuanMultiple) {
-        lokasiTujuanMultiple.addEventListener('change', filterRakMultiple);
-    }
-    if (rakSelectMultiple) {
-        rakSelectMultiple.addEventListener('change', filterBoxMultiple);
-    }
-    
-    // Tampilkan/sembunyikan fields berdasarkan aksi
-    if (multipleActionSelect) {
-        multipleActionSelect.addEventListener('change', function() {
-            setLokasiFields.style.display = 'none';
-            pindahkanFields.style.display = 'none';
-
-            if (this.value === 'set_lokasi') {
-                setLokasiFields.style.display = 'block';
-            }
-
-            if (this.value === 'pindahkan') {
-                pindahkanFields.style.display = 'block';
-            }
-        });
-    }
-    
-    if (prosesMultipleBtnMain) {
-        prosesMultipleBtnMain.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (selectedArsips.size === 0) {
-                alert('Pilih setidaknya satu arsip terlebih dahulu.');
-                return;
-            }
-            
-            // Update daftar arsip di modal
-            selectedCountModal.textContent = selectedArsips.size;
-            selectedArsipList.innerHTML = '';
-            
-            selectedArsips.forEach(id => {
-                const checkbox = document.querySelector(`.arsip-checkbox[value="${id}"]`);
-                if (checkbox) {
-                    const row = checkbox.closest('tr');
-                    const kode = row.cells[2]?.textContent.trim() || '-';
-                    const judul = row.cells[3]?.textContent.trim() || '-';
-                    const subBagian = row.cells[4]?.textContent.trim() || '-';
-                    
-                    const item = document.createElement('div');
-                    item.className = 'mb-2 p-2 border rounded bg-white';
-                    item.innerHTML = `
-                        <div>
-                            <strong>${kode}</strong>
-                            <div class="small text-muted">${judul}</div>
-                            <div class="small">Sub Bagian: ${subBagian}</div>
-                        </div>
-                        <input type="hidden" name="arsip_ids[]" value="${id}">
-                    `;
-                    selectedArsipList.appendChild(item);
-                }
-            });
-            
-            openModal(prosesMultipleModalContainer);
-        });
-    }
-    
-    if (closeProsesMultipleBtn) {
-        closeProsesMultipleBtn.addEventListener('click', closeAllModals);
-    }
-    if (cancelProsesMultipleBtn) {
-        cancelProsesMultipleBtn.addEventListener('click', closeAllModals);
+        setTimeout(() => { if (alertDiv) alertDiv.remove(); }, 3000);
     }
 });
 </script>
+
 @endsection

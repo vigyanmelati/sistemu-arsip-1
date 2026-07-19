@@ -1092,150 +1092,27 @@
 <!-- Bagian JavaScript tetap sama seperti sebelumnya -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-
-     (function() {
-    const tableWrapper = document.querySelector('.table-responsive');
-    const table = tableWrapper ? tableWrapper.querySelector('table') : null;
-    const thead = table ? table.querySelector('thead') : null;
-    if (!tableWrapper || !table || !thead) return;
-
-    // ===== FLOATING HEADER =====
-    const floatingHeaderWrapper = document.createElement('div');
-    floatingHeaderWrapper.className = 'floating-table-header';
-    document.body.appendChild(floatingHeaderWrapper);
-
-    let clonedThead = null;
-
-    function buildFloatingHeader() {
-    floatingHeaderWrapper.innerHTML = '';
-    const clonedTable = table.cloneNode(true); // clone seluruh table (termasuk style/class)
-    // Buang tbody dari clone, sisakan thead saja
-    const clonedTbody = clonedTable.querySelector('tbody');
-    if (clonedTbody) clonedTbody.remove();
-
-    // Samakan lebar total tabel persis dengan aslinya
-    clonedTable.style.width = table.getBoundingClientRect().width + 'px';
-    clonedTable.style.minWidth = table.getBoundingClientRect().width + 'px';
-
-    clonedThead = clonedTable.querySelector('thead');
-    floatingHeaderWrapper.appendChild(clonedTable);
-    syncColumnWidths();
-}
-
-    function syncColumnWidths() {
-        if (!clonedThead) return;
-        const originalThs = thead.querySelectorAll('th');
-        const clonedThs = clonedThead.querySelectorAll('th');
-        originalThs.forEach((th, i) => {
-            if (clonedThs[i]) {
-                const width = th.getBoundingClientRect().width;
-                clonedThs[i].style.width = width + 'px';
-                clonedThs[i].style.minWidth = width + 'px';
-                clonedThs[i].style.maxWidth = width + 'px';
-            }
-        });
-    }
-
-    function updateFloatingHeader() {
-        const wrapperRect = tableWrapper.getBoundingClientRect();
-        const theadRect = thead.getBoundingClientRect();
-        const topOffset = parseInt(getComputedStyle(floatingHeaderWrapper).top) || 0;
-
-        const shouldShow = theadRect.top < topOffset && wrapperRect.bottom > theadRect.height + topOffset;
-
-        if (shouldShow) {
-            floatingHeaderWrapper.style.display = 'block';
-            floatingHeaderWrapper.style.left = wrapperRect.left + 'px';
-            floatingHeaderWrapper.style.width = wrapperRect.width + 'px';
-            floatingHeaderWrapper.scrollLeft = tableWrapper.scrollLeft;
-            syncColumnWidths();
-        } else {
-            floatingHeaderWrapper.style.display = 'none';
-        }
-    }
-
-    // ===== FLOATING SCROLLBAR =====
-    const floatingScrollbar = document.createElement('div');
-    floatingScrollbar.className = 'floating-scrollbar';
-    const floatingContent = document.createElement('div');
-    floatingContent.className = 'floating-scrollbar-content';
-    floatingScrollbar.appendChild(floatingContent);
-    document.body.appendChild(floatingScrollbar);
-
-    let syncingFromTable = false;
-    let syncingFromFloating = false;
-
-    function updateFloatingScrollbar() {
-        const needsScroll = table.scrollWidth > tableWrapper.clientWidth + 1;
-        if (!needsScroll) {
-            floatingScrollbar.style.display = 'none';
-            return;
-        }
-        const rect = tableWrapper.getBoundingClientRect();
-        const wrapperVisible = rect.top < window.innerHeight && rect.bottom > 0;
-        const nativeBarVisible = rect.bottom <= window.innerHeight;
-
-        if (wrapperVisible && !nativeBarVisible) {
-            floatingScrollbar.style.display = 'block';
-            floatingScrollbar.style.left = rect.left + 'px';
-            floatingScrollbar.style.width = rect.width + 'px';
-            floatingContent.style.width = table.scrollWidth + 'px';
-        } else {
-            floatingScrollbar.style.display = 'none';
-        }
-    }
-
-    // ===== SYNC SCROLL (table <-> floating header <-> floating scrollbar) =====
-    tableWrapper.addEventListener('scroll', function() {
-        floatingHeaderWrapper.scrollLeft = tableWrapper.scrollLeft;
-        if (syncingFromFloating) { syncingFromFloating = false; return; }
-        syncingFromTable = true;
-        floatingScrollbar.scrollLeft = tableWrapper.scrollLeft;
-    });
-
-    floatingScrollbar.addEventListener('scroll', function() {
-        if (syncingFromTable) { syncingFromTable = false; return; }
-        syncingFromFloating = true;
-        tableWrapper.scrollLeft = floatingScrollbar.scrollLeft;
-        floatingHeaderWrapper.scrollLeft = floatingScrollbar.scrollLeft;
-    });
-
-    window.addEventListener('scroll', function() {
-        updateFloatingHeader();
-        updateFloatingScrollbar();
-    }, { passive: true });
-
-    window.addEventListener('resize', function() {
-        buildFloatingHeader();
-        updateFloatingHeader();
-        updateFloatingScrollbar();
-    });
-
-    buildFloatingHeader();
-    updateFloatingHeader();
-    updateFloatingScrollbar();
-})();
     // Elements
     const modalOverlay = document.getElementById('modalOverlay');
     const filterModalContainer = document.getElementById('filterModalContainer');
     const importModalContainer = document.getElementById('importModalContainer');
     const exportModalContainer = document.getElementById('exportModalContainer');
     const ajukanPindahModal = document.getElementById('ajukanPindahModalContainer');
-    
+
     const openFilterBtn = document.getElementById('openFilterModal');
     const openImportBtn = document.getElementById('openImportModal');
     const openExportBtn = document.getElementById('openExportModal');
     const ajukanPindahBtn = document.getElementById('ajukanPindahBtn');
-    
+
     const closeFilterBtn = document.getElementById('closeFilterModal');
     const closeImportBtn = document.getElementById('closeImportModal');
     const closeExportBtn = document.getElementById('closeExportModal');
     const closeAjukanPindahBtn = document.getElementById('closeAjukanPindahModal');
-    
+
     const cancelImportBtn = document.getElementById('cancelImport');
     const cancelExportBtn = document.getElementById('cancelExport');
     const cancelAjukanPindahBtn = document.getElementById('cancelAjukanPindah');
-    
+
     const resetFilterBtn = document.getElementById('resetFilter');
     const clearSelectionBtn = document.getElementById('clearSelection');
     const selectAllCheckbox = document.getElementById('selectAll');
@@ -1244,49 +1121,41 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedCount = document.getElementById('selectedCount');
     const selectedCountModal = document.getElementById('selectedCountModal');
     const selectedArsipList = document.getElementById('selectedArsipList');
-    
+
     const filterForm = document.getElementById('filterForm');
     const importForm = document.getElementById('importForm');
     const ajukanPindahForm = document.getElementById('ajukanPindahForm');
     const excelFileInput = document.getElementById('excelFile');
     const fileInfo = document.getElementById('fileInfo');
     const submitImportBtn = document.getElementById('submitImport');
-    
+
     const checkAll = document.getElementById('checkAllColumns');
     const columnChecks = document.querySelectorAll('.column-check');
-    
-    // Tombol ajukan pindah per arsip
+
     const ajukanSingleButtons = document.querySelectorAll('.btn-ajukan-single');
-    
-    // Selection Management
+
     let selectedArsips = new Set();
-    
-    // Fungsi untuk update selection UI
+
     function updateSelectionUI() {
         const count = selectedArsips.size;
         selectedCount.textContent = count;
         selectedCountModal.textContent = count;
-        
+
         if (count > 0) {
-            selectedCounter.style.display = 'flex!important';
+            selectedCounter.style.display = 'flex';
             ajukanPindahBtn.style.display = 'flex';
-            
-            // Update modal list
             updateArsipListInModal();
         } else {
-            selectedCounter.style.display = 'none!important';
+            selectedCounter.style.display = 'none';
             ajukanPindahBtn.style.display = 'none';
             selectedArsipList.innerHTML = '';
         }
-        
-        // Update select all checkbox
-        selectAllCheckbox.checked = count === arsipCheckboxes.length;
+
+        selectAllCheckbox.checked = count === arsipCheckboxes.length && count > 0;
     }
-    
-    // Fungsi untuk update daftar arsip di modal
+
     function updateArsipListInModal() {
         selectedArsipList.innerHTML = '';
-        
         selectedArsips.forEach(id => {
             const checkbox = document.querySelector(`.arsip-checkbox[value="${id}"]`);
             if (checkbox) {
@@ -1294,7 +1163,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const kode = row.cells[2].textContent.trim();
                 const judul = row.cells[3].textContent.trim();
                 const tahun = row.cells[4].textContent.trim();
-                
+
                 const item = document.createElement('div');
                 item.className = 'mb-2 p-2 border rounded bg-white';
                 item.innerHTML = `
@@ -1311,8 +1180,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    // Event listener untuk checkbox individual
+
     arsipCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             if (this.checked) {
@@ -1323,8 +1191,7 @@ document.addEventListener('DOMContentLoaded', function() {
             updateSelectionUI();
         });
     });
-    
-    // Event listener untuk select all
+
     if (selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', function() {
             arsipCheckboxes.forEach(cb => {
@@ -1338,59 +1205,46 @@ document.addEventListener('DOMContentLoaded', function() {
             updateSelectionUI();
         });
     }
-    
-    // Event listener untuk clear selection
+
     if (clearSelectionBtn) {
         clearSelectionBtn.addEventListener('click', function() {
-            arsipCheckboxes.forEach(cb => {
-                cb.checked = false;
-            });
+            arsipCheckboxes.forEach(cb => { cb.checked = false; });
             selectedArsips.clear();
             updateSelectionUI();
         });
     }
-    
-    // Fungsi untuk membuka modal
+
     function openModal(modalContainer) {
-        // Sembunyikan semua modal terlebih dahulu
         filterModalContainer.style.display = 'none';
         importModalContainer.style.display = 'none';
         exportModalContainer.style.display = 'none';
         ajukanPindahModal.style.display = 'none';
-        
-        // Tampilkan overlay
+
         modalOverlay.style.display = 'block';
-        
-        // Tampilkan modal yang dipilih
         modalContainer.style.display = 'flex';
         modalContainer.classList.add('active');
-        
-        // Tambahkan class untuk mencegah scroll body
         document.body.classList.add('modal-open');
-        
-        // Focus ke elemen pertama dalam modal
+
         setTimeout(() => {
             const firstInput = modalContainer.querySelector('input, select, textarea');
             if (firstInput) firstInput.focus();
         }, 100);
     }
-    
-    // Fungsi untuk menutup modal
+
     function closeModal() {
         modalOverlay.style.display = 'none';
         filterModalContainer.style.display = 'none';
         importModalContainer.style.display = 'none';
         exportModalContainer.style.display = 'none';
         ajukanPindahModal.style.display = 'none';
-        
+
         filterModalContainer.classList.remove('active');
         importModalContainer.classList.remove('active');
         exportModalContainer.classList.remove('active');
         ajukanPindahModal.classList.remove('active');
-        
+
         document.body.classList.remove('modal-open');
-        
-        // Reset form import
+
         if (fileInfo) fileInfo.innerHTML = '';
         if (excelFileInput) excelFileInput.value = '';
         if (submitImportBtn) {
@@ -1398,72 +1252,47 @@ document.addEventListener('DOMContentLoaded', function() {
             submitImportBtn.innerHTML = '<i class="bi bi-upload me-1"></i> Import Sekarang';
         }
     }
-    
-    // Event listeners untuk tombol buka modal
+
     if (openFilterBtn) {
         openFilterBtn.addEventListener('click', function(e) {
             e.preventDefault();
             openModal(filterModalContainer);
         });
     }
-    
+
     if (openImportBtn) {
         openImportBtn.addEventListener('click', function(e) {
             e.preventDefault();
             openModal(importModalContainer);
         });
     }
-    
+
     if (openExportBtn) {
         openExportBtn.addEventListener('click', function(e) {
             e.preventDefault();
             openModal(exportModalContainer);
         });
     }
-    
-    // Event listener untuk tombol ajukan pindah multiple
+
     if (ajukanPindahBtn) {
         ajukanPindahBtn.addEventListener('click', function(e) {
             e.preventDefault();
             openModal(ajukanPindahModal);
         });
     }
-    
-    // Event listeners untuk tombol tutup modal
-    if (closeFilterBtn) {
-        closeFilterBtn.addEventListener('click', closeModal);
-    }
-    
-    if (closeImportBtn) {
-        closeImportBtn.addEventListener('click', closeModal);
-    }
-    
-    if (closeExportBtn) {
-        closeExportBtn.addEventListener('click', closeModal);
-    }
-    
-    if (closeAjukanPindahBtn) {
-        closeAjukanPindahBtn.addEventListener('click', closeModal);
-    }
-    
-    if (cancelImportBtn) {
-        cancelImportBtn.addEventListener('click', closeModal);
-    }
-    
-    if (cancelExportBtn) {
-        cancelExportBtn.addEventListener('click', closeModal);
-    }
-    
-    if (cancelAjukanPindahBtn) {
-        cancelAjukanPindahBtn.addEventListener('click', closeModal);
-    }
-    
-    // Tutup modal saat klik overlay
+
+    if (closeFilterBtn) closeFilterBtn.addEventListener('click', closeModal);
+    if (closeImportBtn) closeImportBtn.addEventListener('click', closeModal);
+    if (closeExportBtn) closeExportBtn.addEventListener('click', closeModal);
+    if (closeAjukanPindahBtn) closeAjukanPindahBtn.addEventListener('click', closeModal);
+    if (cancelImportBtn) cancelImportBtn.addEventListener('click', closeModal);
+    if (cancelExportBtn) cancelExportBtn.addEventListener('click', closeModal);
+    if (cancelAjukanPindahBtn) cancelAjukanPindahBtn.addEventListener('click', closeModal);
+
     if (modalOverlay) {
         modalOverlay.addEventListener('click', closeModal);
     }
-    
-    // Mencegah modal tertutup saat klik di dalam modal
+
     [filterModalContainer, importModalContainer, exportModalContainer, ajukanPindahModal].forEach(modal => {
         if (modal) {
             modal.addEventListener('click', function(e) {
@@ -1471,15 +1300,13 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
-    
-    // Reset filter
+
     if (resetFilterBtn) {
         resetFilterBtn.addEventListener('click', function() {
             window.location.href = "{{ route('subbagian.arsip.index') }}";
         });
     }
-    
-    // File upload preview untuk import
+
     if (excelFileInput) {
         excelFileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -1487,8 +1314,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const fileSize = (file.size / (1024 * 1024)).toFixed(2);
                 const fileName = file.name;
                 const fileExtension = fileName.split('.').pop().toLowerCase();
-                
-                // Validasi ekstensi
+
                 const allowedExtensions = ['xlsx', 'xls'];
                 if (!allowedExtensions.includes(fileExtension)) {
                     fileInfo.innerHTML = `
@@ -1502,8 +1328,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (submitImportBtn) submitImportBtn.disabled = true;
                     return;
                 }
-                
-                // Validasi ukuran file
+
                 const maxSize = 5;
                 if (fileSize > maxSize) {
                     fileInfo.innerHTML = `
@@ -1517,8 +1342,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (submitImportBtn) submitImportBtn.disabled = true;
                     return;
                 }
-                
-                // Tampilkan info file valid
+
                 fileInfo.innerHTML = `
                     <div class="alert alert-success alert-dismissible fade show py-2" role="alert">
                         <i class="bi bi-check-circle me-2"></i>
@@ -1530,8 +1354,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    // Validasi form import
+
     if (importForm) {
         importForm.addEventListener('submit', function(e) {
             const fileInput = this.querySelector('input[type="file"]');
@@ -1540,8 +1363,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Silakan pilih file Excel terlebih dahulu.');
                 return;
             }
-            
-            // Tampilkan loading
             if (submitImportBtn) {
                 submitImportBtn.innerHTML = `
                     <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
@@ -1551,15 +1372,20 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    // Check all columns untuk export
+
     if (checkAll) {
         checkAll.addEventListener('change', function() {
             columnChecks.forEach(cb => cb.checked = this.checked);
         });
     }
-    
-    // Validasi form ajukan pindah multiple
+
+    columnChecks.forEach(cb => {
+        cb.addEventListener('change', function() {
+            const allChecked = [...columnChecks].every(c => c.checked);
+            checkAll.checked = allChecked;
+        });
+    });
+
     if (ajukanPindahForm) {
         ajukanPindahForm.addEventListener('submit', function(e) {
             if (selectedArsips.size === 0) {
@@ -1567,8 +1393,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Pilih setidaknya satu arsip untuk diajukan pemindahan.');
                 return;
             }
-            
-            // Tampilkan loading
             const submitBtn = this.querySelector('button[type="submit"]');
             submitBtn.innerHTML = `
                 <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
@@ -1577,53 +1401,43 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = true;
         });
     }
-    
-    // Handle ajukan pindah per arsip (single)
+
     ajukanSingleButtons.forEach(button => {
         button.addEventListener('click', function() {
-            const arsipId = this.getAttribute('data-id');
             const arsipJudul = this.getAttribute('data-judul');
-            
-            // Buat input file sementara
+
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.pdf,.jpg,.jpeg,.png';
             input.style.display = 'none';
-            
+
             input.addEventListener('change', function(e) {
                 if (this.files.length > 0) {
-                    // Konfirmasi sebelum submit
                     if (confirm(`Ajukan pemindahan arsip: ${arsipJudul}?`)) {
-                        // Cari form yang sesuai
                         const form = button.closest('form');
-                        const fileInput = form.querySelector('.file-input-single');
-                        
-                        // Buat DataTransfer untuk menyalin file
+                        const fileInputEl = form.querySelector('.file-input-single');
+
                         const dataTransfer = new DataTransfer();
                         dataTransfer.items.add(this.files[0]);
-                        fileInput.files = dataTransfer.files;
-                        
-                        // Submit form
+                        fileInputEl.files = dataTransfer.files;
+
                         form.submit();
                     }
                 }
             });
-            
-            // Trigger click pada input file
+
             document.body.appendChild(input);
             input.click();
             document.body.removeChild(input);
         });
     });
-    
-    // Tutup modal dengan tombol ESC
+
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && modalOverlay.style.display === 'block') {
             closeModal();
         }
     });
-    
-    // Handle delete confirmation
+
     const deleteForms = document.querySelectorAll('form[data-confirm="delete"]');
     deleteForms.forEach(form => {
         form.addEventListener('submit', function(e) {
@@ -1632,34 +1446,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-    
-    // Sortable headers hover effect
+
     const sortableHeaders = document.querySelectorAll('.sortable-header');
     sortableHeaders.forEach(header => {
         header.addEventListener('mouseenter', function() {
             this.style.backgroundColor = '#e9ecef';
         });
-        
         header.addEventListener('mouseleave', function() {
             this.style.backgroundColor = '#f8f9fa';
         });
     });
-    
-    // Auto-focus pada input pencarian
+
     const searchInput = document.querySelector('input[name="search"]');
-    if (searchInput) {
-        searchInput.focus();
-    }
-    
-    // Inisialisasi selection UI
+    if (searchInput) searchInput.focus();
+
     updateSelectionUI();
-    // Jika salah satu kolom di-uncheck → "Pilih Semua" ikut uncheck
-columnChecks.forEach(cb => {
-    cb.addEventListener('change', function() {
-        const allChecked = [...columnChecks].every(c => c.checked);
-        checkAll.checked = allChecked;
-    });
-});
 });
 </script>
 @endsection
