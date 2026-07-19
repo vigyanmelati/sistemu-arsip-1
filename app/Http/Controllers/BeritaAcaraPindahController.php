@@ -165,6 +165,15 @@ public function kirim(Request $request, BeritaAcaraPindah $berita_acara)
     \Log::info('Request files: ', $request->allFiles());
     try {
         $this->authorizeAccess($berita_acara);
+        // $$berita_acara = BeritaAcaraPindah::findOrFail($id);
+
+    // Tidak boleh kirim jika belum ada arsip
+    if (!$berita_acara->details()->exists()) {
+        return redirect()
+            ->back()
+            ->with('error', 'Berita Acara tidak dapat dikirim karena belum memiliki arsip.');
+    }
+
 
         if (!$berita_acara->canSend()) {
             return redirect()->route('berita-acara.index')

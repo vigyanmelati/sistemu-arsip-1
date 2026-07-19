@@ -121,4 +121,11 @@ class BeritaAcaraPindah extends Model
             return;
         }
     }
+
+    public function hasArsip()
+{
+    return $this->details()->exists();
+}
+
+
 }

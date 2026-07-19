@@ -217,7 +217,7 @@
     <div class="modal fade" id="kirimModal{{ $bap->id }}" tabindex="-1" aria-labelledby="kirimModalLabel{{ $bap->id }}" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-               <<form action="{{ route('berita-acara.kirim', $bap->id) }}" 
+               <form action="{{ route('berita-acara.kirim', $bap->id) }}" 
       method="POST" 
       enctype="multipart/form-data"
       id="formKirimBAP{{ $bap->id }}">
