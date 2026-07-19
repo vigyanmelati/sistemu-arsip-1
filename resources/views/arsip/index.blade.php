@@ -771,6 +771,39 @@
 </div>
 
 <style>
+.floating-table-header {
+    position: fixed;
+    top: 0;              /* ganti ke tinggi navbar-mu kalau ada navbar fixed, misal 60px */
+    z-index: 1040;
+    overflow: hidden;
+    display: none;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+.floating-table-header table {
+    margin-bottom: 0;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+.floating-table-header thead th {
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+.floating-scrollbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    z-index: 1050;
+    display: none;
+    background: #f1f1f1;
+    border-top: 1px solid #dee2e6;
+}
+.floating-scrollbar-content {
+    height: 1px;
+}
     /* ===== STYLE UNTUK SORTING ===== */
     .sortable-header {
         cursor: pointer;
@@ -1226,6 +1259,128 @@ checkAll.addEventListener('change', function () {
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+     (function() {
+    const tableWrapper = document.querySelector('.table-responsive');
+    const table = tableWrapper ? tableWrapper.querySelector('table') : null;
+    const thead = table ? table.querySelector('thead') : null;
+    if (!tableWrapper || !table || !thead) return;
+
+    // ===== FLOATING HEADER =====
+    const floatingHeaderWrapper = document.createElement('div');
+    floatingHeaderWrapper.className = 'floating-table-header';
+    document.body.appendChild(floatingHeaderWrapper);
+
+    let clonedThead = null;
+
+    function buildFloatingHeader() {
+    floatingHeaderWrapper.innerHTML = '';
+    const clonedTable = table.cloneNode(true); // clone seluruh table (termasuk style/class)
+    // Buang tbody dari clone, sisakan thead saja
+    const clonedTbody = clonedTable.querySelector('tbody');
+    if (clonedTbody) clonedTbody.remove();
+
+    // Samakan lebar total tabel persis dengan aslinya
+    clonedTable.style.width = table.getBoundingClientRect().width + 'px';
+    clonedTable.style.minWidth = table.getBoundingClientRect().width + 'px';
+
+    clonedThead = clonedTable.querySelector('thead');
+    floatingHeaderWrapper.appendChild(clonedTable);
+    syncColumnWidths();
+}
+
+    function syncColumnWidths() {
+        if (!clonedThead) return;
+        const originalThs = thead.querySelectorAll('th');
+        const clonedThs = clonedThead.querySelectorAll('th');
+        originalThs.forEach((th, i) => {
+            if (clonedThs[i]) {
+                const width = th.getBoundingClientRect().width;
+                clonedThs[i].style.width = width + 'px';
+                clonedThs[i].style.minWidth = width + 'px';
+                clonedThs[i].style.maxWidth = width + 'px';
+            }
+        });
+    }
+
+    function updateFloatingHeader() {
+        const wrapperRect = tableWrapper.getBoundingClientRect();
+        const theadRect = thead.getBoundingClientRect();
+        const topOffset = parseInt(getComputedStyle(floatingHeaderWrapper).top) || 0;
+
+        const shouldShow = theadRect.top < topOffset && wrapperRect.bottom > theadRect.height + topOffset;
+
+        if (shouldShow) {
+            floatingHeaderWrapper.style.display = 'block';
+            floatingHeaderWrapper.style.left = wrapperRect.left + 'px';
+            floatingHeaderWrapper.style.width = wrapperRect.width + 'px';
+            floatingHeaderWrapper.scrollLeft = tableWrapper.scrollLeft;
+            syncColumnWidths();
+        } else {
+            floatingHeaderWrapper.style.display = 'none';
+        }
+    }
+
+    // ===== FLOATING SCROLLBAR =====
+    const floatingScrollbar = document.createElement('div');
+    floatingScrollbar.className = 'floating-scrollbar';
+    const floatingContent = document.createElement('div');
+    floatingContent.className = 'floating-scrollbar-content';
+    floatingScrollbar.appendChild(floatingContent);
+    document.body.appendChild(floatingScrollbar);
+
+    let syncingFromTable = false;
+    let syncingFromFloating = false;
+
+    function updateFloatingScrollbar() {
+        const needsScroll = table.scrollWidth > tableWrapper.clientWidth + 1;
+        if (!needsScroll) {
+            floatingScrollbar.style.display = 'none';
+            return;
+        }
+        const rect = tableWrapper.getBoundingClientRect();
+        const wrapperVisible = rect.top < window.innerHeight && rect.bottom > 0;
+        const nativeBarVisible = rect.bottom <= window.innerHeight;
+
+        if (wrapperVisible && !nativeBarVisible) {
+            floatingScrollbar.style.display = 'block';
+            floatingScrollbar.style.left = rect.left + 'px';
+            floatingScrollbar.style.width = rect.width + 'px';
+            floatingContent.style.width = table.scrollWidth + 'px';
+        } else {
+            floatingScrollbar.style.display = 'none';
+        }
+    }
+
+    // ===== SYNC SCROLL (table <-> floating header <-> floating scrollbar) =====
+    tableWrapper.addEventListener('scroll', function() {
+        floatingHeaderWrapper.scrollLeft = tableWrapper.scrollLeft;
+        if (syncingFromFloating) { syncingFromFloating = false; return; }
+        syncingFromTable = true;
+        floatingScrollbar.scrollLeft = tableWrapper.scrollLeft;
+    });
+
+    floatingScrollbar.addEventListener('scroll', function() {
+        if (syncingFromTable) { syncingFromTable = false; return; }
+        syncingFromFloating = true;
+        tableWrapper.scrollLeft = floatingScrollbar.scrollLeft;
+        floatingHeaderWrapper.scrollLeft = floatingScrollbar.scrollLeft;
+    });
+
+    window.addEventListener('scroll', function() {
+        updateFloatingHeader();
+        updateFloatingScrollbar();
+    }, { passive: true });
+
+    window.addEventListener('resize', function() {
+        buildFloatingHeader();
+        updateFloatingHeader();
+        updateFloatingScrollbar();
+    });
+
+    buildFloatingHeader();
+    updateFloatingHeader();
+    updateFloatingScrollbar();
+})();
         // ==================== GLOBAL VARIABLES ====================
         const modalOverlay = document.getElementById('modalOverlay');
         const filterModalContainer = document.getElementById('filterModalContainer');
