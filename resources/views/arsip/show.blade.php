@@ -9,10 +9,10 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h6 class="m-0 font-weight-bold text-primary">Detail Arsip</h6>
         {{-- <div class="btn-group">
-            <a href="{{ route('subbagian.arsip.index') }}" class="btn btn-secondary btn-sm">
+            <a href="{{ route('arsip.index') }}" class="btn btn-secondary btn-sm">
                 <i class="bi bi-arrow-left"></i> Kembali
             </a>
-            <a href="{{ route('subbagian.arsip.edit', $arsip->id) }}" class="btn btn-warning btn-sm">
+            <a href="{{ route('arsip.edit', $arsip->id) }}" class="btn btn-warning btn-sm">
                 <i class="bi bi-pencil"></i> Edit
             </a>
         </div> --}}
@@ -340,26 +340,26 @@
         <div class="mt-4 pt-3 border-top">
             <div class="d-flex gap-2 align-items-center">
 
-                {{-- <a href="{{ $returnUrl ?? route('subbagian.arsip.index') }}"
+                {{-- <a href="{{ $returnUrl ?? route('arsip.index') }}"
                 class="btn btn-secondary">
                     ⬅ Kembali
                 </a> --}}
 
-                    <a href="{{ session('arsip_return_url') ?? url()->previous() ?? route('subbagian.arsip.index') }}"
+                    <a href="{{ session('arsip_return_url') ?? url()->previous() ?? route('arsip.index') }}"
                 class="btn btn-secondary">
                     ⬅ Kembali
                 </a>
 
 
                @if(auth()->user()->canEditArsip($arsip))
-    <a href="{{ route('subbagian.arsip.edit', $arsip->id) }}"
+    <a href="{{ route('arsip.edit', $arsip->id) }}"
        class="btn btn-warning">
         <i class="bi bi-pencil"></i> Edit Arsip
     </a>
 @endif
 
 @if(auth()->user()->canDeleteArsip($arsip))
-    <form action="{{ route('subbagian.arsip.destroy', $arsip->id) }}"
+    <form action="{{ route('arsip.destroy', $arsip->id) }}"
           method="POST"
           class="d-inline">
         @csrf
