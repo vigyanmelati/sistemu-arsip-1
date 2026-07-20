@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use App\Models\BeritaAcaraDetail;
 use App\Models\HistoryPindah;
+use App\Models\MasterRak;
+use App\Models\MasterBox;
 
 
 class SubBagianRiwayatPemindahanController extends Controller
@@ -125,7 +127,20 @@ class SubBagianRiwayatPemindahanController extends Controller
         $arsip->load(['kodeKlasifikasi', 'subBagian']);
         $kodeKlasifikasis = KodeKlasifikasi::orderBy('kode')->get();
 
-        return view('subbagian.riwayat-pemindahan.perbaikan', compact('arsip', 'kodeKlasifikasis'));
+    $lokasi = $this->getLokasiArsip($user);
+    $lokasiLabel = $this->getLabelLokasi($lokasi);
+
+    $rakOptions = MasterRak::where('lokasi_arsip', $lokasi)
+        ->orderBy('nomor_rak')
+        ->get(['id', 'nomor_rak', 'lokasi_arsip']);
+
+    $boxOptions = MasterBox::whereIn('rak_id', $rakOptions->pluck('id'))
+        ->orderBy('nomor_box')
+        ->get(['id', 'nomor_box', 'rak_id']);
+
+
+
+        return view('subbagian.riwayat-pemindahan.perbaikan', compact('arsip', 'kodeKlasifikasis','rakOptions', 'boxOptions', 'lokasi', 'lokasiLabel'));
     }
 
     /**
@@ -294,4 +309,34 @@ class SubBagianRiwayatPemindahanController extends Controller
     {
         return $this->simpanPerbaikan($request, $arsip);
     }
+
+    private function getLokasiArsip($user)
+{
+    $namaSub = $user->subBagian->nama_sub_bagian ?? null;
+
+    $mapLokasi = [
+        'Sub Bagian Umum dan Logistik' => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
+        'Sub Bagian Partisipasi, Hubungan Masyarakat dan SDM' => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
+        'Sub Bagian Keuangan' => 'RUANG_SUBBAGIAN_KEUANGAN',
+        'Sub Bagian Perencanaan, Data, dan Informasi' => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
+        'Sub Bagian Teknis Penyelenggaraan Pemilu' => 'RUANG_SUBBAGIAN_TEKNIS',
+        'Sub Bagian Hukum' => 'RUANG_SUBBAGIAN_HUKUM',
+    ];
+
+    return $mapLokasi[$namaSub] ?? null;
+}
+
+// Tambahkan method ini di controller
+private function getLabelLokasi($lokasiKey)
+{
+    $labels = [
+        'RUANG_SUBBAGIAN_UMUM_LOGISTIK' => 'Ruang Subbagian Umum & Logistik',
+        'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM' => 'Ruang Subbagian Parmas & SDM',
+        'RUANG_SUBBAGIAN_KEUANGAN' => 'Ruang Subbagian Keuangan',
+        'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI' => 'Ruang Subbagian Perencanaan, Data & Informasi',
+        'RUANG_SUBBAGIAN_TEKNIS' => 'Ruang Subbagian Teknis',
+        'RUANG_SUBBAGIAN_HUKUM' => 'Ruang Subbagian Hukum',
+    ];
+    return $labels[$lokasiKey] ?? $lokasiKey;
+}
 }

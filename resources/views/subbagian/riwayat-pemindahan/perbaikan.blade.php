@@ -127,20 +127,50 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label fw-semibold">Nomor Rak</label>
-                                <input type="text" name="nomor_rak" class="form-control"
-                                       value="{{ old('nomor_rak', $arsip->nomor_rak) }}">
+                           <div class="col-md-4 mb-3">
+                                <label for="rak_id" class="form-label fw-semibold">Rak</label>
+                                <select class="form-select @error('rak_id') is-invalid @enderror" id="rak_id" name="rak_id">
+                                    <option value="">Pilih Rak</option>
+                                    @forelse($rakOptions as $rak)
+                                        <option value="{{ $rak->id }}"
+                                                data-lokasi="{{ $rak->lokasi_arsip }}"
+                                                {{ old('rak_id', $arsip->rak_id) == $rak->id ? 'selected' : '' }}>
+                                            {{ $rak->nomor_rak }}
+                                        </option>
+                                    @empty
+                                        <option value="" disabled>-- Tidak ada rak tersedia --</option>
+                                    @endforelse
+                                </select>
+                                <small class="text-muted" id="rak-info">Pilih lokasi terlebih dahulu</small>
+                                @error('rak_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
+
                             <div class="col-md-4 mb-3">
-                                <label class="form-label fw-semibold">Nomor Box</label>
-                                <input type="text" name="nomor_box" class="form-control"
-                                       value="{{ old('nomor_box', $arsip->nomor_box) }}">
+                                <label for="box_id" class="form-label fw-semibold">Box</label>
+                                <select class="form-select @error('box_id') is-invalid @enderror" id="box_id" name="box_id">
+                                    <option value="">Pilih Box</option>
+                                    @forelse($boxOptions as $box)
+                                        <option value="{{ $box->id }}"
+                                                data-rak-id="{{ $box->rak_id }}"
+                                                {{ old('box_id', $arsip->box_id) == $box->id ? 'selected' : '' }}>
+                                            {{ $box->nomor_box }}
+                                        </option>
+                                    @empty
+                                        <option value="" disabled>-- Tidak ada box tersedia --</option>
+                                    @endforelse
+                                </select>
+                                <small class="text-muted" id="box-info">Pilih rak terlebih dahulu</small>
+                                @error('box_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
+
                             <div class="col-md-4 mb-3">
                                 <label class="form-label fw-semibold">Nomor Sampul</label>
                                 <input type="text" name="nomor_sampul" class="form-control"
-                                       value="{{ old('nomor_sampul', $arsip->nomor_sampul) }}">
+                                    value="{{ old('nomor_sampul', $arsip->nomor_sampul) }}">
                             </div>
                         </div>
 
@@ -253,4 +283,76 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const rakSelect = document.getElementById('rak_id');
+    const boxSelect = document.getElementById('box_id');
+
+    if (!rakSelect || !boxSelect) return;
+
+    const allRakOptions = Array.from(rakSelect.querySelectorAll('option:not([value=""])'));
+    const allBoxOptions = Array.from(boxSelect.querySelectorAll('option:not([value=""])'));
+
+    const selectedLokasi = "{{ $lokasi }}";
+    const selectedRakId = "{{ old('rak_id', $arsip->rak_id) }}";
+    const selectedBoxId = "{{ old('box_id', $arsip->box_id) }}";
+
+    function filterRak() {
+        rakSelect.innerHTML = '<option value="">Pilih Rak</option>';
+        const infoRak = document.getElementById('rak-info');
+
+        if (!selectedLokasi) {
+            infoRak.textContent = 'Lokasi tidak ditemukan';
+            return;
+        }
+
+        const filteredRak = allRakOptions.filter(opt => opt.getAttribute('data-lokasi') === selectedLokasi);
+
+        if (filteredRak.length === 0) {
+            infoRak.textContent = 'Tidak ada rak di lokasi ini';
+            rakSelect.innerHTML = '<option value="">-- Tidak ada rak --</option>';
+        } else {
+            infoRak.textContent = filteredRak.length + ' rak tersedia';
+            filteredRak.forEach(opt => rakSelect.appendChild(opt));
+
+            if (selectedRakId) {
+                const rakOption = rakSelect.querySelector('option[value="' + selectedRakId + '"]');
+                if (rakOption) rakOption.selected = true;
+            }
+        }
+
+        rakSelect.dispatchEvent(new Event('change'));
+    }
+
+    function filterBox() {
+        const currentRakId = rakSelect.value;
+        boxSelect.innerHTML = '<option value="">Pilih Box</option>';
+        const infoBox = document.getElementById('box-info');
+
+        if (!currentRakId) {
+            infoBox.textContent = 'Pilih rak terlebih dahulu';
+            return;
+        }
+
+        const filteredBox = allBoxOptions.filter(opt => opt.getAttribute('data-rak-id') === currentRakId);
+
+        if (filteredBox.length === 0) {
+            infoBox.textContent = 'Tidak ada box di rak ini';
+            boxSelect.innerHTML = '<option value="">-- Tidak ada box --</option>';
+        } else {
+            infoBox.textContent = filteredBox.length + ' box tersedia';
+            filteredBox.forEach(opt => boxSelect.appendChild(opt));
+
+            if (selectedBoxId) {
+                const boxOption = boxSelect.querySelector('option[value="' + selectedBoxId + '"]');
+                if (boxOption) boxOption.selected = true;
+            }
+        }
+    }
+
+    filterRak();
+    rakSelect.addEventListener('change', filterBox);
+});
+</script>
 @endsection
