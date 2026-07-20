@@ -307,7 +307,20 @@ public function store(Request $request)
         'kode_klasifikasi_id' => 'required|exists:kode_klasifikasis,id',
         'uraian_arsip' => 'required|string|min:30',
         'sub_bagian_id' => 'required|exists:sub_bagians,id',
-        'tahun_arsip' => 'required|integer|min:2000|max:' . (date('Y') + 1),
+                    'tahun_arsip' => [
+                'required',
+                'integer',
+                'min:2000',
+                'max:' . (date('Y') + 1),
+                function ($attribute, $value, $fail) use ($request) {
+                    if ($request->filled('tanggal_arsip')) {
+                        $tahunTanggal = \Carbon\Carbon::parse($request->tanggal_arsip)->year;
+                        if ((int) $value !== $tahunTanggal) {
+                            $fail("Tahun arsip ({$value}) harus sama dengan tahun pada tanggal arsip ({$tahunTanggal}).");
+                        }
+                    }
+                },
+            ],
         'tanggal_arsip' => 'required|date',
         'jumlah_berkas' => 'required|integer|min:1',
         'satuan_arsip' => 'required|in:BENDEL,LEMBAR',
@@ -640,7 +653,20 @@ private function extractNumberFromText($text)
         'kode_klasifikasi_id' => 'required|exists:kode_klasifikasis,id',
         'uraian_arsip'        => 'required|string|min:30',
         'sub_bagian_id'       => 'required|exists:sub_bagians,id',
-        'tahun_arsip'         => 'required|integer|min:2000|max:' . (date('Y') + 1),
+        'tahun_arsip' => [
+    'required',
+    'integer',
+    'min:2000',
+    'max:' . (date('Y') + 1),
+    function ($attribute, $value, $fail) use ($request) {
+        if ($request->filled('tanggal_arsip')) {
+            $tahunTanggal = \Carbon\Carbon::parse($request->tanggal_arsip)->year;
+            if ((int) $value !== $tahunTanggal) {
+                $fail("Tahun arsip ({$value}) harus sama dengan tahun pada tanggal arsip ({$tahunTanggal}).");
+            }
+        }
+    },
+],
         'tanggal_arsip'       => 'required|date',
         'jumlah_berkas'       => 'required|integer|min:1',
         'satuan_arsip'        => 'required|in:BENDEL,LEMBAR',

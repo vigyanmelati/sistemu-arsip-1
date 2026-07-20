@@ -75,7 +75,10 @@
                 <!-- Tahun & Tanggal -->
                 <div class="col-md-3 mb-3">
                     <label for="tahun_arsip" class="form-label">Tahun Arsip <span class="text-danger">*</span></label>
-                    <input type="number" class="form-control @error('tahun_arsip') is-invalid @enderror" name="tahun_arsip" value="{{ old('tahun_arsip', $arsip->tahun_arsip) }}" min="2000" max="{{ date('Y') + 1 }}" required>
+                    <input type="number" class="form-control @error('tahun_arsip') is-invalid @enderror"
+                        id="tahun_arsip" name="tahun_arsip" value="{{ old('tahun_arsip', $arsip->tahun_arsip) }}"
+                        min="2000" max="{{ date('Y') + 1 }}" required>
+                    <small class="text-muted" id="tahun-info"></small>
                     @error('tahun_arsip')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -83,7 +86,8 @@
 
                 <div class="col-md-3 mb-3">
                     <label for="tanggal_arsip" class="form-label">Tanggal Arsip <span class="text-danger">*</span></label>
-                    <input type="date" class="form-control @error('tanggal_arsip') is-invalid @enderror" name="tanggal_arsip" value="{{ old('tanggal_arsip', $arsip->tanggal_arsip_for_input) }}" required>
+                    <input type="date" class="form-control @error('tanggal_arsip') is-invalid @enderror"
+                        id="tanggal_arsip" name="tanggal_arsip" value="{{ old('tanggal_arsip', $arsip->tanggal_arsip_for_input) }}" required>
                     @error('tanggal_arsip')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -432,6 +436,57 @@ document.addEventListener('DOMContentLoaded', function () {
 
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tahunInput = document.getElementById('tahun_arsip');
+    const tanggalInput = document.getElementById('tanggal_arsip');
+    const tahunInfo = document.getElementById('tahun-info');
+    const form = document.getElementById('arsipForm');
+
+    function syncTahunFromTanggal() {
+        if (!tanggalInput.value) return;
+        const tahunTanggal = new Date(tanggalInput.value).getFullYear();
+        tahunInput.value = tahunTanggal;
+        tahunInfo.textContent = '';
+        tahunInput.classList.remove('is-invalid');
+    }
+
+    function cekKecocokan() {
+        if (!tanggalInput.value || !tahunInput.value) return;
+        const tahunTanggal = new Date(tanggalInput.value).getFullYear();
+
+        if (parseInt(tahunInput.value) !== tahunTanggal) {
+            tahunInfo.textContent = `Tahun arsip harus sama dengan tahun tanggal arsip (${tahunTanggal})`;
+            tahunInfo.classList.add('text-danger');
+            tahunInput.classList.add('is-invalid');
+        } else {
+            tahunInfo.textContent = '';
+            tahunInput.classList.remove('is-invalid');
+        }
+    }
+
+    // Kalau tanggal diubah, samakan tahun otomatis
+    tanggalInput.addEventListener('change', syncTahunFromTanggal);
+
+    // Kalau tahun diubah manual, cek kecocokan
+    tahunInput.addEventListener('input', cekKecocokan);
+
+    // Cek saat halaman pertama load (data lama dari database)
+    cekKecocokan();
+
+    // Cegah submit kalau tidak cocok
+    form.addEventListener('submit', function (e) {
+        if (!tanggalInput.value || !tahunInput.value) return;
+        const tahunTanggal = new Date(tanggalInput.value).getFullYear();
+        if (parseInt(tahunInput.value) !== tahunTanggal) {
+            e.preventDefault();
+            cekKecocokan();
+            tahunInput.focus();
+        }
     });
 });
 </script>

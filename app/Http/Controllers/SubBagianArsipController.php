@@ -32,51 +32,51 @@ class SubBagianArsipController extends Controller
         // if (!$user->canViewRahasiaArsip()) {
         //     $query->where('klasifikasi_keamanan', '!=', 'Rahasia');
         // }
-   $query->whereDoesntHave('beritaAcaraDetails', function($q) {
-        $q->whereIn('status', ['DRAFT', 'DIAJUKAN', 'DITERIMA']);
-    });
-        $query->where(function ($q) use ($user) {
+        $query->whereDoesntHave('beritaAcaraDetails', function($q) {
+                $q->whereIn('status', ['DRAFT', 'DIAJUKAN', 'DITERIMA']);
+            });
+                $query->where(function ($q) use ($user) {
 
-    // selain rahasia
-    $q->where('klasifikasi_keamanan', '!=', 'Rahasia');
+            // selain rahasia
+            $q->where('klasifikasi_keamanan', '!=', 'Rahasia');
 
-    // rahasia milik sendiri
-    $q->orWhere(function ($sub) use ($user) {
+            // rahasia milik sendiri
+            $q->orWhere(function ($sub) use ($user) {
 
-        $sub->where('klasifikasi_keamanan', 'Rahasia');
+                $sub->where('klasifikasi_keamanan', 'Rahasia');
 
-        // admin, super admin dan TU
-        if (
-            $user->isAdmin() ||
-            $user->isSuperAdmin() ||
-            $user->isTu()
-        ) {
-            return;
-        }
+                // admin, super admin dan TU
+                if (
+                    $user->isAdmin() ||
+                    $user->isSuperAdmin() ||
+                    $user->isTu()
+                ) {
+                    return;
+                }
 
         // user hanya miliknya sendiri
         $sub->where('created_by', $user->id);
-    });
+        });
 
-});
+        });
+                    
+        // Di dalam method index() controller SubBagianArsipController
+
+        if ($request->has('sort')) {
+            $sort = $request->sort;
+            $direction = $request->direction ?? 'asc';
             
-// Di dalam method index() controller SubBagianArsipController
-
-if ($request->has('sort')) {
-    $sort = $request->sort;
-    $direction = $request->direction ?? 'asc';
-    
-    // Handle sorting untuk relasi
-    if ($sort == 'rak.nomor_rak') {
-        $query->join('master_raks', 'arsips.rak_id', '=', 'master_raks.id')
-              ->orderBy('master_raks.nomor_rak', $direction)
-              ->select('arsips.*');
-    } elseif ($sort == 'box.nomor_box') {
-        $query->join('master_box', 'arsips.box_id', '=', 'master_box.id')
-              ->orderBy('master_box.nomor_box', $direction)
-              ->select('arsips.*');
+            // Handle sorting untuk relasi
+            if ($sort == 'rak.nomor_rak') {
+                $query->join('master_raks', 'arsips.rak_id', '=', 'master_raks.id')
+                    ->orderBy('master_raks.nomor_rak', $direction)
+                    ->select('arsips.*');
+            } elseif ($sort == 'box.nomor_box') {
+                $query->join('master_box', 'arsips.box_id', '=', 'master_box.id')
+                    ->orderBy('master_box.nomor_box', $direction)
+                    ->select('arsips.*');
+            }
     }
-}
 
         $tahunOptions = Arsip::select('tahun_arsip')
             ->distinct()
@@ -314,7 +314,20 @@ if ($request->show_duplicates == 1) {
         $validated = $request->validate([
             'kode_klasifikasi_id'=>'required|exists:kode_klasifikasis,id',
             'uraian_arsip'=>'required|string|min:30',
-            'tahun_arsip'=>'required|integer|min:2000|max:'.(date('Y')+1),
+            'tahun_arsip' => [
+                'required',
+                'integer',
+                'min:2000',
+                'max:' . (date('Y') + 1),
+                function ($attribute, $value, $fail) use ($request) {
+                    if ($request->filled('tanggal_arsip')) {
+                        $tahunTanggal = \Carbon\Carbon::parse($request->tanggal_arsip)->year;
+                        if ((int) $value !== $tahunTanggal) {
+                            $fail("Tahun arsip ({$value}) harus sama dengan tahun pada tanggal arsip ({$tahunTanggal}).");
+                        }
+                    }
+                },
+            ],
             'tanggal_arsip'=>'required|date',
             'jumlah_berkas'=>'required|integer|min:1',
             'satuan_arsip'=>'required|in:BENDEL,LEMBAR',
@@ -456,7 +469,20 @@ if (!$user->canViewArsip($arsip)) {
         $validated = $request->validate([
             'kode_klasifikasi_id'=>'required|exists:kode_klasifikasis,id',
             'uraian_arsip'=>'required|string|min:30',
-            'tahun_arsip'=>'required|integer|min:2000|max:'.(date('Y')+1),
+            'tahun_arsip' => [
+                'required',
+                'integer',
+                'min:2000',
+                'max:' . (date('Y') + 1),
+                function ($attribute, $value, $fail) use ($request) {
+                    if ($request->filled('tanggal_arsip')) {
+                        $tahunTanggal = \Carbon\Carbon::parse($request->tanggal_arsip)->year;
+                        if ((int) $value !== $tahunTanggal) {
+                            $fail("Tahun arsip ({$value}) harus sama dengan tahun pada tanggal arsip ({$tahunTanggal}).");
+                        }
+                    }
+                },
+            ],
             'tanggal_arsip'=>'required|date',
             'jumlah_berkas'=>'required|integer|min:1',
             'satuan_arsip'=>'required|in:BENDEL,LEMBAR',
