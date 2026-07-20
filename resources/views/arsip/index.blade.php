@@ -318,11 +318,16 @@ $isApprovedForDestruction = in_array($arsip->status_arsip, [
         </td>
         
 
-         <td class="{{ !$isApprovedForDestruction ? 'editable-select' : '' }}" 
-            data-field="box_id" 
-            data-value="{{ $arsip->lokasi_arsip }}">
-            {{ $arsip->box ? $arsip->lokasi_arsip : '-' }}
+        <td class="{{ !$isApprovedForDestruction ? 'editable-select' : '' }}" data-field="lokasi_arsip" data-value="{{ $arsip->lokasi_arsip }}">
+            @php
+                $lokasiLabel = [
+                    'RECORD_CENTER_PERMANEN' => 'Record Center (Arsip Permanen)',
+                    'RECORD_CENTER_INAKTIF' => 'Record Center (Arsip Inaktif)',
+                ][$arsip->lokasi_arsip] ?? '-';
+            @endphp
+            {{ $lokasiLabel }}
         </td>
+        
         
         <!-- Aktif Tahun -->
         <td class="{{ !$isApprovedForDestruction ? 'editable' : '' }}" data-field="aktif_tahun">
