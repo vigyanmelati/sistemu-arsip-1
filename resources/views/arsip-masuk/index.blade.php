@@ -93,7 +93,7 @@
                         <th>Tanggal Diajukan</th>
                         <th>File Berita Acara</th>
                         <th>Status Pemindahan</th>
-                        <th>Status Lokasi</th>
+                        <!-- <th>Status Lokasi</th> -->
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -172,7 +172,7 @@
                                 <span class="badge bg-secondary">Belum Diajukan</span>
                             @endif
                         </td>
-                        <td>
+                        <!-- <td>
                             @if($arsip->tanggal_diverifikasi)
                                 <span class="badge bg-success">
                                     <i class="bi bi-check-circle"></i> Sudah Diverifikasi
@@ -182,7 +182,7 @@
                                     <i class="bi bi-exclamation-circle"></i> Belum Diverifikasi
                                 </span>
                             @endif
-                        </td>
+                        </td> -->
                         <td>
                             <a href="{{ route('arsip-masuk.show', $arsip->id) }}" class="btn btn-sm btn-info" title="Detail">
                                 <i class="bi bi-eye"></i>
@@ -289,6 +289,7 @@
 </div>
 
 <!-- Proses Multiple Modal -->
+<!-- Proses Multiple Modal -->
 <div class="modal-container" id="prosesMultipleModalContainer" style="display: none;">
     <div class="modal-content-wrapper">
         <div class="modal-content">
@@ -305,43 +306,51 @@
                 @csrf
                 <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Aksi</label>
+                        <label class="form-label fw-semibold">Aksi <span class="text-danger">*</span></label>
                         <select name="action" class="form-select" id="multipleActionSelect" required>
                             <option value="">Pilih Aksi</option>
-                            <option value="set_lokasi">Set Lokasi Rak & Box</option>
-                            <option value="pindahkan">Pindahkan ke Master</option>
+                            <option value="setujui">✅ Setujui Arsip</option>
+                            <option value="tolak">❌ Tolak Arsip</option>
                         </select>
                     </div>
 
-                    <!-- Fields for Set Lokasi -->
-                    <div id="setLokasiFields" style="display: none;">
-                        <div class="alert alert-info mb-3">
-                            <i class="bi bi-info-circle me-2"></i>
-                            Pilih lokasi tujuan untuk semua arsip yang dipilih.
+                    <!-- Fields for Setujui -->
+                    <div id="setujuiFields" style="display: none;">
+                        <div class="alert alert-success mb-3">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            Arsip yang dipilih akan disetujui dan langsung dipindahkan ke Unit Kearsipan.
                         </div>
 
-                        <!-- Pilih Lokasi Tujuan -->
+                        <!-- <div class="mb-3">
+                            <label class="form-label fw-semibold">Status Arsip Setelah Pindah <span class="text-danger">*</span></label>
+                            <select name="status_arsip_setelah_pindah" id="status_arsip_multiple" class="form-select">
+                                <option value="">-- Pilih Status --</option>
+                                <option value="AKTIF">Aktif</option>
+                                <option value="INAKTIF">Inaktif</option>
+                                <option value="PERMANEN">Permanen</option>
+                                <option value="MUSNAH">Musnah</option>
+                            </select>
+                        </div> -->
+
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Lokasi Tujuan <span class="text-danger">*</span></label>
-                            <select name="lokasi_tujuan" id="lokasi_tujuan_multiple" class="form-select" required>
+                            <select name="lokasi_tujuan" id="lokasi_tujuan_multiple" class="form-select">
                                 <option value="">-- Pilih Lokasi --</option>
                                 <option value="RECORD_CENTER_PERMANEN">Record Center Permanen</option>
                                 <option value="RECORD_CENTER_INAKTIF">Record Center Inaktif</option>
                             </select>
                         </div>
 
-                        <!-- Pilih Rak -->
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Rak <span class="text-danger">*</span></label>
-                            <select name="rak_id" id="rak_id_multiple" class="form-select" required>
+                            <label class="form-label fw-semibold">Rak Tujuan <span class="text-danger">*</span></label>
+                            <select name="rak_id" id="rak_id_multiple" class="form-select">
                                 <option value="">-- Pilih Lokasi Terlebih Dahulu --</option>
                             </select>
                         </div>
 
-                        <!-- Pilih Box -->
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Box <span class="text-danger">*</span></label>
-                            <select name="box_id" id="box_id_multiple" class="form-select" required>
+                            <label class="form-label fw-semibold">Box Tujuan <span class="text-danger">*</span></label>
+                            <select name="box_id" id="box_id_multiple" class="form-select">
                                 <option value="">-- Pilih Rak Terlebih Dahulu --</option>
                             </select>
                         </div>
@@ -349,23 +358,22 @@
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Catatan (Opsional)</label>
                             <textarea name="catatan" class="form-control" rows="2"
-                                    placeholder="Catatan verifikasi lokasi..."></textarea>
+                                    placeholder="Catatan persetujuan & pemindahan arsip..."></textarea>
                         </div>
                     </div>
 
-                    <!-- Fields for Pindahkan -->
-                    <div id="pindahkanFields" style="display: none;">
-                        <div class="alert alert-warning">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                            <strong>Perhatian:</strong>
-                            Lokasi rak dan box <u>tidak dapat diubah</u>.
-                            Arsip akan dipindahkan sesuai lokasi yang sudah diverifikasi.
+                    <!-- Fields for Tolak -->
+                    <div id="tolakFields" style="display: none;">
+                        <div class="alert alert-danger mb-3">
+                            <i class="bi bi-x-circle-fill me-2"></i>
+                            Arsip yang dipilih akan ditolak dan dikembalikan ke Sub Bagian untuk diperbaiki.
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Catatan (Opsional)</label>
-                            <textarea name="catatan" class="form-control" rows="2"
-                                    placeholder="Catatan pemindahan arsip..."></textarea>
+                            <label class="form-label fw-semibold">Alasan Penolakan <span class="text-danger">*</span></label>
+                            <textarea name="alasan" id="alasan_multiple" class="form-control" rows="3"
+                                    placeholder="Jelaskan alasan penolakan untuk semua arsip yang dipilih..."></textarea>
+                            <small class="text-muted">Alasan ini akan dikirim ke Sub Bagian terkait untuk setiap arsip.</small>
                         </div>
                     </div>
 
@@ -392,6 +400,7 @@
             </form>
         </div>
     </div>
+</div>>
 </div>
 
 <style>
@@ -563,8 +572,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedArsipList = document.getElementById('selectedArsipList');
     
     const multipleActionSelect = document.getElementById('multipleActionSelect');
-    const pindahkanFields = document.getElementById('pindahkanFields');
-    const setLokasiFields = document.getElementById('setLokasiFields');
+    const setujuiFields = document.getElementById('setujuiFields');
+    const tolakFields = document.getElementById('tolakFields');
     
     const prosesMultipleForm = document.getElementById('prosesMultipleForm');
     
@@ -586,22 +595,23 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Fungsi untuk update selection UI
     function updateSelectionUI() {
-        const count = selectedArsips.size;
-        selectedCount.textContent = count;
-        selectedCountModal.textContent = count;
-        
-        if (count > 0) {
-            selectedCounter.style.display = 'flex';
-            prosesMultipleBtn.style.display = 'flex';
-            updateArsipListInModal();
-        } else {
-            selectedCounter.style.display = 'none';
-            prosesMultipleBtn.style.display = 'none';
-            selectedArsipList.innerHTML = '';
-        }
-        
-        selectAllCheckbox.checked = count === arsipCheckboxes.length;
+    const count = selectedArsips.size;
+    
+    if (selectedCount) selectedCount.textContent = count;
+    if (selectedCountModal) selectedCountModal.textContent = count;
+    
+    if (count > 0) {
+        if (selectedCounter) selectedCounter.style.display = 'flex';
+        prosesMultipleBtn.style.display = 'flex';
+        updateArsipListInModal();
+    } else {
+        if (selectedCounter) selectedCounter.style.display = 'none';
+        prosesMultipleBtn.style.display = 'none';
+        selectedArsipList.innerHTML = '';
     }
+    
+    selectAllCheckbox.checked = count === arsipCheckboxes.length;
+}
     
     // Fungsi untuk update daftar arsip di modal
     function updateArsipListInModal() {
@@ -744,19 +754,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Tampilkan/sembunyikan fields berdasarkan aksi
     if (multipleActionSelect) {
-        multipleActionSelect.addEventListener('change', function() {
-            setLokasiFields.style.display = 'none';
-            pindahkanFields.style.display = 'none';
+    multipleActionSelect.addEventListener('change', function() {
+        setujuiFields.style.display = 'none';
+        tolakFields.style.display = 'none';
 
-            if (this.value === 'set_lokasi') {
-                setLokasiFields.style.display = 'block';
-            }
+        if (this.value === 'setujui') {
+            setujuiFields.style.display = 'block';
+        }
 
-            if (this.value === 'pindahkan') {
-                pindahkanFields.style.display = 'block';
-            }
-        });
-    }
+        if (this.value === 'tolak') {
+            tolakFields.style.display = 'block';
+        }
+    });
+}
     
     // =========================
     // FILTER RAK & BOX MULTIPLE
@@ -1139,78 +1149,93 @@ function updateRelatedField(arsipId, fieldName, value) {
     
     // Validasi form proses multiple
     if (prosesMultipleForm) {
-        prosesMultipleForm.addEventListener('submit', function(e) {
-            if (selectedArsips.size === 0) {
+    prosesMultipleForm.addEventListener('submit', function(e) {
+        if (selectedArsips.size === 0) {
+            e.preventDefault();
+            alert('Pilih setidaknya satu arsip untuk diproses.');
+            return;
+        }
+
+        const action = document.getElementById('multipleActionSelect').value;
+        if (!action) {
+            e.preventDefault();
+            alert('Pilih aksi yang akan dilakukan.');
+            return;
+        }
+
+        // Validasi untuk SETUJUI
+        if (action === 'setujui') {
+            // const statusArsip = document.getElementById('status_arsip_multiple').value;
+            const lokasi = lokasiTujuanMultiple.value;
+            const rakId = rakSelectMultiple.value;
+            const boxId = boxSelectMultiple.value;
+
+            // if (!statusArsip) {
+            //     e.preventDefault();
+            //     alert('Pilih status arsip setelah dipindah.');
+            //     return;
+            // }
+
+            if (!lokasi) {
                 e.preventDefault();
-                alert('Pilih setidaknya satu arsip untuk diproses.');
+                alert('Pilih lokasi tujuan terlebih dahulu.');
                 return;
             }
-            
-            const action = document.getElementById('multipleActionSelect').value;
-            if (!action) {
+
+            if (!rakId) {
                 e.preventDefault();
-                alert('Pilih aksi yang akan dilakukan.');
+                alert('Pilih rak tujuan.');
                 return;
             }
-            
-            // Validasi untuk set_lokasi
-            if (action === 'set_lokasi') {
-                const lokasi = lokasiTujuanMultiple.value;
-                const rakId = rakSelectMultiple.value;
-                const boxId = boxSelectMultiple.value;
-                
-                if (!lokasi) {
-                    e.preventDefault();
-                    alert('Pilih lokasi tujuan terlebih dahulu.');
-                    return;
-                }
-                
-                if (!rakId) {
-                    e.preventDefault();
-                    alert('Pilih rak tujuan.');
-                    return;
-                }
-                
-                if (!boxId) {
-                    e.preventDefault();
-                    alert('Pilih box tujuan.');
-                    return;
-                }
-                
-                // Konfirmasi
-                const rakName = rakSelectMultiple.options[rakSelectMultiple.selectedIndex]?.text || '-';
-                const boxName = boxSelectMultiple.options[boxSelectMultiple.selectedIndex]?.text || '-';
-                const lokasiLabel = lokasiTujuanMultiple.options[lokasiTujuanMultiple.selectedIndex]?.text || '-';
-                
-                if (!confirm('Anda akan memproses ' + selectedArsips.size + ' arsip ke lokasi:\n' +
-                            'Lokasi: ' + lokasiLabel + '\n' +
-                            'Rak: ' + rakName + '\n' +
-                            'Box: ' + boxName + '\n\n' +
-                            'Lanjutkan?')) {
-                    e.preventDefault();
-                    return;
-                }
+
+            if (!boxId) {
+                e.preventDefault();
+                alert('Pilih box tujuan.');
+                return;
             }
-            
-            // Validasi untuk pindahkan
-            if (action === 'pindahkan') {
-                if (!confirm('Anda akan memindahkan ' + selectedArsips.size + ' arsip ke master.\n\n' +
-                            'Lokasi akan tetap sesuai yang sudah diverifikasi.\n\n' +
-                            'Lanjutkan?')) {
-                    e.preventDefault();
-                    return;
-                }
+
+            const rakName = rakSelectMultiple.options[rakSelectMultiple.selectedIndex]?.text || '-';
+            const boxName = boxSelectMultiple.options[boxSelectMultiple.selectedIndex]?.text || '-';
+            const lokasiLabel = lokasiTujuanMultiple.options[lokasiTujuanMultiple.selectedIndex]?.text || '-';
+
+            if (!confirm('Anda akan MENYETUJUI dan memindahkan ' + selectedArsips.size + ' arsip ke:\n' +
+                        'Lokasi: ' + lokasiLabel + '\n' +
+                        'Rak: ' + rakName + '\n' +
+                        'Box: ' + boxName + '\n\n' +
+                        'Lanjutkan?')) {
+                e.preventDefault();
+                return;
             }
-            
-            // Tampilkan loading
-            const submitBtn = this.querySelector('button[type="submit"]');
-            submitBtn.innerHTML = `
-                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                Memproses...
-            `;
-            submitBtn.disabled = true;
-        });
-    }
+        }
+
+        // Validasi untuk TOLAK
+        if (action === 'tolak') {
+            const alasan = document.getElementById('alasan_multiple').value.trim();
+
+            if (!alasan) {
+                e.preventDefault();
+                alert('Isi alasan penolakan.');
+                document.getElementById('alasan_multiple').focus();
+                return;
+            }
+
+            if (!confirm('Anda akan MENOLAK ' + selectedArsips.size + ' arsip.\n\n' +
+                        'Arsip akan dikembalikan ke Sub Bagian untuk diperbaiki.\n\n' +
+                        'Lanjutkan?')) {
+                e.preventDefault();
+                return;
+            }
+        }
+
+        // Tampilkan loading
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Memproses...
+        `;
+        submitBtn.disabled = true;
+    });
+}
     
     // Tutup modal dengan tombol ESC
     document.addEventListener('keydown', function(e) {

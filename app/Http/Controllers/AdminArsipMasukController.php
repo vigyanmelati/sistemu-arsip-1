@@ -706,9 +706,12 @@ public function prosesMultiple(Request $request)
     $request->validate([
         'arsip_ids'   => 'required|array',
         'arsip_ids.*' => 'exists:arsips,id',
-        'action'      => 'required|in:set_lokasi,pindahkan',
-        'rak_id'      => 'nullable|exists:master_raks,id',
-        'box_id'      => 'nullable|exists:master_box,id',
+        'action'      => 'required|in:setujui,tolak',
+        // 'status_arsip_setelah_pindah' => 'nullable|required_if:action,setujui|in:AKTIF,INAKTIF,PERMANEN,MUSNAH',
+        'lokasi_tujuan' => 'nullable|required_if:action,setujui|in:RECORD_CENTER_INAKTIF,RECORD_CENTER_PERMANEN',
+        'rak_id'      => 'nullable|required_if:action,setujui|exists:master_raks,id',
+        'box_id'      => 'nullable|required_if:action,setujui|exists:master_box,id',
+        'alasan'      => 'nullable|required_if:action,tolak|string|max:500',
         'catatan'     => 'nullable|string|max:500',
     ]);
 
@@ -722,20 +725,17 @@ public function prosesMultiple(Request $request)
         $bapIds = [];
 
         foreach ($arsips as $arsip) {
-            // Kumpulkan BAP IDs untuk update nanti
+
+            if ($arsip->status_pindah !== 'DIAJUKAN') {
+                continue;
+            }
+
             $bapDetail = BeritaAcaraDetail::where('arsip_id', $arsip->id)->first();
             if ($bapDetail) {
                 $bapIds[] = $bapDetail->bap_id;
             }
 
-            /* ============================
-             | AKSI 1 : SET LOKASI
-             | ============================ */
-            if ($request->action === 'set_lokasi') {
-
-                if (!$request->rak_id || !$request->box_id) {
-                    throw new \Exception('Rak dan box wajib dipilih.');
-                }
+            if ($request->action === 'setujui') {
 
                 $dariRak = $arsip->rak_id;
                 $dariBox = $arsip->box_id;
@@ -745,94 +745,86 @@ public function prosesMultiple(Request $request)
                 $rakBaru = MasterRak::find($request->rak_id);
                 $boxBaru = MasterBox::find($request->box_id);
 
+                $catatanVerifikasi = '✅ DISETUJUI: ' . ($request->catatan ?? 'Arsip diverifikasi dan dipindahkan ke Unit Kearsipan.');
+
                 $arsip->skipHistory = true;
                 $arsip->update([
-                    'rak_id'               => $request->rak_id,
-                    'box_id'               => $request->box_id,
-                    'lokasi_arsip'         => $rakBaru ? $rakBaru->lokasi_arsip : $arsip->lokasi_arsip,
-                    'tanggal_diverifikasi' => now(),
-                    'diverifikasi_oleh'    => auth()->id(),
-                    'catatan_verifikasi'   => $request->catatan ?? 'Verifikasi lokasi arsip',
-                    'status_pindah'        => 'DITERIMA', // Set DITERIMA
+                    'rak_id'                => $request->rak_id,
+                    'box_id'                => $request->box_id,
+                    'lokasi_arsip'           => $request->lokasi_tujuan,
+                    // 'status_arsip'           => $request->status_arsip_setelah_pindah,
+                    'status_pindah'          => 'DIPINDAHKAN',
+                    'tanggal_diverifikasi'   => now(),
+                    'diverifikasi_oleh'      => auth()->id(),
+                    'tanggal_dipindahkan'    => now(),
+                    'catatan_verifikasi'     => $catatanVerifikasi,
                 ]);
 
-                // Update BAP detail
                 if ($bapDetail) {
                     $bapDetail->update(['status' => BeritaAcaraDetail::STATUS_DITERIMA]);
                 }
 
                 HistoryPindah::create([
                     'arsip_id' => $arsip->id,
-                    'aksi' => 'SET_LOKASI',
+                    'aksi' => 'SETUJUI_PINDAHKAN',
                     'dari_rak' => $dariRakNomor,
                     'dari_box' => $dariBoxNomor,
                     'ke_rak' => $rakBaru ? $rakBaru->nomor_rak : null,
                     'ke_box' => $boxBaru ? $boxBaru->nomor_box : null,
                     'tanggal_pindah' => now(),
-                    'alasan_pindah' => $request->catatan ?? 'Verifikasi lokasi arsip',
+                    'alasan_pindah' => $catatanVerifikasi,
                     'user_id' => auth()->id(),
                 ]);
             }
 
-            /* ============================
-             | AKSI 2 : PINDAHKAN KE MASTER
-             | ============================ */
-            if ($request->action === 'pindahkan') {
+            if ($request->action === 'tolak') {
 
-                if (!$arsip->rak_id || !$arsip->box_id) {
-                    throw new \Exception('Arsip belum memiliki rak dan box.');
-                }
+                $catatanPenolakan = '❌ DITOLAK: ' . $request->alasan;
 
-                $arsip->skipHistory = true;
-                $arsip->update([
-                    'status_pindah'       => 'DITERIMA', // Set DITERIMA
-                    'tanggal_diverifikasi' => now(),
-                    'diverifikasi_oleh' => auth()->id(),
-                ]);
+                $arsip->status_pindah = 'DITOLAK';
+                $arsip->tanggal_diverifikasi = now();
+                $arsip->diverifikasi_oleh = auth()->id();
+                $arsip->catatan_verifikasi = $catatanPenolakan;
+                $arsip->save();
 
-                // Update BAP detail
                 if ($bapDetail) {
-                    $bapDetail->update(['status' => BeritaAcaraDetail::STATUS_DITERIMA]);
+                    $bapDetail->update(['status' => BeritaAcaraDetail::STATUS_DITOLAK]);
                 }
 
                 HistoryPindah::create([
                     'arsip_id' => $arsip->id,
-                    'aksi'     => 'PINDAHKAN',
-                    'dari_rak' => $arsip->rak ? $arsip->rak->nomor_rak : null,
-                    'dari_box' => $arsip->box ? $arsip->box->nomor_box : null,
-                    'ke_rak'   => $arsip->rak ? $arsip->rak->nomor_rak : null,
-                    'ke_box'   => $arsip->box ? $arsip->box->nomor_box : null,
+                    'aksi' => 'TOLAK',
                     'tanggal_pindah' => now(),
-                    'alasan_pindah'  => $request->catatan ?? 'Arsip dipindahkan ke Unit Kearsipan',
-                    'user_id'  => auth()->id(),
+                    'alasan_pindah' => $catatanPenolakan,
+                    'user_id' => auth()->id(),
                 ]);
             }
         }
 
-        // ========== UPDATE STATUS BAP ==========
-        // Proses update status BAP untuk semua BAP yang terpengaruh
         $uniqueBapIds = array_unique($bapIds);
         foreach ($uniqueBapIds as $bapId) {
             $bap = BeritaAcaraPindah::find($bapId);
             if ($bap) {
-                // Cek apakah semua arsip di BAP sudah DITERIMA
                 $allDiterima = BeritaAcaraDetail::where('bap_id', $bapId)
                     ->whereHas('arsip', function($q) {
-                        $q->where('status_pindah', '!=', 'DITERIMA');
+                        $q->where('status_pindah', '!=', 'DIPINDAHKAN');
                     })
                     ->doesntExist();
-                
+
                 if ($allDiterima) {
                     $bap->status = BeritaAcaraPindah::STATUS_DISETUJUI;
-                    // $bap->tanggal_disetujui = now();
-                    // $bap->disetujui_by = auth()->id();
                     $bap->save();
                 }
             }
         }
 
         DB::commit();
-        return back()->with('success', 'Proses arsip berhasil. Semua arsip diterima.');
+
+        $message = $request->action === 'setujui'
+            ? 'Semua arsip yang dipilih berhasil disetujui dan dipindahkan ke Unit Kearsipan.'
+            : 'Semua arsip yang dipilih berhasil ditolak.';
+
+        return back()->with('success', $message);
 
     } catch (\Throwable $e) {
         DB::rollBack();
