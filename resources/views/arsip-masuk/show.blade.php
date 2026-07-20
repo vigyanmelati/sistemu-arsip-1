@@ -140,36 +140,23 @@
                 
                 <!-- Preview / File Dokumen Arsip -->
                 <div class="mt-3 pt-3 border-top">
-                    <label class="form-label fw-semibold">
-                        <i class="bi bi-file-earmark me-2"></i>File Dokumen Arsip
-                    </label>
-                   {{-- resources/views/arsip-masuk/show.blade.php --}}
-
-<!-- Preview / File Dokumen Arsip -->
-{{-- resources/views/arsip-masuk/show.blade.php --}}
-
-<!-- Preview / File Dokumen Arsip -->
-<div class="mt-3 pt-3 border-top">
     <label class="form-label fw-semibold">
         <i class="bi bi-file-earmark me-2"></i>File Dokumen Arsip
     </label>
     @if($arsip->file_dokumen)
         <div class="d-flex align-items-center gap-3 flex-wrap">
-            <!-- Tombol Download - PASTIKAN ROUTE INI -->
-            <a href="{{ route('arsip-masuk.download-file', $arsip->id) }}" 
+            <a href="{{ route('arsip-masuk.download-file', $arsip->id) }}"
                class="btn btn-sm btn-success"
                download>
                 <i class="bi bi-download me-1"></i> Download
             </a>
-            
-            <!-- Tombol Preview -->
-            <a href="{{ asset('storage/arsip/' . $arsip->file_dokumen) }}" 
-               target="_blank" 
+
+            <a href="{{ asset('storage/arsip/' . $arsip->file_dokumen) }}"
+               target="_blank"
                class="btn btn-sm btn-outline-primary">
                 <i class="bi bi-eye me-1"></i> Preview
             </a>
-            
-            <!-- Info file -->
+
             <small class="text-muted">
                 <i class="bi bi-file-earmark me-1"></i>
                 {{ $arsip->file_dokumen }}
@@ -186,7 +173,7 @@
                         }
                     }
                     if ($fileSize) {
-                        $sizeStr = $fileSize > 1048576 ? round($fileSize/1048576, 2) . ' MB' : 
+                        $sizeStr = $fileSize > 1048576 ? round($fileSize/1048576, 2) . ' MB' :
                                   ($fileSize > 1024 ? round($fileSize/1024, 2) . ' KB' : $fileSize . ' B');
                         echo '<span class="text-muted ms-2">(' . $sizeStr . ')</span>';
                     }
@@ -200,7 +187,7 @@
         </span>
     @endif
 </div>
-                </div>
+                
             </div>
         </div>
         
@@ -275,7 +262,7 @@
     
     <div class="col-md-4">
         <!-- Panel Verifikasi -->
-        <div class="card mb-4">
+        <div class="card mb-4" style="margin-top:50px">
             <div class="card-header bg-warning text-white">
                 <h5 class="mb-0">
                     <i class="bi bi-clipboard-check me-2"></i>
