@@ -203,7 +203,7 @@
                                 @if(auth()->user()->canDownloadArsip($arsip))
                                     <div>
                                         @if($arsip->file_dokumen)
-                                            <a href="{{ route('subbagian.arsip.downloadFile', $arsip->id) }}"
+                                            <a href="{{ route('arsip.downloadFile', $arsip->id) }}"
                                                target="_blank"
                                                class="btn btn-primary">
                                                 Lihat/Unduh Dokumen

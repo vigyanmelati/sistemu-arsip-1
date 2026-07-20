@@ -247,6 +247,7 @@ Route::prefix('lintas-unit')->name('lintas-unit.')->group(function () {
         ->name('daftar');
 
 });
+    Route::get('/arsip/{arsip}/download-file', [SubBagianArsipController::class, 'downloadFile'])->name('arsip.downloadFile');
    Route::post('/berita-acara/{berita_acara}/kirim', [BeritaAcaraPindahController::class, 'kirim'])->name('berita-acara.kirim');
     
     // === ROUTE EXPORT LAMPIRAN ===
