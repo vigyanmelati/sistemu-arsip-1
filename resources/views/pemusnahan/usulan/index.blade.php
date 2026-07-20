@@ -300,12 +300,19 @@
     }
     
     /* Style soft untuk semua badge */
-    .badge, span[style*="border-radius"] {
+    /* .badge, span[style*="border-radius"] {
         display: inline-flex;
         align-items: center;
         gap: 4px;
         font-weight: 500;
         letter-spacing: 0.3px;
-    }
+    } */
+    .badge, span[style*="border-radius"] {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
 </style>
 @endpush
