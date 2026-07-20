@@ -255,7 +255,7 @@
                                         </span>
                                     @endif
                                 </div>
-                            </td>v>
+                            </td>
                             </td>
                         </tr>
                         @empty
