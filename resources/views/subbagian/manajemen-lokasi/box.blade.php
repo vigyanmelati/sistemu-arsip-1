@@ -143,7 +143,7 @@
                                 <i class="{{ $iconClass }} fs-1" style="color: {{ $iconColor }}; font-size: 3rem !important;"></i>
                             </div>
                             
-                            <h5 class="card-title fw-semibold mb-2" style="color: {{ $iconColor }};">Box {{ $boxName }}</h5>
+                            <h5 class="card-title fw-semibold mb-2" style="color: {{ $iconColor }};">{{ $boxName }}</h5>
                             
                             {{-- Keterangan --}}
                             @if(!empty($box->keterangan))
