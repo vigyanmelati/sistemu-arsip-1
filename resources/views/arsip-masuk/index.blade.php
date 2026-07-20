@@ -23,7 +23,7 @@
     
     <div class="card-body">
         <!-- Selected Counter -->
-        <div id="selectedCounter" class="alert alert-info d-flex align-items-center justify-content-between mb-3" style="display: none!important;">
+        <!-- <div id="selectedCounter" class="alert alert-info d-flex align-items-center justify-content-between mb-3" style="display: none!important;">
             <div>
                 <i class="bi bi-check-circle-fill me-2"></i>
                 <span id="selectedCount">0</span> arsip dipilih
@@ -31,7 +31,7 @@
             <button class="btn btn-sm btn-outline-danger" id="clearSelection">
                 <i class="bi bi-x-circle"></i> Batalkan Pilihan
             </button>
-        </div>
+        </div> -->
         
         <!-- Search Bar -->
         <form method="GET" action="{{ route('arsip-masuk.index') }}" class="mb-4">
@@ -56,7 +56,20 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         @endif
-        
+        <div class="alert alert-info d-flex align-items-start gap-2 mb-3">
+    <i class="bi bi-info-circle-fill mt-1"></i>
+    <div>
+        <strong>Tips:</strong> Klik pada nilai di kolom
+        <span class="badge bg-primary">Kode Klasifikasi</span>,
+        <span class="badge bg-primary">Aktif Tahun</span>,
+        <span class="badge bg-primary">Inaktif Tahun</span>, dan
+        <span class="badge bg-primary">Keterangan JRA</span>
+        untuk mengubah nilainya secara langsung (inline edit) tanpa perlu membuka halaman lain.
+    </div>
+</div>
+
+<!-- Table -->
+<div class="table-responsive">
         <!-- Table -->
         <div class="table-responsive">
             <table class="table table-hover" id="arsipTable">
