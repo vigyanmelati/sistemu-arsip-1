@@ -160,6 +160,15 @@ Route::post('/arsip-masuk/{id}/update-field', [AdminArsipMasukController::class,
                 [PemusnahanController::class, 'riwayatShow']
             )->name('riwayat.show');
 
+            Route::get('/usulan/{pemusnahan}/edit', [PemusnahanController::class, 'edit'])
+    ->name('usulan.edit');
+
+Route::put('/usulan/{pemusnahan}', [PemusnahanController::class, 'update'])
+    ->name('usulan.update');
+
+Route::delete('/usulan/{pemusnahan}', [PemusnahanController::class, 'destroy'])
+    ->name('usulan.destroy');
+
         });
           // Arsip Masuk (pengajuan dari subbagian)
          // Arsip Masuk

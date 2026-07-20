@@ -472,4 +472,75 @@ public function simpanKpu(Request $request, Pemusnahan $pemusnahan)
         ->with('success', 'Persetujuan KPU berhasil diupload.');
 }
 
+/**
+ * ===============================
+ * FORM EDIT USULAN (HANYA DRAFT)
+ * ===============================
+ */
+public function edit(Pemusnahan $pemusnahan)
+{
+    if ($pemusnahan->status !== 'draft') {
+        abort(403, 'Hanya pemusnahan berstatus draft yang dapat diedit.');
+    }
+
+    return view('pemusnahan.usulan.edit', compact('pemusnahan'));
+}
+
+/**
+ * ===============================
+ * UPDATE USULAN (HANYA DRAFT)
+ * ===============================
+ */
+public function update(Request $request, Pemusnahan $pemusnahan)
+{
+    if ($pemusnahan->status !== 'draft') {
+        abort(403, 'Hanya pemusnahan berstatus draft yang dapat diedit.');
+    }
+
+    $request->validate([
+        'tahun' => 'required|numeric',
+    ]);
+
+    $pemusnahan->update([
+        'tahun'      => $request->tahun,
+        'keterangan' => $request->keterangan,
+    ]);
+
+    return redirect()
+        ->route('pemusnahan.usulan.show', $pemusnahan)
+        ->with('success', 'Usulan pemusnahan berhasil diperbarui');
+}
+
+/**
+ * ===============================
+ * HAPUS USULAN (HANYA DRAFT)
+ * Arsip yang sudah dimasukkan akan
+ * dikembalikan status semulanya
+ * ===============================
+ */
+public function destroy(Pemusnahan $pemusnahan)
+{
+    if ($pemusnahan->status !== 'draft') {
+        return back()->with('error', 'Hanya pemusnahan berstatus draft yang dapat dihapus.');
+    }
+
+    foreach ($pemusnahan->details as $detail) {
+        $arsip = $detail->arsip;
+
+        if ($arsip) {
+            $arsip->status_arsip  = 'HABIS_RETENSI'; // kembalikan status semula
+            $arsip->pemusnahan_id = null;
+            $arsip->save();
+        }
+
+        $detail->delete();
+    }
+
+    $pemusnahan->delete();
+
+    return redirect()
+        ->route('pemusnahan.usulan.index')
+        ->with('success', 'Pemusnahan berhasil dihapus dan arsip dikembalikan ke daftar.');
+}
+
 }

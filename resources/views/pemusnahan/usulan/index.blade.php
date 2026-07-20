@@ -130,8 +130,9 @@
                             <th width="10%" class="text-center">Tahun</th>
                             <th width="20%">Tanggal Usulan</th>
                             <th width="15%" class="text-center">Jumlah Arsip</th>
-                            <th width="25%">Status</th>
-                            <th width="25%" class="text-center">Aksi</th>
+                            <th width="15%">Keterangan</th>
+                            <th width="15%">Status</th>
+                            <th width="20%" class="text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -153,6 +154,13 @@
                                     <i class="bi bi-archive me-1"></i>
                                     {{ $item->details_count }} Arsip
                                 </span>
+                            </td>
+                            <td>
+                                @if($item->keterangan)
+                                    {{ $item->keterangan }}
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
                             </td>
                             <td>
                                 @switch($item->status)
@@ -193,34 +201,50 @@
                             <td>
                                 <div class="d-flex flex-wrap gap-1 justify-content-center">
                                     <a href="{{ route('pemusnahan.usulan.show', $item->id) }}"
-                                       class="btn btn-sm btn-outline-secondary">
+                                    class="btn btn-sm btn-outline-secondary">
                                         <i class="bi bi-eye me-1"></i> Detail
                                     </a>
 
                                     @if ($item->status === 'draft')
+                                        <a href="{{ route('pemusnahan.usulan.edit', $item->id) }}"
+                                        class="btn btn-sm btn-outline-info">
+                                            <i class="bi bi-pencil me-1"></i> Edit
+                                        </a>
+
+                                        <form action="{{ route('pemusnahan.usulan.destroy', $item->id) }}"
+                                            method="POST"
+                                            class="d-inline"
+                                            onsubmit="return confirm('Yakin ingin menghapus pengajuan pemusnahan ini? Arsip yang sudah dimasukkan akan dikembalikan.')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash me-1"></i> Hapus
+                                            </button>
+                                        </form>
+
                                         <a href="{{ route('pemusnahan.sidang', $item->id) }}"
-                                           class="btn btn-sm btn-outline-warning">
+                                        class="btn btn-sm btn-outline-warning">
                                             <i class="bi bi-chat-dots me-1"></i> Penelitian/Penilaian
                                         </a>
                                     @endif
 
                                     @if ($item->status === 'diajukan_ke_anri')
                                         <a href="{{ route('pemusnahan.anri', $item->id) }}"
-                                           class="btn btn-sm btn-outline-primary">
+                                        class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-building me-1"></i> ANRI
                                         </a>
                                     @endif
 
                                     @if (in_array($item->status, ['disetujui_anri', 'menunggu_persetujuan_kpu']))
                                         <a href="{{ route('pemusnahan.kpu', $item->id) }}"
-                                           class="btn btn-sm btn-outline-secondary">
+                                        class="btn btn-sm btn-outline-secondary">
                                             <i class="bi bi-check2-circle me-1"></i> KPU
                                         </a>
                                     @endif
 
                                     @if ($item->status === 'disetujui_kpu')
                                         <a href="{{ route('pemusnahan.eksekusi', $item->id) }}"
-                                           class="btn btn-sm btn-outline-success">
+                                        class="btn btn-sm btn-outline-success">
                                             <i class="bi bi-play-circle me-1"></i> Eksekusi
                                         </a>
                                     @endif
@@ -231,6 +255,7 @@
                                         </span>
                                     @endif
                                 </div>
+                            </td>v>
                             </td>
                         </tr>
                         @empty
