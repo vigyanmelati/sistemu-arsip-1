@@ -1023,33 +1023,28 @@ function saveInlineEdit(element, fieldName, arsipId, originalText) {
             // Update display dengan data dari server
             const result = data.data;
             
-            // Update field yang diedit
-             if (fieldName === 'aktif_tahun') {
-            element.textContent = result.aktif_tahun || '-';
-            // Update kolom Aktif Sampai
-            updateRelatedField(arsipId, 'aktif_sampai', result.aktif_sampai);
-            // Update kolom Status (jika berubah)
-            if (result.status_arsip) {
-                updateRelatedField(arsipId, 'status', result.status_arsip);
-            }
-        } else if (fieldName === 'inaktif_tahun') {
-            element.textContent = result.inaktif_tahun || '-';
-            // Update kolom Inaktif Sampai
-            updateRelatedField(arsipId, 'inaktif_sampai', result.inaktif_sampai);
-            // Update kolom Status (jika berubah)
-            if (result.status_arsip) {
-                updateRelatedField(arsipId, 'status', result.status_arsip);
-            }
-        
+            if (fieldName === 'aktif_tahun') {
+                element.textContent = result.aktif_tahun || '-';
+                updateRelatedField(arsipId, 'aktif_sampai', result.aktif_sampai);
+                if (result.status_arsip) {
+                    updateRelatedField(arsipId, 'status', result.status_arsip);
+                }
             } else if (fieldName === 'inaktif_tahun') {
                 element.textContent = result.inaktif_tahun || '-';
-                // Update kolom Inaktif Sampai di baris yang sama
                 updateRelatedField(arsipId, 'inaktif_sampai', result.inaktif_sampai);
+                if (result.status_arsip) {
+                    updateRelatedField(arsipId, 'status', result.status_arsip);
+                }
             } else if (fieldName === 'keterangan_jra') {
                 element.textContent = result.keterangan_jra || '-';
+                // TAMBAHKAN INI: keterangan_jra juga mempengaruhi retensi
+                updateRelatedField(arsipId, 'aktif_sampai', result.aktif_sampai);
+                updateRelatedField(arsipId, 'inaktif_sampai', result.inaktif_sampai);
+            } else if (fieldName === 'kode_klasifikasi') {
+                element.textContent = result.kode_klasifikasi || '-';
             }
-            
-            // Update status jika berubah
+
+            // Status selalu diupdate kalau ada perubahan (satu kali saja, tidak perlu diulang di setiap cabang di atas)
             if (result.status_arsip) {
                 updateRelatedField(arsipId, 'status', result.status_arsip);
             }

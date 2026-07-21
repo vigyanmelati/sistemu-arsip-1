@@ -237,7 +237,7 @@
                 </div>
 
                 <!-- Tanggal Masuk -->
-                <div class="col-md-6 mb-3">
+                {{-- <div class="col-md-6 mb-3">
                     <label for="tanggal_masuk" class="form-label">Tanggal Masuk</label>
                     <input type="date" class="form-control @error('tanggal_masuk') is-invalid @enderror" 
                         name="tanggal_masuk" value="{{ old('tanggal_masuk', $arsip->tanggal_masuk_for_input) }}">
@@ -245,7 +245,7 @@
                     @error('tanggal_masuk')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
-                </div>
+                </div> --}}
             </div>
 
             <!-- File Upload & Link -->
