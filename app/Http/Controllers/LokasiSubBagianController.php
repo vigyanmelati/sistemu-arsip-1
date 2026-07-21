@@ -11,19 +11,18 @@ use Illuminate\Support\Facades\Auth;
 class LokasiSubBagianController extends Controller
 {
     // Mapping sub_bagian_id -> ruangan
-    private function getRuanganBySubBagian($subBagianId)
-    {
-        $mapping = [
-            1 => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
-            2 => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
-            3 => 'RUANG_SUBBAGIAN_KEUANGAN',
-            4 => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
-            5 => 'RUANG_SUBBAGIAN_TEKNIS',
-            6 => 'RUANG_SUBBAGIAN_HUKUM',
-        ];
-
-        return $mapping[$subBagianId] ?? null;
-    }
+   private function getRuanganBySubBagian($subBagianId)
+{
+    $mapping = [
+        1 => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
+        2 => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
+        3 => 'RUANG_SUBBAGIAN_KEUANGAN',
+        7 => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI', // ganti dari 4 ke 7
+        5 => 'RUANG_SUBBAGIAN_TEKNIS',
+        6 => 'RUANG_SUBBAGIAN_HUKUM',
+    ];
+    return $mapping[$subBagianId] ?? null;
+}
 
     private function getSubBagianIdByRuangan($ruangan)
     {
