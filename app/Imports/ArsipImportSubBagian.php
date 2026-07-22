@@ -101,6 +101,7 @@ class ArsipImportSubBagian implements
             'nama_raklemari' => 'nullable',
             'aktif'                => 'nullable|string|max:100',
             'inaktif'              => 'nullable|string|max:100',
+            'klasifikasi_keamanan' => 'nullable|in:Biasa/Terbuka,Terbatas,Rahasia',
         ];
     }
 
@@ -324,7 +325,30 @@ class ArsipImportSubBagian implements
                     "Baris {$rowNumber}: Tingkat perkembangan hanya boleh ASLI, COPY atau SALINAN.";
             }
         }
+/*
+|--------------------------------------------------------------------------
+| KLASIFIKASI KEAMANAN
+|--------------------------------------------------------------------------
+*/
 
+if (!empty($row['klasifikasi_keamanan'])) {
+
+    $allowedRaw = [
+        'BIASA/TERBUKA',
+        'TERBATAS',
+        'RAHASIA'
+    ];
+
+    $value = strtoupper(
+        str_replace(' ', '', trim($row['klasifikasi_keamanan']))
+    );
+
+    if (!in_array($value, $allowedRaw)) {
+
+        $this->errors[] =
+            "Baris {$rowNumber}: Klasifikasi keamanan hanya boleh Biasa/Terbuka, Terbatas, atau Rahasia.";
+    }
+}
 
         /*
         |--------------------------------------------------------------------------
@@ -555,6 +579,16 @@ class ArsipImportSubBagian implements
             $tingkatPerkembangan = 'ASLI';
         }
 
+
+        // Klasifikasi keamanan
+$klasifikasiKeamananRaw = trim($row['klasifikasi_keamanan'] ?? '');
+$klasifikasiKeamananMap = [
+    'BIASA/TERBUKA' => 'Biasa/Terbuka',
+    'TERBATAS'      => 'Terbatas',
+    'RAHASIA'       => 'Rahasia',
+];
+$klasifikasiKeamananKey = strtoupper(str_replace(' ', '', $klasifikasiKeamananRaw));
+$klasifikasiKeamanan = $klasifikasiKeamananMap[$klasifikasiKeamananKey] ?? 'Biasa/Terbuka';
         // Link foto
         $linkFoto = trim($row['link_foto'] ?? '');
         if ($linkFoto && !filter_var($linkFoto, FILTER_VALIDATE_URL)) {
@@ -633,6 +667,7 @@ class ArsipImportSubBagian implements
             'nomor_rak'           => (string) $nomorRak,
             'lokasi_arsip'        => $lokasiArsip,
             'tingkat_perkembangan'=> $tingkatPerkembangan,
+            'klasifikasi_keamanan'=> $klasifikasiKeamanan,
             'link_foto'           => $linkFoto,
             'media_arsip'         => $mediaArsip,
             'keterangan'          => $kondisiFisik,
