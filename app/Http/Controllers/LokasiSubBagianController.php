@@ -58,12 +58,19 @@ class LokasiSubBagianController extends Controller
             'RUANG_SUBBAGIAN_HUKUM' => 'Subbagian Hukum',
         ];
 
+        // $arsipTanpaRuangan = Arsip::where('sub_bagian_id', $subBagianId)
+        //     ->where(function ($q) {
+        //         $q->whereNull('lokasi_arsip')
+        //           ->orWhere('lokasi_arsip', '');
+        //     })
+        //     ->where('status_pindah', 'BELUM')
+        //     ->count();
         $arsipTanpaRuangan = Arsip::where('sub_bagian_id', $subBagianId)
-            ->where(function ($q) {
-                $q->whereNull('lokasi_arsip')
-                  ->orWhere('lokasi_arsip', '');
+            ->where(function ($query) {
+                $query->whereNull('rak_id')
+                    ->orWhereNull('box_id');
             })
-            ->where('status_pindah', 'BELUM')
+            ->whereIn('status_pindah', ['BELUM'])
             ->count();
 
         return view('subbagian.manajemen-lokasi.index', compact('ruangans', 'ruanganLabels', 'arsipTanpaRuangan'));

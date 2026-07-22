@@ -91,7 +91,14 @@ class SubBagianArsipController extends Controller
         ->where('status', 'DRAFT') // <-- GANTI dari DIAJUKAN ke DRAFT
         ->orderBy('tanggal_bap', 'desc')
         ->get();
-
+       if ($request->filter === 'tanpa_ruangan') {
+    $query->where('sub_bagian_id', $user->sub_bagian_id)
+          ->where(function ($q) {
+              $q->whereNull('rak_id')
+                ->orWhereNull('box_id');
+          })
+          ->whereIn('status_pindah', ['BELUM']);
+}
         // Filter & search sama seperti ArsipController
         if ($request->has('status_arsip') && $request->status_arsip != '') {
             $query->where('status_arsip', $request->status_arsip);

@@ -14,7 +14,7 @@
                     Terdapat <strong>{{ number_format($arsipTanpaRuangan) }}</strong> arsip yang belum memiliki ruangan.
                 </span>
             </div>
-            <a href="{{ route('arsip.index', ['filter' => 'tanpa_ruangan']) }}" class="btn btn-sm btn-warning">
+            <a href="{{ route('subbagian.arsip.index', ['filter' => 'tanpa_ruangan']) }}" class="btn btn-sm btn-warning">
                 <i class="bi bi-archive"></i> Kelola Arsip
             </a>
         </div>

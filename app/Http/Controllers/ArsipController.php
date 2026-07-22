@@ -64,6 +64,13 @@ class ArsipController extends Controller
 
             $query->where('is_duplicate', 1);
         }
+
+        if ($request->filter === 'tanpa_ruangan') {
+    $query->where(function ($q) {
+        $q->whereNull('rak_id')
+          ->orWhereNull('box_id');
+    });
+}
         // Filter berdasarkan status arsip
         if ($request->has('status_arsip') && $request->status_arsip != '') {
             $query->where('status_arsip', $request->status_arsip);

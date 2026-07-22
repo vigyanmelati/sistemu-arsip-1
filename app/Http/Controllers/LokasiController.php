@@ -33,11 +33,11 @@ class LokasiController extends Controller
 
         // Hitung arsip yang belum punya ruangan
         $arsipTanpaRuangan = Arsip::where(function ($query) {
-            $query->whereNull('lokasi_arsip')
-                ->orWhere('lokasi_arsip', '');
-        })
-        ->whereIn('status_pindah', ['LANGSUNG', 'DIPINDAHKAN'])
-        ->count();
+        $query->whereNull('rak_id')
+            ->orWhereNull('box_id');
+    })
+    ->whereIn('status_pindah', ['LANGSUNG', 'DIPINDAHKAN'])
+    ->count();
 
         return view('manajemen-lokasi.index', compact('ruangans', 'ruanganLabels', 'arsipTanpaRuangan'));
     }
