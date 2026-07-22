@@ -722,6 +722,7 @@ $isApprovedForDestruction = in_array($arsip->status_arsip, [
                             'aktif_sampai' => 'Aktif Sampai',
                             'inaktif_sampai' => 'Inaktif Sampai',
                             'status_arsip' => 'Status Arsip',
+                            'klasifikasi_keamanan' => 'Klasifikasi Keamanan',
                             'sub_bagian' => 'Sub Bagian',
                             'keterangan' => 'Keterangan', 
                             'tingkat_perkembangan' => 'Tingkat Perkembangan',
