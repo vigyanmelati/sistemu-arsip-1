@@ -172,11 +172,11 @@
             <hr>
 
             <!-- INFORMASI TAMBAHAN (Opsional) -->
-            <h6 class="mb-3 text-primary">Informasi Tambahan (Opsional)</h6>
+            <h6 class="mb-3 text-primary">Informasi Tambahan</h6>
             <div class="row">
                 <!-- Lokasi Arsip -->
                 <div class="col-md-12 mb-3">
-                    <label class="form-label">Lokasi Arsip</label>
+                    <label class="form-label">Lokasi Arsip<span class="text-danger">*</span> </label>
                     <input type="text" class="form-control" value="{{ $lokasiLabel ?? 'Sub Bagian' }}" readonly disabled>
                     <small class="text-muted">Lokasi ditentukan berdasarkan sub bagian Anda</small>
                     <input type="hidden" name="lokasi_arsip" value="{{ $lokasi }}">
@@ -184,7 +184,7 @@
 
                 <!-- Rak -->
                 <div class="col-md-4 mb-3">
-                    <label for="rak_id" class="form-label">Rak <span class="text-muted">(Opsional)</span></label>
+                    <label for="rak_id" class="form-label">Rak <span class="text-danger">*</span></label>
                     <select class="form-control @error('rak_id') is-invalid @enderror" id="rak_id" name="rak_id">
                         <option value="">Pilih Rak</option>
                         @forelse($rakOptions as $rak)
@@ -205,7 +205,7 @@
 
                 <!-- Box -->
                 <div class="col-md-4 mb-3">
-                    <label for="box_id" class="form-label">Box <span class="text-muted">(Opsional)</span></label>
+                    <label for="box_id" class="form-label">Box <span class="text-danger">*</span></label>
                     <select class="form-control @error('box_id') is-invalid @enderror" id="box_id" name="box_id">
                         <option value="">Pilih Box</option>
                         @forelse($boxOptions as $box)

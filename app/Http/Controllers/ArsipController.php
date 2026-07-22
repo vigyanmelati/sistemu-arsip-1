@@ -371,10 +371,10 @@ public function store(Request $request)
         'status_arsip' => 'nullable|in:AKTIF,INAKTIF,MUSNAH,PERMANEN',
 
         // optional lain
-        'rak_id' => 'nullable|exists:master_raks,id',
-        'box_id' => 'nullable|exists:master_box,id',
+        'rak_id' => 'required|exists:master_raks,id',
+        'box_id' => 'required|exists:master_box,id',
         'nomor_sampul' => 'nullable|string|max:100',
-        'lokasi_arsip' => 'nullable|in:SUB_BAGIAN,RECORD_CENTER_PERMANEN,RECORD_CENTER_INAKTIF',
+        'lokasi_arsip' => 'required|in:SUB_BAGIAN,RECORD_CENTER_PERMANEN,RECORD_CENTER_INAKTIF',
         'tingkat_perkembangan' => 'nullable|in:ASLI,COPY,SALINAN',
         'keterangan' => 'nullable|in:BAIK,RUSAK,HILANG',
         'media_arsip' => 'nullable|string|max:255',
@@ -717,10 +717,10 @@ private function extractNumberFromText($text)
         'status_arsip'        => 'nullable|in:AKTIF,INAKTIF,HABIS_RETENSI,MUSNAH,PERMANEN',
 
         // Optional
-        'rak_id' => 'nullable|exists:master_raks,id',
-'box_id' => 'nullable|exists:master_box,id',
+        'rak_id' => 'required|exists:master_raks,id',
+'box_id' => 'required|exists:master_box,id',
         'nomor_sampul'        => 'nullable|string|max:100',
-        'lokasi_arsip'        => 'nullable|in:SUB_BAGIAN,RECORD_CENTER_PERMANEN,RECORD_CENTER_INAKTIF',
+        'lokasi_arsip'        => 'required|in:SUB_BAGIAN,RECORD_CENTER_PERMANEN,RECORD_CENTER_INAKTIF',
         'tingkat_perkembangan'=> 'nullable|in:ASLI,COPY,SALINAN',
         'keterangan'          => 'nullable|in:BAIK,RUSAK,HILANG',
         'media_arsip'         => 'nullable|string|max:255',
