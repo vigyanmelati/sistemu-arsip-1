@@ -257,7 +257,7 @@
                 <!-- Lokasi Arsip (1 baris penuh) -->
                 <div class="col-md-12 mb-3">
                     <label for="lokasi_arsip" class="form-label">Lokasi Arsip</label>
-                    <select name="lokasi_arsip" id="lokasi_arsip" class="form-control @error('lokasi_arsip') is-invalid @enderror">
+                    <select name="lokasi_arsip" id="lokasi_arsip" class="form-control @error('lokasi_arsip') is-invalid @enderror" required>
                         <option value="">Pilih Lokasi</option>
                         <option value="RECORD_CENTER_PERMANEN" {{ old('lokasi_arsip') == 'RECORD_CENTER_PERMANEN' ? 'selected' : '' }}>
                             Record Center (Arsip Permanen)
@@ -275,7 +275,7 @@
                 <!-- Rak, Box, Nomor Sampul (3 kolom) -->
                 <div class="col-md-4 mb-3">
                     <label for="rak_id" class="form-label">Rak</label>
-                    <select class="form-control @error('rak_id') is-invalid @enderror" id="rak_id" name="rak_id">
+                    <select class="form-control @error('rak_id') is-invalid @enderror" id="rak_id" name="rak_id" required>
                         <option value="">Pilih Rak</option>
                         @forelse($rakOptions as $rak)
                             <option value="{{ $rak->id }}" 
@@ -295,7 +295,7 @@
 
                 <div class="col-md-4 mb-3">
                     <label for="box_id" class="form-label">Box</label>
-                    <select class="form-control @error('box_id') is-invalid @enderror" id="box_id" name="box_id">
+                    <select class="form-control @error('box_id') is-invalid @enderror" id="box_id" name="box_id" required>
                         <option value="">Pilih Box</option>
                         @forelse($boxOptions as $box)
                             <option value="{{ $box->id }}" 

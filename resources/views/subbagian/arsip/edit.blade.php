@@ -186,7 +186,7 @@
                 <!-- Rak -->
                 <div class="col-md-4 mb-3">
                     <label for="rak_id" class="form-label">Rak</label>
-                    <select class="form-control @error('rak_id') is-invalid @enderror" id="rak_id" name="rak_id">
+                    <select class="form-control @error('rak_id') is-invalid @enderror" id="rak_id" name="rak_id" required>
                         <option value="">Pilih Rak</option>
                         @forelse($rakOptions as $rak)
                             <option value="{{ $rak->id }}" 
@@ -207,7 +207,7 @@
                 <!-- Box -->
                 <div class="col-md-4 mb-3">
                     <label for="box_id" class="form-label">Box</label>
-                    <select class="form-control @error('box_id') is-invalid @enderror" id="box_id" name="box_id">
+                    <select class="form-control @error('box_id') is-invalid @enderror" id="box_id" name="box_id" required>
                         <option value="">Pilih Box</option>
                         @forelse($boxOptions as $box)
                             <option value="{{ $box->id }}" 
