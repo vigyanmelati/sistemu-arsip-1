@@ -38,7 +38,7 @@
 
         <form action="{{ route('surat-masuk.store') }}"
               method="POST"
-              enctype="multipart/form-data">
+              enctype="multipart/form-data" id="formSuratMasuk">
 
             @csrf
 
@@ -205,7 +205,7 @@
             </div>
 
             <button type="submit"
-                    class="btn btn-primary">
+                    class="btn btn-primary" id="btnSubmitSuratMasuk">
                 Submit
             </button>
 
@@ -223,5 +223,13 @@
 
     </div>
 </div>
-
+@push('scripts')
+<script>
+document.getElementById('formSuratMasuk').addEventListener('submit', function (e) {
+    const btn = document.getElementById('btnSubmitSuratMasuk');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+});
+</script>
+@endpush
 @endsection

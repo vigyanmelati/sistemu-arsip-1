@@ -29,8 +29,8 @@
             </div>
         @endif
 
-        <form action="{{ route('berita-acara.store') }}" method="POST" enctype="multipart/form-data">
-            @csrf
+       <form action="{{ route('berita-acara.store') }}" method="POST" enctype="multipart/form-data" id="formBeritaAcara">
+    @csrf
 
             <div class="mb-3">
                 <label class="form-label">Nomor BAP</label>
@@ -78,16 +78,24 @@
             </div> --}}
 
             <div class="d-flex gap-2">
-                <a href="{{ route('berita-acara.index') }}" class="btn btn-secondary">
-                    Kembali
-                </a>
-                <button class="btn btn-primary">
-                    Simpan
-                </button>
-            </div>
+        <a href="{{ route('berita-acara.index') }}" class="btn btn-secondary">Kembali</a>
+        <button class="btn btn-primary" id="btnSubmitBAP">
+            Simpan
+        </button>
+    </div>
 
         </form>
 
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.getElementById('formBeritaAcara').addEventListener('submit', function (e) {
+    const btn = document.getElementById('btnSubmitBAP');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+});
+</script>
+@endpush
 @endsection

@@ -34,7 +34,7 @@
     <div class="card shadow-sm">
         <div class="card-body">
 
-            <form action="{{ route('pemusnahan.usulan.store') }}" method="POST">
+            <form action="{{ route('pemusnahan.usulan.store') }}" method="POST" id="formPemusnahan">>
                 @csrf
 
                 <div class="row">
@@ -72,7 +72,7 @@
 
                 {{-- ACTION --}}
                 <div class="d-flex justify-content-end gap-2">
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" id="btnSubmitPemusnahan">
                         💾 Simpan & Lanjutkan
                     </button>
                 </div>
@@ -83,4 +83,14 @@
     </div>
 
 </div>
+
+@push('scripts')
+<script>
+document.getElementById('formPemusnahan').addEventListener('submit', function (e) {
+    const btn = document.getElementById('btnSubmitPemusnahan');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+});
+</script>
+@endpush
 @endsection
