@@ -167,7 +167,22 @@ if ($sort === 'kode_klasifikasi') {
     'sql' => $query->toSql(),
     'bindings' => $query->getBindings(),
 ]);
-        $arsips = $query->paginate(15);
+        // $arsips = $query->paginate(15);
+
+        $perPageInput = $request->get('per_page', 15);
+$allowedPerPage = [10, 15, 25, 50, 100];
+
+if ($perPageInput === 'all') {
+    // Hitung total data sesuai filter yang aktif (pakai arsips.id agar aman dari join)
+    $perPage = (clone $query)->count('arsips.id');
+    $perPage = $perPage > 0 ? $perPage : 1; // hindari paginate(0)
+} elseif (in_array((int) $perPageInput, $allowedPerPage)) {
+    $perPage = (int) $perPageInput;
+} else {
+    $perPage = 15;
+}
+
+$arsips = $query->paginate($perPage)->withQueryString();
         
         // Data untuk filter
         $tahunOptions = Arsip::select('tahun_arsip')

@@ -117,7 +117,7 @@ class SubBagianArsipController extends Controller
                   });
             });
         }
- // Filter duplikat
+
  // Filter duplikat
 if ($request->show_duplicates == 1) {
 
@@ -277,7 +277,22 @@ if ($sort === 'kode_klasifikasi') {
 ]);
 
 
-        $arsips = $query->orderBy('id','desc')->paginate(15);
+        // $arsips = $query->orderBy('id','desc')->paginate(15);
+
+        $perPageInput = $request->get('per_page', 15);
+$allowedPerPage = [10, 15, 25, 50, 100];
+
+if ($perPageInput === 'all') {
+    // Hitung total data sesuai filter yang aktif, lalu jadikan itu sebagai perPage
+    $perPage = (clone $query)->count();
+    $perPage = $perPage > 0 ? $perPage : 1; // hindari paginate(0)
+} elseif (in_array((int) $perPageInput, $allowedPerPage)) {
+    $perPage = (int) $perPageInput;
+} else {
+    $perPage = 15;
+}
+
+$arsips = $query->orderBy('id','desc')->paginate($perPage)->withQueryString();
 
         // Filter dropdown options
         $kodeKlasifikasiOptions = KodeKlasifikasi::orderBy('kode')->get();

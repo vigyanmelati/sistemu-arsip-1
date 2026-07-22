@@ -442,16 +442,45 @@ $isApprovedForDestruction = in_array($arsip->status_arsip, [
         </div>
         
         <!-- Pagination -->
-        <div class="d-flex justify-content-between align-items-center mt-3">
-            <div class="text-muted">
-                Menampilkan {{ $arsips->firstItem() }} - {{ $arsips->lastItem() }} dari {{ $arsips->total() }} arsip
-            </div>
-            
-            <!-- Tambah class pagination-sm -->
-            <nav aria-label="Page navigation">
-                {{ $arsips->withQueryString()->links('pagination::bootstrap-5')->with('class', 'pagination pagination-sm mb-0') }}
-            </nav>
+        <!-- Pagination -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="text-muted">
+            Menampilkan {{ $arsips->firstItem() ?? 0 }} - {{ $arsips->lastItem() ?? 0 }} dari {{ $arsips->total() }} arsip
         </div>
+
+        <form method="GET" action="{{ route('arsip.index') }}" id="perPageForm" class="d-flex align-items-center gap-2 ms-3">
+            {{-- pertahankan semua filter/query yang sedang aktif --}}
+            @foreach(request()->except(['per_page', 'page']) as $key => $value)
+                @if(is_array($value))
+                    @foreach($value as $val)
+                        <input type="hidden" name="{{ $key }}[]" value="{{ $val }}">
+                    @endforeach
+                @else
+                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                @endif
+            @endforeach
+
+            <label for="perPageSelect" class="text-muted mb-0 small">Tampilkan:</label>
+            <select name="per_page" id="perPageSelect" class="form-select form-select-sm" style="width: auto;" onchange="document.getElementById('perPageForm').submit()">
+                @foreach([10, 15, 25, 50, 100] as $option)
+                    <option value="{{ $option }}" {{ request('per_page', 15) == $option ? 'selected' : '' }}>
+                        {{ $option }}
+                    </option>
+                @endforeach
+                <option value="all" {{ request('per_page') == 'all' ? 'selected' : '' }}>
+                    Semua
+                </option>
+            </select>
+            <span class="text-muted small">data / halaman</span>
+        </form>
+    </div>
+
+    <!-- Tambah class pagination-sm -->
+    <nav aria-label="Page navigation">
+        {{ $arsips->withQueryString()->links('pagination::bootstrap-5')->with('class', 'pagination pagination-sm mb-0') }}
+    </nav>
+</div>
     </div>
 </div>
 
