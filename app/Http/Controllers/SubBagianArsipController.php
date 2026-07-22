@@ -244,6 +244,39 @@ if ($request->show_duplicates == 1) {
 
 //             $query->where('is_duplicate', 1);
 //         }
+
+// ... semua filter (status, tahun, keterangan, search, duplikat, dll) tetap di posisi yang sama
+
+// ===== SORTING (pindah ke sini, SEBELUM paginate) =====
+$sort = $request->get('sort', 'id');
+$direction = $request->get('direction', 'desc');
+
+$query->reorder();
+
+if ($sort === 'kode_klasifikasi') {
+    $query->leftJoin('kode_klasifikasis', 'arsips.kode_klasifikasi_id', '=', 'kode_klasifikasis.id')
+          ->orderBy('kode_klasifikasis.kode', $direction)
+          ->select('arsips.*');
+} elseif ($sort === 'rak.nomor_rak' || $sort === 'nomor_rak') {
+    $query->leftJoin('master_raks', 'arsips.rak_id', '=', 'master_raks.id')
+          ->orderBy('master_raks.nomor_rak', $direction)
+          ->select('arsips.*');
+} elseif ($sort === 'box.nomor_box' || $sort === 'nomor_box') {
+    $query->leftJoin('master_box', 'arsips.box_id', '=', 'master_box.id')
+          ->orderBy('master_box.nomor_box', $direction)
+          ->select('arsips.*');
+} else {
+    $query->orderBy($sort, $direction);
+}
+
+\Log::info('SORT DEBUG', [
+    'sort' => $sort,
+    'direction' => $direction,
+    'sql' => $query->toSql(),
+    'bindings' => $query->getBindings(),
+]);
+
+
         $arsips = $query->orderBy('id','desc')->paginate(15);
 
         // Filter dropdown options
@@ -251,7 +284,7 @@ if ($request->show_duplicates == 1) {
         $statusOptions = ['AKTIF'=>'Aktif','INAKTIF'=>'Inaktif','HABIS_RETENSI'=>'HABIS RETENSI','MUSNAH'=>'Musnah','PERMANEN'=>'Permanen'];
         $kondisiOptions = ['BAIK'=>'Baik','RUSAK'=>'Rusak','HILANG'=>'Hilang'];
         $keteranganJraOptions = ['MUSNAH'=>'Musnah','PERMANEN'=>'Permanen'];
-
+  
         return view('subbagian.arsip.index', compact(
             'arsips','kodeKlasifikasiOptions','statusOptions','kondisiOptions','keteranganJraOptions', 'tahunOptions','subBagianOptions', 'bapOptions'
         ));
