@@ -567,13 +567,14 @@
                 <div class="modal-body">
                     <div class="row">
                         @php
-                        $columns = [
+                       $columns = [
                             'kode_klasifikasi' => 'Kode Klasifikasi',
                             'uraian_arsip' => 'Judul Arsip',
                             'tahun_arsip' => 'Tahun',
                             'jumlah_berkas' => 'Jumlah',
                             'sub_bagian' => 'Sub Bagian',
                             'keterangan' => 'Kondisi Fisik',
+                            'klasifikasi_keamanan' => 'Klasifikasi Keamanan',
                         ];
                         @endphp
 

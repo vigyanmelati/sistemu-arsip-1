@@ -831,13 +831,12 @@ public function export(Request $request)
         return back()->with('error', 'Pilih minimal satu kolom.');
     }
 
-    // Ubah 'jumlah_berkas' menjadi 'jumlah' karena di Export class menggunakan key 'jumlah'
     $columns = array_map(function($col) {
         return $col === 'jumlah_berkas' ? 'jumlah' : $col;
     }, $columns);
 
     return Excel::download(
-        new ArsipExport($request, $columns, []), // $selectedIds = []
+        new ArsipExport($request, $columns, []),
         'arsip_subbagian_' . date('Y-m-d-H-i-s') . '.xlsx'
     );
 }
