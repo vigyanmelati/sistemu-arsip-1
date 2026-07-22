@@ -19,6 +19,7 @@ class ArsipController extends Controller
 {
     public function index(Request $request)
     {
+
         // Mulai query dengan eager loading
         // $query = Arsip::with(['kodeKlasifikasi', 'subBagian']);
       $query = Arsip::with(['kodeKlasifikasi', 'subBagian'])
@@ -139,17 +140,33 @@ class ArsipController extends Controller
         }
         
         // Sorting
-        $sort = $request->get('sort', 'id');
-        $direction = $request->get('direction', 'desc');
-        
-        if ($sort === 'kode_klasifikasi') {
-            $query->join('kode_klasifikasis', 'arsips.kode_klasifikasi_id', '=', 'kode_klasifikasis.id')
-                  ->orderBy('kode_klasifikasis.kode', $direction)
-                  ->select('arsips.*');
-        } else {
-            $query->orderBy($sort, $direction);
-        }
-        
+      $sort = $request->get('sort', 'id');
+$direction = $request->get('direction', 'desc');
+
+$query->reorder(); // jaga-jaga ada order lain yang menempel dari relasi/eager load
+
+if ($sort === 'kode_klasifikasi') {
+    $query->leftJoin('kode_klasifikasis', 'arsips.kode_klasifikasi_id', '=', 'kode_klasifikasis.id')
+          ->orderBy('kode_klasifikasis.kode', $direction)
+          ->select('arsips.*');
+} elseif ($sort === 'nomor_rak') {
+    $query->leftJoin('master_raks', 'arsips.rak_id', '=', 'master_raks.id')
+          ->orderBy('master_raks.nomor_rak', $direction)
+          ->select('arsips.*');
+} elseif ($sort === 'nomor_box') {
+    $query->leftJoin('master_box', 'arsips.box_id', '=', 'master_box.id')
+          ->orderBy('master_box.nomor_box', $direction)
+          ->select('arsips.*');
+} else {
+    $query->orderBy($sort, $direction);
+}
+
+   \Log::info('SORT DEBUG', [
+    'sort' => $sort,
+    'direction' => $direction,
+    'sql' => $query->toSql(),
+    'bindings' => $query->getBindings(),
+]);
         $arsips = $query->paginate(15);
         
         // Data untuk filter
@@ -179,6 +196,7 @@ class ArsipController extends Controller
             'PERMANEN' => 'Permanen'
         ];
         
+ 
         return view('arsip.index', compact(
             'arsips', 
             'tahunOptions', 
