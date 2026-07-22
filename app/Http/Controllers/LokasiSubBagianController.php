@@ -148,6 +148,9 @@ public function listBox($ruangan, $rak)
         // Ambil arsip berdasarkan box_id, dan pastikan sub_bagian_id sesuai
         $arsips = Arsip::where('box_id', $boxModel->id)
             ->where('sub_bagian_id', $subBagianId)
+             ->whereIn('status_pindah', [
+            'NON_ARSIP',
+        ])
             ->orderBy('tahun_arsip', 'desc')
             ->get();
 
