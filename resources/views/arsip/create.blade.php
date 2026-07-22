@@ -627,27 +627,39 @@ document.addEventListener('DOMContentLoaded', function () {
     // =========================
     // 4. SUBMIT VALIDATION
     // =========================
-    form.addEventListener('submit', function(e) {
-        hitungRetensi();
+     form.addEventListener('submit', function(e) {
+    hitungRetensi();
 
-        const fileInput = document.getElementById('file_dokumen');
-        if (fileInput && fileInput.files.length > 0) {
-            const file = fileInput.files[0];
-            const fileSize = (file.size / 1024 / 1024).toFixed(2);
-            const ext = file.name.split('.').pop().toLowerCase();
-            
-            if (fileSize > 10) {
-                e.preventDefault();
-                alert('Ukuran file melebihi 10MB');
-                return;
-            }
-            if (!['pdf', 'jpg', 'jpeg', 'png'].includes(ext)) {
-                e.preventDefault();
-                alert('Format file tidak didukung. Gunakan PDF, JPG, JPEG, atau PNG');
-                return;
-            }
+    const fileInput = document.getElementById('file_dokumen');
+    if (fileInput && fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const fileSize = (file.size / 1024 / 1024).toFixed(2);
+        const ext = file.name.split('.').pop().toLowerCase();
+        
+        if (fileSize > 10) {
+            e.preventDefault();
+            alert('Ukuran file melebihi 10MB');
+            return;
         }
-    });
+        if (!['pdf', 'jpg', 'jpeg', 'png'].includes(ext)) {
+            e.preventDefault();
+            alert('Format file tidak didukung. Gunakan PDF, JPG, JPEG, atau PNG');
+            return;
+        }
+    }
+
+    // ===== CEGAH DOUBLE SUBMIT =====
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        // Kalau sudah pernah disable (klik kedua), batalkan submit
+        if (submitBtn.disabled) {
+            e.preventDefault();
+            return;
+        }
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Menyimpan...';
+    }
+});
 });
 </script>
 <script>
@@ -706,4 +718,5 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
+
 @endpush

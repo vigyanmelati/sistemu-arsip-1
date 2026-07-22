@@ -419,4 +419,32 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('arsipForm');
+    if (!form) return;
+
+    form.addEventListener('submit', function (e) {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (!submitBtn) return;
+
+        // Kalau tombol sudah didisable (klik kedua), batalkan submit
+        if (submitBtn.disabled) {
+            e.preventDefault();
+            return;
+        }
+
+        // Cek dulu apakah ada validasi lain di listener sebelumnya yang mem-preventDefault
+        // Karena banyak listener submit terpisah di file ini, kita disable di akhir
+        // menggunakan setTimeout 0 supaya listener lain (validasi tahun, dll) sempat jalan dulu
+        setTimeout(function () {
+            if (!e.defaultPrevented) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Menyimpan...';
+            }
+        }, 0);
+    });
+});
+</script>
+
 @endpush
