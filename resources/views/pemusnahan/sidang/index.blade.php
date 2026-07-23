@@ -3,6 +3,9 @@
 @section('title', 'Penelitian/Penilaian Pemusnahan Arsip')
 
 @section('content')
+<style>
+    
+    </style>
 <div class="container-fluid">
 
 @if(session('error'))
@@ -41,6 +44,10 @@
             <li>Perubahan data langsung <b>tersimpan otomatis</b></li>
         </ul>
     </div>
+    <div class="alert alert-info">
+    <i class="bi bi-info-circle-fill"></i>
+    Klik pada data yang berwarna biru atau memiliki icon pensil (✏) untuk mengubah nilai secara langsung.
+</div>
 <div class="card shadow-sm mb-3">
     <div class="card-body">
 
@@ -266,20 +273,33 @@
                     </td>
 
                     {{-- KEPUTUSAN --}}
-                    <td>
-                        <span class="inline-text" onclick="editInline(this)">
-                            {{ ucfirst(str_replace('_',' ',$detail->keputusan)) ?: '-' }}
-                        </span>
-                        <select class="form-select form-select-sm d-none inline-input"
-                                data-model="detail"
-                                data-id="{{ $detail->id }}"
-                                data-field="keputusan"
-                                onchange="saveInline(this)">
-                            <option value="">-- Pilih --</option>
-                            <option value="musnah" {{ $detail->keputusan=='musnah'?'selected':'' }}>Musnah</option>
-                            <option value="inaktif" {{ $detail->keputusan=='inaktif'?'selected':'' }}>Inaktif</option>
-                        </select>
-                    </td>
+<td>
+    <div class="position-relative">
+        <div class="form-select form-select-sm inline-text"
+             onclick="editInline(this)"
+             style="cursor: pointer;">
+            {{ $detail->keputusan
+                ? ucfirst(str_replace('_', ' ', $detail->keputusan))
+                : 'Pilih Keputusan' }}
+        </div>
+
+        <select class="form-select form-select-sm d-none inline-input"
+                data-model="detail"
+                data-id="{{ $detail->id }}"
+                data-field="keputusan"
+                onchange="saveInline(this)">
+            <option value="">-- Pilih --</option>
+            <option value="musnah"
+                {{ $detail->keputusan == 'musnah' ? 'selected' : '' }}>
+                Musnah
+            </option>
+            <option value="inaktif"
+                {{ $detail->keputusan == 'inaktif' ? 'selected' : '' }}>
+                Inaktif
+            </option>
+        </select>
+    </div>
+</td>
 
                     {{-- CATATAN --}}
                     <td>
