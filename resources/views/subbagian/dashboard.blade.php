@@ -18,7 +18,6 @@
                 </div>
                 <div class="flex-grow-1">
                     <h5 class="alert-heading fw-bold mb-2">
-                        {{-- <i class="bi bi-x-circle-fill me-2"></i> --}}
                         Ada {{ $arsipDitolak }} Arsip Ditolak!
                     </h5>
                     <p class="mb-2">
@@ -28,14 +27,10 @@
                         @endif
                     </p>
                     <p class="mb-0">
-                        <a href="{{ route('subbagian.riwayat-pemindahan.index') }}?status=DITOLAK" 
+                        <a href="{{ route('subbagian.riwayat-pemindahan.index') }}?status=DITOLAK"
                            class="btn btn-danger btn-sm">
                             <i class="bi bi-eye me-1"></i> Lihat Arsip Ditolak
                         </a>
-                        {{-- <a href="{{ route('subbagian.arsip.index') }}?status=DITOLAK" 
-                           class="btn btn-outline-danger btn-sm ms-2">
-                            <i class="bi bi-pencil me-1"></i> Perbaiki Arsip
-                        </a> --}}
                     </p>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -43,86 +38,23 @@
         </div>
     </div>
 </div>
-
-
-{{-- @if(isset($arsipDitolakList) && $arsipDitolakList->count() > 0)
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card border-danger">
-            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="bi bi-list-check me-2"></i>
-                    Daftar Arsip Ditolak ({{ $arsipDitolakList->count() }} terbaru)
-                </h6>
-                <a href="{{ route('subbagian.riwayat-pemindahan.index') }}?status=DITOLAK" 
-                   class="btn btn-light btn-sm text-danger">
-                    <i class="bi bi-arrow-right me-1"></i> Lihat Semua
-                </a>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>#</th>
-                                <th>Kode</th>
-                                <th>Judul Arsip</th>
-                                <th>Alasan Ditolak</th>
-                                <th>Tanggal</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($arsipDitolakList as $index => $arsip)
-                            <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>
-                                    <span class="badge bg-secondary">
-                                        {{ $arsip->kodeKlasifikasi->kode ?? 'N/A' }}
-                                    </span>
-                                </td>
-                                <td>{{ Str::limit($arsip->uraian_arsip, 50) }}</td>
-                                <td>
-                                    <span class="text-danger">
-                                        {{ Str::limit($arsip->catatan_verifikasi, 60) }}
-                                    </span>
-                                </td>
-                                <td>{{ $arsip->updated_at ? $arsip->updated_at->format('d/m/Y H:i') : '-' }}</td>
-                                <td>
-                                    <a href="{{ route('subbagian.arsip.edit', $arsip->id) }}" 
-                                       class="btn btn-sm btn-warning">
-                                        <i class="bi bi-pencil"></i> Perbaiki
-                                    </a>
-                                    <a href="{{ route('subbagian.arsip.show', $arsip->id) }}" 
-                                       class="btn btn-sm btn-info">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-@endif --}}
 @endif
 
 {{-- ============================================================ --}}
 {{-- STATISTIK CARD --}}
 {{-- ============================================================ --}}
 <div class="row">
+
     <!-- Total Arsip -->
-    <div class="col-xl-3 col-lg-6 mb-4">
-        <div class="card h-100">
+    <div class="col-xl-2 col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 dashboard-card-clickable"
+            onclick="window.location='{{ route('subbagian.arsip.index') }}'">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-muted mb-2">Total Arsip</h6>
                         <h2 class="fw-bold text-primary mb-0">{{ $totalArsip }}</h2>
-                        <small class="text-muted">Arsip Sub Bagian Anda</small>
+                        <small class="text-muted">Klik untuk melihat seluruh arsip</small>
                     </div>
                     <div class="icon-shape bg-primary bg-opacity-10 rounded-circle p-3">
                         <i class="bi bi-archive text-primary fs-4"></i>
@@ -131,10 +63,11 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Arsip Dipindahkan -->
-    <div class="col-xl-3 col-lg-6 mb-4">
-        <div class="card h-100">
+    <div class="col-xl-2 col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 dashboard-card-clickable"
+            onclick="window.location='{{ route('subbagian.riwayat-pemindahan.index') }}?status=DIPINDAHKAN'">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -151,10 +84,11 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Arsip Diajukan -->
-    <div class="col-xl-3 col-lg-6 mb-4">
-        <div class="card h-100">
+    <div class="col-xl-2 col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 dashboard-card-clickable"
+            onclick="window.location='{{ route('subbagian.riwayat-pemindahan.index') }}?status=DIAJUKAN'">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -173,8 +107,9 @@
     </div>
 
     <!-- Arsip Ditolak -->
-    <div class="col-xl-3 col-lg-6 mb-4">
-        <div class="card h-100 {{ isset($arsipDitolak) && $arsipDitolak > 0 ? 'border-danger' : '' }}">
+    <div class="col-xl-2 col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 dashboard-card-clickable {{ isset($arsipDitolak) && $arsipDitolak > 0 ? 'border-danger' : '' }}"
+            onclick="window.location='{{ route('subbagian.riwayat-pemindahan.index') }}?status=DITOLAK'">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -182,30 +117,45 @@
                         <h2 class="fw-bold {{ isset($arsipDitolak) && $arsipDitolak > 0 ? 'text-danger' : 'text-muted' }} mb-0">
                             {{ $arsipDitolak ?? 0 }}
                         </h2>
-                        @if(isset($arsipDitolak) && $arsipDitolak > 0)
-                            <small class="text-danger">
-                                <i class="bi bi-exclamation-circle me-1"></i>
-                                Perlu perbaikan segera!
-                            </small>
-                        @else
-                            <small class="text-muted">Tidak ada arsip ditolak</small>
-                        @endif
                     </div>
                     <div class="icon-shape {{ isset($arsipDitolak) && $arsipDitolak > 0 ? 'bg-danger' : 'bg-secondary' }} bg-opacity-10 rounded-circle p-3">
                         <i class="bi {{ isset($arsipDitolak) && $arsipDitolak > 0 ? 'bi-x-circle text-danger' : 'bi-check-circle text-secondary' }} fs-4"></i>
                     </div>
                 </div>
                 @if(isset($arsipDitolak) && $arsipDitolak > 0)
-                    <div class="mt-2">
-                        <a href="{{ route('subbagian.riwayat-pemindahan.index') }}?status=DITOLAK" 
-                           class="btn btn-danger btn-sm w-100">
-                            <i class="bi bi-eye me-1"></i> Lihat {{ $arsipDitolak }} Arsip Ditolak
-                        </a>
-                    </div>
+                    <small class="text-danger">Klik untuk melihat arsip ditolak</small>
+                @else
+                    <small class="text-muted">Tidak ada arsip ditolak</small>
                 @endif
             </div>
         </div>
     </div>
+
+    <!-- Arsip Belum Upload Dokumen -->
+    <div class="col-xl-3 col-lg-6 mb-4">
+        <div class="card h-100 dashboard-card-clickable {{ ($arsipBelumUploadDokumen ?? 0) > 0 ? 'border-info' : '' }}"
+            onclick="window.location='{{ route('subbagian.arsip.index', ['filter' => 'belum_dokumen']) }}'">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Belum Upload Dokumen</h6>
+                        <h2 class="fw-bold text-info mb-0">{{ $arsipBelumUploadDokumen ?? 0 }}</h2>
+                        <small class="text-info">
+                            @if(($arsipBelumUploadDokumen ?? 0) > 0)
+                                Klik untuk melihat arsip
+                            @else
+                                Semua arsip lengkap
+                            @endif
+                        </small>
+                    </div>
+                    <div class="icon-shape bg-info bg-opacity-10 rounded-circle p-3">
+                        <i class="bi bi-file-earmark-text text-info fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 {{-- ============================================================ --}}
@@ -229,7 +179,7 @@
                             <div class="col text-center">
                                 <div class="d-flex justify-content-center mb-2" style="height: 200px; align-items: end;">
                                     <div class="d-flex flex-column align-items-center">
-                                        <div class="bg-primary rounded-top" 
+                                        <div class="bg-primary rounded-top"
                                              style="width: 25px; height: {{ ($item->total/$maxArsip)*200 }}px;"></div>
                                         <small class="text-muted mt-1">{{ $item->total }}</small>
                                     </div>
@@ -298,12 +248,12 @@
                                 </td>
                                 <td>{{ $arsip->created_at ? $arsip->created_at->format('d/m/Y') : '-' }}</td>
                                 <td>
-                                    <a href="{{ route('subbagian.arsip.show', $arsip->id) }}" 
+                                    <a href="{{ route('subbagian.arsip.show', $arsip->id) }}"
                                        class="btn btn-sm btn-info">
                                         <i class="bi bi-eye"></i>
                                     </a>
                                     @if($arsip->status_pindah == 'DITOLAK')
-                                        <a href="{{ route('subbagian.arsip.edit', $arsip->id) }}" 
+                                        <a href="{{ route('subbagian.arsip.edit', $arsip->id) }}"
                                            class="btn btn-sm btn-warning">
                                             <i class="bi bi-pencil"></i>
                                         </a>
@@ -349,6 +299,14 @@
     .table td {
         vertical-align: middle;
         padding: 10px 12px;
+    }
+    .dashboard-card-clickable {
+        cursor: pointer;
+        transition: all .25s ease;
+    }
+    .dashboard-card-clickable:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,.12);
     }
 </style>
 

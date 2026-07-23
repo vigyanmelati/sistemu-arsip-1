@@ -47,6 +47,9 @@ class SubBagianRiwayatPemindahanController extends Controller
                     });
             });
         }
+ if ($request->filled('status')) {
+        $query->where('status_pindah', $request->status);
+    }
 
         $arsips = $query->paginate(15);
 

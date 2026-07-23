@@ -99,6 +99,15 @@ class SubBagianArsipController extends Controller
           })
           ->whereIn('status_pindah', ['BELUM']);
 }
+if ($request->filter === 'belum_dokumen') {
+    $query->where(function ($q) {
+        $q->whereNull('file_dokumen')
+          ->orWhere('file_dokumen', '');
+    })->where(function ($q) {
+        $q->whereNull('link_foto')
+          ->orWhere('link_foto', '');
+    });
+}
         // Filter & search sama seperti ArsipController
         if ($request->has('status_arsip') && $request->status_arsip != '') {
             $query->where('status_arsip', $request->status_arsip);

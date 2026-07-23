@@ -4,6 +4,12 @@
 @section('page-subtitle', 'Manajemen Data Arsip Digital')
 
 @section('content')
+@if(request('filter') == 'belum_dokumen')
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        Menampilkan arsip yang belum memiliki File Dokumen maupun Link Foto.
+    </div>
+@endif
 <div class="card">
     <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">

@@ -96,7 +96,15 @@ class DashboardController extends Controller
         $arsipPermanen = (clone $baseQuery)
             ->where('status_arsip', 'PERMANEN')
             ->count();
-
+        // Arsip yang belum punya file_dokumen DAN belum punya link_foto
+        $arsipBelumFile = (clone $baseQuery)
+            ->where(function ($q) {
+                $q->whereNull('file_dokumen')->orWhere('file_dokumen', '');
+            })
+            ->where(function ($q) {
+                $q->whereNull('link_foto')->orWhere('link_foto', '');
+            })
+            ->count();
         // Arsip inaktif yang perlu ditindaklanjuti
         $arsipPerluTindak = $arsipInaktif;
 
@@ -146,6 +154,7 @@ class DashboardController extends Controller
             'arsipMusnah',
             'arsipUsulMusnah',
             'arsipPermanen',
+            'arsipBelumFile', 
             'arsipPerluTindak',
             'arsipPerTahun',
             'arsipTerbaru',

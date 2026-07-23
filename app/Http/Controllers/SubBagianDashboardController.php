@@ -92,7 +92,17 @@ class SubBagianDashboardController extends Controller
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
-
+// Arsip yang belum memiliki file dokumen maupun link foto
+$arsipBelumUploadDokumen = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
+    ->where(function ($query) {
+        $query->whereNull('file_dokumen')
+              ->orWhere('file_dokumen', '');
+    })
+    ->where(function ($query) {
+        $query->whereNull('link_foto')
+              ->orWhere('link_foto', '');
+    })
+    ->count();
         return view('subbagian.dashboard', [
             'totalArsip' => $totalArsip,
             'arsipDipindahkan' => $arsipDipindahkan,
@@ -104,6 +114,7 @@ class SubBagianDashboardController extends Controller
             'arsipTerbaru' => $arsipTerbaru,
             'arsipDitolakList' => $arsipDitolakList,
             'arsipDitolakBelumDiperbaiki' => $arsipDitolakBelumDiperbaiki,
+            'arsipBelumUploadDokumen' => $arsipBelumUploadDokumen,
         ]);
     }
 }
