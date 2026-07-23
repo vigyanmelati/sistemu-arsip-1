@@ -1014,7 +1014,23 @@ public function import(Request $request)
             $import,
             $request->file('file_excel')
         );
+// if (!empty($import->errors)) {
 
+//     dd($import->errors);
+
+// }
+
+// // kalau tidak ada yang berhasil diimport
+// if ($import->importedRows == 0) {
+
+//     dd('Tidak ada data yang berhasil diimport.');
+
+// }
+
+return back()->with(
+    'success',
+    "Berhasil mengimpor {$import->importedRows} data arsip."
+);
         return redirect()
             ->route('arsip.index')
             ->with(

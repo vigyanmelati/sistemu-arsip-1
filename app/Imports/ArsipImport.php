@@ -18,6 +18,8 @@ use Maatwebsite\Excel\Concerns\SkipsFailures;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Validators\ValidationException;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as SpreadsheetException;
+use App\Models\MasterRak;
+use App\Models\MasterBox;
 
 class ArsipImport implements
     ToModel,
@@ -184,6 +186,72 @@ class ArsipImport implements
 
     private function validateRow(array $row, int $rowNumber): void
     {
+
+      $lokasiArsip = $this->normalizeLokasiArsip(
+    $row['lokasi_arsip'] ?? ''
+);
+
+    $rakModel = null;
+
+    // ============================
+    // VALIDASI RAK
+    // ============================
+
+    if (!empty($row['nomor_rak'])) {
+
+        $nomorRak = trim(
+            $row['nomor_rak']
+        );
+
+        $rakModel = MasterRak::whereRaw(
+                'LOWER(TRIM(nomor_rak)) = ?',
+                [strtolower($nomorRak)]
+            )
+            ->where(
+                'lokasi_arsip',
+                $lokasiArsip
+            )
+            ->first();
+
+        if (!$rakModel) {
+
+            $this->errors[] =
+                "Baris {$rowNumber}: Rak '{$nomorRak}' tidak ditemukan pada lokasi {$lokasiArsip}. Silakan periksa kembali Menu Manajemen Lokasi.";
+        }
+    }
+
+    // ============================
+    // VALIDASI BOX
+    // ============================
+
+    if (!empty($row['nomor_box'])) {
+
+        $nomorBox = trim(
+            $row['nomor_box']
+        );
+
+        // Kalau rak tidak ditemukan, tidak usah cek box
+        if (!$rakModel) {
+            return;
+        }
+
+        $boxModel = MasterBox::where(
+                'rak_id',
+                $rakModel->id
+            )
+            ->whereRaw(
+                'LOWER(TRIM(nomor_box)) = ?',
+                [strtolower($nomorBox)]
+            )
+            ->first();
+
+        if (!$boxModel) {
+
+            $this->errors[] =
+                "Baris {$rowNumber}: Box '{$nomorBox}' tidak ditemukan pada Rak '{$rakModel->nomor_rak}'. Silakan periksa kembali Menu Manajemen Lokasi.";
+        }
+    }
+    
         $requiredFields = [
             'kode_klasifikasi' => 'Kode Klasifikasi',
             'uraian_arsip'     => 'Uraian Arsip',
@@ -340,7 +408,96 @@ class ArsipImport implements
                     "Baris {$rowNumber}: Tingkat perkembangan hanya boleh ASLI, COPY atau SALINAN.";
             }
         }
+/*
+|--------------------------------------------------------------------------
+| KLASIFIKASI KEAMANAN
+|--------------------------------------------------------------------------
+*/
 
+if (!empty($row['klasifikasi_keamanan'])) {
+
+    $value = strtoupper(trim($row['klasifikasi_keamanan']));
+
+    $allowed = [
+        'TERBATAS',
+        'RAHASIA',
+        'BIASA/TERBUKA',
+    ];
+
+    if (!in_array($value, $allowed)) {
+
+        $this->errors[] =
+            "Baris {$rowNumber}: Klasifikasi keamanan hanya boleh TERBATAS, RAHASIA atau BIASA/TERBUKA.";
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| KETERANGAN (MEDIA/KONDISI)
+|--------------------------------------------------------------------------
+*/
+
+if (!empty($row['keterangan'])) {
+
+    $parts = explode('/', strtoupper(trim($row['keterangan'])));
+
+    if (count($parts) < 2) {
+
+        $this->errors[] =
+            "Baris {$rowNumber}: Format keterangan harus MEDIA/KONDISI.";
+    } else {
+
+        $media = trim($parts[0]);
+        $kondisi = trim($parts[1]);
+
+        $allowedMedia = [
+            'TEKSTUAL',
+            'DIGITAL',
+        ];
+
+        $allowedKondisi = [
+            'BAIK',
+            'RUSAK',
+            'HILANG',
+        ];
+
+        if (!in_array($media, $allowedMedia)) {
+
+            $this->errors[] =
+                "Baris {$rowNumber}: Media arsip hanya boleh TEKSTUAL atau DIGITAL.";
+        }
+
+        if (!in_array($kondisi, $allowedKondisi)) {
+
+            $this->errors[] =
+                "Baris {$rowNumber}: Kondisi arsip hanya boleh BAIK, RUSAK atau HILANG.";
+        }
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| LOKASI ARSIP
+|--------------------------------------------------------------------------
+*/
+
+if (!empty($row['lokasi_arsip'])) {
+
+    $lokasiArsip = $this->normalizeLokasiArsip(
+        $row['lokasi_arsip']
+    );
+
+    $allowed = [
+        'RECORD_CENTER_INAKTIF',
+        'RECORD_CENTER_PERMANEN',
+    ];
+
+    if (!in_array($lokasiArsip, $allowed)) {
+
+        $this->errors[] =
+            "Baris {$rowNumber}: Lokasi arsip hanya boleh RECORD CENTER INAKTIF atau RECORD CENTER PERMANEN.";
+    }
+}
         /*
         |--------------------------------------------------------------------------
         | KETERANGAN JRA
@@ -543,8 +700,67 @@ class ArsipImport implements
                 $tanggalArsip = Carbon::createFromDate((int)$tahunArsip, 1, 1);
             }
 
-            $nomorRak = $row['nomor_rak'] ?? null;
-            $nomorBox = $row['nomor_box'] ?? null;
+            // =======================
+// LOKASI ARSIP
+// =======================
+
+$lokasiArsip = $this->normalizeLokasiArsip(
+    $row['lokasi_arsip'] ?? ''
+);
+
+// =======================
+// NOMOR RAK & BOX
+// =======================
+// =======================
+// NOMOR RAK
+// =======================
+
+$rak = MasterRak::whereRaw(
+        'LOWER(TRIM(nomor_rak)) = ?',
+        [strtolower(trim($row['nomor_rak']))]
+    )
+    ->where(
+        'lokasi_arsip',
+        $lokasiArsip
+    )
+    ->first();
+
+if (!$rak) {
+
+    $this->errors[] =
+        "Baris {$this->currentRow}: Rak '{$row['nomor_rak']}' tidak ditemukan pada lokasi {$lokasiArsip}.";
+
+    return null;
+}
+
+
+// =======================
+// NOMOR BOX
+// =======================
+
+$box = MasterBox::where(
+        'rak_id',
+        $rak->id
+    )
+    ->whereRaw(
+        'LOWER(TRIM(nomor_box)) = ?',
+        [strtolower(trim($row['nomor_box']))]
+    )
+    ->first();
+
+if (!$box) {
+
+    $this->errors[] =
+        "Baris {$this->currentRow}: Box '{$row['nomor_box']}' tidak ditemukan pada Rak '{$rak->nomor_rak}'.";
+
+    return null;
+}
+
+$rakId = $rak->id;
+$boxId = $box->id;
+
+            // $nomorRak = $row['nomor_rak'] ?? null;
+            // $nomorBox = $row['nomor_box'] ?? null;
 
             // =======================
             // CEK DUPLIKAT (SAFETY NET SAAT IMPORT BENERAN)
@@ -653,6 +869,28 @@ class ArsipImport implements
                 $status = 'AKTIF';
             }
             $linkFoto = trim($row['link_foto'] ?? '');
+
+            $klasifikasiRaw = strtoupper(
+                str_replace(
+                    ' ',
+                    '',
+                    trim($row['klasifikasi_keamanan'] ?? '')
+                )
+            );
+
+
+            $mapKlasifikasi = [
+
+                'BIASA/TERBUKA' => 'Biasa/Terbuka',
+                'TERBATAS'      => 'Terbatas',
+                'RAHASIA'       => 'Rahasia',
+
+            ];
+
+
+            $klasifikasiKeamanan =
+                $mapKlasifikasi[$klasifikasiRaw]
+                ?? 'Biasa/Terbuka';
             // =======================
             // SIMPAN DATA - PAKAI DB TRANSACTION
             // =======================
@@ -676,8 +914,13 @@ class ArsipImport implements
                     'tingkat_perkembangan' => $tingkatPerkembangan,
                     'status_pindah' => 'LANGSUNG',
                     'link_foto' => $linkFoto ?: null,
-                    'nomor_rak' => $nomorRak,
-                    'nomor_box' => $nomorBox,
+                    'rak_id' => $rakId,
+
+                    'box_id' => $boxId,
+
+                    'lokasi_arsip' => $lokasiArsip,
+
+                    'klasifikasi_keamanan' => $klasifikasiKeamanan,
                     'media_arsip' => $mediaArsip,
                     'keterangan' => $kondisiFisik,
                     'tanggal_masuk' => now()->format('Y-m-d'),
@@ -696,10 +939,20 @@ class ArsipImport implements
             }
 
         } catch (\Exception $e) {
-            Log::error('Import Error: ' . $e->getMessage());
-            Log::error($e->getTraceAsString());
-            return null;
-        }
+
+    $this->errors[] =
+        "Baris {$this->currentRow}: " . $e->getMessage();
+
+    Log::error(
+        'Import Error: ' . $e->getMessage()
+    );
+
+    Log::error(
+        $e->getTraceAsString()
+    );
+
+    return null;
+}
     }
 
     private function parseRetensi($value)
@@ -719,4 +972,23 @@ class ArsipImport implements
         }
         return null;
     }
+
+   private function normalizeLokasiArsip($value): ?string
+{
+    if (empty($value)) {
+        return null;
+    }
+
+    $value = strtoupper(trim($value));
+
+    $mapping = [
+        'RECORD CENTER INAKTIF' => 'RECORD_CENTER_INAKTIF',
+        'RECORD_CENTER_INAKTIF' => 'RECORD_CENTER_INAKTIF',
+
+        'RECORD CENTER PERMANEN' => 'RECORD_CENTER_PERMANEN',
+        'RECORD_CENTER_PERMANEN' => 'RECORD_CENTER_PERMANEN',
+    ];
+
+    return $mapping[$value] ?? $value;
+}
 }

@@ -15,6 +15,8 @@ use Maatwebsite\Excel\Concerns\SkipsFailures;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Models\MasterRak;
+use App\Models\MasterBox;
 
 class ArsipImportSubBagian implements
     ToModel,
@@ -95,13 +97,42 @@ class ArsipImportSubBagian implements
             ],
 
             // OPTIONAL
-            'tingkat_perkembangan' => 'nullable|in:ASLI,COPY,SALINAN',
+            'tingkat_perkembangan' => [
+    'nullable',
+    function ($attribute, $value, $fail) {
+        $value = strtoupper(trim($value));
+
+        if (!in_array($value, ['ASLI', 'COPY', 'SALINAN'])) {
+            $fail('Tingkat perkembangan hanya boleh ASLI, COPY atau SALINAN.');
+        }
+    }
+],
             'link_foto'            => 'nullable|url|max:1000',
             'namanomor_box' => 'nullable',
             'nama_raklemari' => 'nullable',
             'aktif'                => 'nullable|string|max:100',
             'inaktif'              => 'nullable|string|max:100',
-            'klasifikasi_keamanan' => 'nullable|in:Biasa/Terbuka,Terbatas,Rahasia',
+            'klasifikasi_keamanan' => [
+    'nullable',
+    function ($attribute, $value, $fail) {
+
+        $value = strtoupper(
+            str_replace(' ', '', trim($value))
+        );
+
+        $allowed = [
+            'BIASA/TERBUKA',
+            'TERBATAS',
+            'RAHASIA',
+        ];
+
+        if (!in_array($value, $allowed)) {
+            $fail(
+                'Klasifikasi keamanan hanya boleh Biasa/Terbuka, Terbatas, atau Rahasia.'
+            );
+        }
+    },
+],
         ];
     }
 
@@ -208,6 +239,65 @@ class ArsipImportSubBagian implements
 
     private function validateRow(array $row, int $rowNumber): void
     {
+
+        $user = Auth::user();
+        $subBagianId = $user->sub_bagian_id;
+
+        $ruangan = $this->getRuanganBySubBagian(
+            $subBagianId
+        );
+
+        $rakModel = null;
+
+if (!empty($row['nama_raklemari'])) {
+
+    $nomorRak = trim(
+        $row['nama_raklemari']
+    );
+
+    $rakModel = MasterRak::whereRaw(
+            'LOWER(TRIM(nomor_rak)) = ?',
+            [strtolower($nomorRak)]
+        )
+        ->where(
+            'lokasi_arsip',
+            $ruangan
+        )
+        ->first();
+
+    if (!$rakModel) {
+
+        $this->errors[] =
+        "Baris {$rowNumber}: Rak '{$nomorRak}' tidak ditemukan pada ruangan {$ruangan}. Silakan periksa kembali Menu Manajamen Lokasi.;";
+    }
+}
+
+if (!empty($row['namanomor_box'])) {
+
+    $nomorBox = trim($row['namanomor_box']);
+
+    // Kalau rak tidak ditemukan, tidak usah tambah error lagi
+    if (!$rakModel) {
+        return;
+    }
+
+    $boxModel = MasterBox::where(
+            'rak_id',
+            $rakModel->id
+        )
+        ->whereRaw(
+            'LOWER(TRIM(nomor_box)) = ?',
+            [strtolower($nomorBox)]
+        )
+        ->first();
+
+    if (!$boxModel) {
+
+        $this->errors[] =
+        "Baris {$rowNumber}: Box '{$nomorBox}' tidak ditemukan pada Rak '{$rakModel->nomor_rak}'. Silakan periksa kembali Menu Manajemen Lokasi.";
+
+    }
+}
         $requiredFields = [
             'kode_klasifikasi' => 'Kode Klasifikasi',
             'jenis_arsip'      => 'Jenis Arsip',
@@ -646,7 +736,37 @@ $klasifikasiKeamanan = $klasifikasiKeamananMap[$klasifikasiKeamananKey] ?? 'Bias
         ];
         $namaSubBagian = strtoupper(trim($subBagian->nama_sub_bagian ?? ''));
         $lokasiArsip = $lokasiMapping[$namaSubBagian] ?? null;
+$rakId = null;
+$boxId = null;
 
+if (!empty($nomorRak)) {
+
+    $rak = MasterRak::whereRaw(
+            'LOWER(TRIM(nomor_rak)) = ?',
+            [strtolower(trim($nomorRak))]
+        )
+        ->where('lokasi_arsip', $lokasiArsip)
+        ->first();
+
+    if ($rak) {
+
+        $rakId = $rak->id;
+
+        if (!empty($nomorBox)) {
+
+            $box = MasterBox::where('rak_id', $rak->id)
+                ->whereRaw(
+                    'LOWER(TRIM(nomor_box)) = ?',
+                    [strtolower(trim($nomorBox))]
+                )
+                ->first();
+
+            if ($box) {
+                $boxId = $box->id;
+            }
+        }
+    }
+}
         // Siapkan data
         $data = [
             'kode_klasifikasi_id' => $kode->id,
@@ -663,8 +783,8 @@ $klasifikasiKeamanan = $klasifikasiKeamananMap[$klasifikasiKeamananKey] ?? 'Bias
             'inaktif_sampai'      => $perhitungan['inaktif_sampai'],
             'status_arsip'        => $perhitungan['status_arsip'],
             'status_pindah'       => 'BELUM',
-            'nomor_box'           => (string) $nomorBox,
-            'nomor_rak'           => (string) $nomorRak,
+            'rak_id'        => $rakId,
+'box_id'        => $boxId,
             'lokasi_arsip'        => $lokasiArsip,
             'tingkat_perkembangan'=> $tingkatPerkembangan,
             'klasifikasi_keamanan'=> $klasifikasiKeamanan,
@@ -738,4 +858,18 @@ $klasifikasiKeamanan = $klasifikasiKeamananMap[$klasifikasiKeamananKey] ?? 'Bias
         $result['inaktif_sampai'] = $inaktifSampai->format('Y-m-d');
         return $result;
     }
+
+    private function getRuanganBySubBagian($subBagianId)
+{
+    $mapping = [
+        1 => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
+        2 => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
+        3 => 'RUANG_SUBBAGIAN_KEUANGAN',
+        7 => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
+        5 => 'RUANG_SUBBAGIAN_TEKNIS',
+        6 => 'RUANG_SUBBAGIAN_HUKUM',
+    ];
+
+    return $mapping[$subBagianId] ?? null;
+}
 }
