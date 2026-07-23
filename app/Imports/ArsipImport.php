@@ -188,145 +188,112 @@ class ArsipImport implements
     | konsisten antara fase validasi dan fase import beneran.
     |--------------------------------------------------------------------------
     */
-    private function parseTanggalArsipFleksibel($value): ?Carbon
+  private function parseTanggalArsipFleksibel($value): ?Carbon
 {
     if ($value === null || $value === '') {
+        Log::info('Tanggal raw: NULL atau kosong');
         return null;
     }
 
+    Log::info('Tanggal raw: ' . print_r($value, true));
 
-    /*
-    |--------------------------------------------------------------------------
-    | 0. Excel Date Object
-    |--------------------------------------------------------------------------
-    | Beberapa reader Excel mengembalikan tanggal sebagai object DateTime
-    |--------------------------------------------------------------------------
-    */
+    // 0. Excel Date Object
     if ($value instanceof \DateTimeInterface) {
-
-        return Carbon::instance(
-            $value
-        )->startOfDay();
-
+        $carbon = Carbon::instance($value)->startOfDay();
+        Log::info('Tanggal parsed (DateTimeInterface): ' . $carbon->toDateString());
+        return $carbon;
     }
-        // 1) Excel serial date (angka asli, mis. float/int dari PhpSpreadsheet)
-        if (is_numeric($value)) {
 
-    try {
+    // 1) Excel serial date (angka asli)
+    if (is_numeric($value)) {
+        try {
+            $carbon = Carbon::instance(Date::excelToDateTimeObject((float) $value))->startOfDay();
+            Log::info('Tanggal parsed (serial number): ' . $carbon->toDateString());
+            return $carbon;
+        } catch (\Throwable $e) {
+            Log::warning('Gagal konversi serial number: ' . $e->getMessage());
+            // lanjut ke proses string
+        }
+    }
 
-        return Carbon::instance(
-            Date::excelToDateTimeObject((float) $value)
-        )->startOfDay();
+    // 2) Normalisasi whitespace aneh
+    $raw = trim((string) $value);
+    $raw = str_replace(["\xc2\xa0"], ' ', $raw);
+    $raw = preg_replace('/\s+/', ' ', $raw);
 
-    } catch (\Throwable $e) {
-
+    if ($raw === '') {
+        Log::info('Tanggal parsed: kosong setelah normalisasi');
         return null;
     }
 
-}
-
-        // 2) Normalisasi whitespace aneh (non-breaking space dari copy-paste)
-        $raw = trim((string) $value);
-        $raw = str_replace(["\xc2\xa0"], ' ', $raw);
-        $raw = preg_replace('/\s+/', ' ', $raw);
-
-        if ($raw === '') {
-            return null;
-        }
-
-        // 3) Serial number yang kebungkus jadi string murni angka, mis. "45678"
-        if (ctype_digit($raw)) {
-            try {
-                return Carbon::instance(
-                    Date::excelToDateTimeObject((float) $raw)
-                )->startOfDay();
-            } catch (\Throwable $e) {
-                // lanjut coba format string biasa di bawah
-            }
-        }
-
-        // 4) Normalisasi nama bulan Indonesia -> Inggris supaya Carbon bisa baca
-        $bulanIndo = [
-            'JANUARI'   => 'January',
-            'FEBRUARI'  => 'February',
-            'MARET'     => 'March',
-            'APRIL'     => 'April',
-            'MEI'       => 'May',
-            'JUNI'      => 'June',
-            'JULI'      => 'July',
-            'AGUSTUS'   => 'August',
-            'SEPTEMBER' => 'September',
-            'OKTOBER'   => 'October',
-            'NOVEMBER'  => 'November',
-            'DESEMBER'  => 'December',
-        ];
-
-        $upper = strtoupper($raw);
-        foreach ($bulanIndo as $indo => $eng) {
-            if (str_contains($upper, $indo)) {
-                $raw = str_ireplace($indo, $eng, $raw);
-                break;
-            }
-        }
-
-        // 5) Coba format eksplisit satu-satu, diurutkan dari yang paling
-        //    mungkin ke yang paling longgar. Urutan d/m/Y didahulukan
-        //    sebelum m/d/Y karena konteks datanya Indonesia, biar
-        //    "05/06/2023" dibaca 5 Juni, bukan 6 Mei.
-        $formats = [
-
-    // Indonesia
-    'd/m/Y',
-    'd-m-Y',
-    'd.m.Y',
-
-    // ISO
-    'Y-m-d',
-    'Y/m/d',
-
-    // Tahun pendek
-    'd/m/y',
-    'd-m-y',
-
-    // Dengan nama bulan
-    'd F Y',
-    'j F Y',
-    'd M Y',
-    'j M Y',
-
-    // Format Excel umum
-    'm/d/Y',
-    'm-d-Y',
-
-    // Format dengan jam
-    'Y-m-d H:i:s',
-    'd/m/Y H:i:s',
-    'd-m-Y H:i:s',
-
-];
-
-        foreach ($formats as $format) {
-            try {
-                // Prefix "!" supaya field yang tidak disebut di format
-                // (jam, menit, detik) di-reset ke 0, bukan ke-carry dari now().
-                $date = Carbon::createFromFormat('!' . $format, $raw);
-                if ($date !== false) {
-                    return $date->startOfDay();
-                }
-            } catch (\Throwable $e) {
-                continue;
-            }
-        }
-
-        // 6) Fallback paling akhir: biarkan Carbon menebak sendiri. Paling
-        //    fleksibel tapi juga paling berisiko salah tafsir untuk format
-        //    ambigu, jadi sengaja ditaruh paling akhir.
+    // 3) Serial number yang kebungkus string angka
+    if (ctype_digit($raw)) {
         try {
-            return Carbon::parse($raw)->startOfDay();
+            $carbon = Carbon::instance(Date::excelToDateTimeObject((float) $raw))->startOfDay();
+            Log::info('Tanggal parsed (serial string): ' . $carbon->toDateString());
+            return $carbon;
         } catch (\Throwable $e) {
-            return null;
+            // lanjut
         }
     }
+
+    // 4) Normalisasi nama bulan Indonesia -> Inggris
+    $bulanIndo = [
+        'JANUARI'   => 'January',
+        'FEBRUARI'  => 'February',
+        'MARET'     => 'March',
+        'APRIL'     => 'April',
+        'MEI'       => 'May',
+        'JUNI'      => 'June',
+        'JULI'      => 'July',
+        'AGUSTUS'   => 'August',
+        'SEPTEMBER' => 'September',
+        'OKTOBER'   => 'October',
+        'NOVEMBER'  => 'November',
+        'DESEMBER'  => 'December',
+    ];
+
+    $upper = strtoupper($raw);
+    foreach ($bulanIndo as $indo => $eng) {
+        if (str_contains($upper, $indo)) {
+            $raw = str_ireplace($indo, $eng, $raw);
+            break;
+        }
+    }
+
+    // 5) Coba format eksplisit satu-satu
+    $formats = [
+        'd/m/Y', 'd-m-Y', 'd.m.Y',
+        'Y-m-d', 'Y/m/d',
+        'd/m/y', 'd-m-y',
+        'd F Y', 'j F Y', 'd M Y', 'j M Y',
+        'm/d/Y', 'm-d-Y',
+        'Y-m-d H:i:s', 'd/m/Y H:i:s', 'd-m-Y H:i:s',
+    ];
+
+    foreach ($formats as $format) {
+        try {
+            $date = Carbon::createFromFormat('!' . $format, $raw);
+            if ($date !== false) {
+                $carbon = $date->startOfDay();
+                Log::info("Tanggal parsed (format '{$format}'): " . $carbon->toDateString());
+                return $carbon;
+            }
+        } catch (\Throwable $e) {
+            continue;
+        }
+    }
+
+    // 6) Fallback terakhir: biarkan Carbon menebak
+    try {
+        $carbon = Carbon::parse($raw)->startOfDay();
+        Log::info('Tanggal parsed (fallback Carbon::parse): ' . $carbon->toDateString());
+        return $carbon;
+    } catch (\Throwable $e) {
+        Log::warning('Gagal parse tanggal: ' . $e->getMessage());
+        return null;
+    }
+}
 
     /*
     |--------------------------------------------------------------------------
