@@ -25,16 +25,20 @@ class SubBagianArsipController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $query = Arsip::with(['kodeKlasifikasi', 'subBagian'])
-            ->where('sub_bagian_id', $user->sub_bagian_id) // scope sub bagian
-            ->where('status_pindah', 'BELUM');
+        $showAllStatus = $request->filter === 'belum_dokumen';
 
+$query = Arsip::with(['kodeKlasifikasi', 'subBagian'])
+    ->where('sub_bagian_id', $user->sub_bagian_id);
+
+if (!$showAllStatus) {
+    $query->where('status_pindah', 'BELUM');
+}
         // if (!$user->canViewRahasiaArsip()) {
         //     $query->where('klasifikasi_keamanan', '!=', 'Rahasia');
         // }
-        $query->whereDoesntHave('beritaAcaraDetails', function($q) {
-                $q->whereIn('status', ['DRAFT', 'DIAJUKAN', 'DITERIMA']);
-            });
+        // $query->whereDoesntHave('beritaAcaraDetails', function($q) {
+        //         $q->whereIn('status', ['DRAFT', 'DIAJUKAN', 'DITERIMA']);
+        //     });
                 $query->where(function ($q) use ($user) {
 
             // selain rahasia
@@ -100,10 +104,20 @@ class SubBagianArsipController extends Controller
           ->whereIn('status_pindah', ['BELUM']);
 }
 if ($request->filter === 'belum_dokumen') {
+    $query->whereIn('status_pindah', [
+        'BELUM',
+        'DIAJUKAN',
+        'DIPINDAHKAN'
+    ]);
+
+    $query->where('status_arsip', '!=', 'NON_ARSIP');
+
     $query->where(function ($q) {
         $q->whereNull('file_dokumen')
           ->orWhere('file_dokumen', '');
-    })->where(function ($q) {
+    });
+
+    $query->where(function ($q) {
         $q->whereNull('link_foto')
           ->orWhere('link_foto', '');
     });

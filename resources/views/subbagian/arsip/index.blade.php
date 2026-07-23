@@ -242,11 +242,13 @@
                             @if($arsip->status_pindah)
                                 @php
                                     $statusPindahColors = [
-                                        'DIAJUKAN' => 'warning',
-                                        'DITERIMA' => 'success',
-                                        'DITOLAK' => 'danger',
-                                        'SELESAI' => 'info'
+                                        'DIAJUKAN'      => 'warning', // kuning
+                                        'DIPINDAHKAN'  => 'success', // hijau
+                                        'DITERIMA'     => 'primary',
+                                        'DITOLAK'      => 'danger',
+                                        'SELESAI'      => 'info',
                                     ];
+
                                     $color = $statusPindahColors[$arsip->status_pindah] ?? 'secondary';
                                 @endphp
                                 <span class="badge bg-{{ $color }}">
@@ -268,16 +270,28 @@
                                 <a href="{{ route('subbagian.arsip.edit', $arsip->id) }}" class="btn btn-warning" title="Edit" style="padding: 0.25rem 0.5rem;">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <form action="{{ route('subbagian.arsip.destroy', $arsip->id) }}"
-                                    method="POST"
-                                    data-confirm="delete"
-                                    class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger" title="Hapus" style="padding: 0.25rem 0.5rem;">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
+                                @if(in_array($arsip->status_pindah, ['DIAJUKAN', 'DIPINDAHKAN']))
+    <button
+        type="button"
+        class="btn btn-secondary"
+        title="Arsip yang sudah diajukan atau dipindahkan tidak dapat dihapus"
+        disabled>
+        <i class="bi bi-lock-fill"></i>
+    </button>
+@else
+    <form action="{{ route('subbagian.arsip.destroy', $arsip->id) }}"
+        method="POST"
+        data-confirm="delete"
+        class="d-inline">
+        @csrf
+        @method('DELETE')
+        <button type="submit"
+                class="btn btn-danger"
+                title="Hapus">
+            <i class="bi bi-trash"></i>
+        </button>
+    </form>
+@endif
                             </div>
                         </td>
                     </tr>

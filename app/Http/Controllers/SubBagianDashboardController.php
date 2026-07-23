@@ -94,6 +94,8 @@ class SubBagianDashboardController extends Controller
             ->get();
 // Arsip yang belum memiliki file dokumen maupun link foto
 $arsipBelumUploadDokumen = Arsip::where('sub_bagian_id', $user->sub_bagian_id)
+    ->whereIn('status_pindah', ['BELUM', 'DIAJUKAN', 'DIPINDAHKAN'])
+    ->where('status_arsip', '!=', 'NON_ARSIP')
     ->where(function ($query) {
         $query->whereNull('file_dokumen')
               ->orWhere('file_dokumen', '');
