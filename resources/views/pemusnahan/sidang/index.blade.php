@@ -44,10 +44,10 @@
             <li>Perubahan data langsung <b>tersimpan otomatis</b></li>
         </ul>
     </div>
-    <div class="alert alert-info">
+    <!-- <div class="alert alert-info">
     <i class="bi bi-info-circle-fill"></i>
     Klik pada data yang berwarna biru atau memiliki icon pensil (✏) untuk mengubah nilai secara langsung.
-</div>
+</div> -->
 <div class="card shadow-sm mb-3">
     <div class="card-body">
 
