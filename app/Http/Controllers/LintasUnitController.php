@@ -85,8 +85,9 @@ class LintasUnitController extends Controller
         // SUB BAGIAN PERENCANAAN
         elseif ($unit == 'subbag-perencanaan') {
 
-            $query = Arsip::where('sub_bagian_id', 7)
-                ->where('status_pindah', 'BELUM');
+           $query = Arsip::whereHas('subBagian', function ($q) use ($unit) {
+    $q->where('slug', $unit);
+})->where('status_pindah', 'BELUM');
 
             $query = $this->filterRahasia($query, $user);
 
