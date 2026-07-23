@@ -64,6 +64,10 @@ class ArsipImportSubBagian implements
             'jenis_arsip' => 'required|string|max:500',
             'kurun_waktu' => 'required|numeric|min:2000|max:' . (date('Y') + 1),
 
+            // TANGGAL ARSIP (opsional, tapi kalau diisi tahunnya wajib sama dengan kurun_waktu.
+            // Pengecekan detail dilakukan di validateRow() karena butuh akses ke field lain.)
+            'tanggal_arsip' => 'nullable',
+
             // JUMLAH (format: "angka<spasi>satuan")
             'jumlah' => [
                 'required',
@@ -237,6 +241,98 @@ class ArsipImportSubBagian implements
             ->exists();
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | HELPER: PARSING TANGGAL ARSIP YANG "TAHAN BANTING"
+    |--------------------------------------------------------------------------
+    | Kenapa perlu ini? Karena kolom tanggal di file Excel bisa datang dalam
+    | beberapa bentuk yang berbeda-beda tergantung cara user mengisi/menyimpan
+    | filenya:
+    |   1) Excel serial number (mis. 45678) -> ini yang paling sering bikin
+    |      error kalau langsung di-Carbon::parse() begitu saja, karena bukan
+    |      string tanggal, tapi angka murni hasil format cell "Date" di Excel.
+    |   2) String dengan berbagai format umum: 17/08/1945, 17-08-1945,
+    |      1945-08-17, 17 Agustus 1945 (kalau locale Indonesia dipakai di OS),
+    |      dst.
+    | Strategi: kalau numeric -> convert pakai PhpSpreadsheet
+    | (Date::excelToDateTimeObject). Kalau string -> coba beberapa format
+    | eksplisit dulu (supaya hasilnya konsisten & bisa diprediksi), baru
+    | fallback ke Carbon::parse() otomatis kalau semua format eksplisit gagal.
+    | Kalau tetap tidak bisa di-parse, return null (biar dianggap tidak valid).
+    |--------------------------------------------------------------------------
+    */
+    private function parseTanggalExcel($value): ?Carbon
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        // Kalau Excel simpan sebagai angka (serial date), convert dulu
+        if (is_numeric($value)) {
+            try {
+                $dateTime = Date::excelToDateTimeObject($value);
+                return Carbon::instance($dateTime)->startOfDay();
+            } catch (\Throwable $e) {
+                return null;
+            }
+        }
+
+        $raw = trim((string) $value);
+        $raw = str_replace(["\xc2\xa0"], ' ', $raw); // non-breaking space
+        $raw = preg_replace('/\s+/', ' ', $raw);
+
+        if ($raw === '') {
+            return null;
+        }
+
+        // Kalau nilainya ternyata numeric tapi kebungkus string, misal "45678"
+        if (ctype_digit($raw)) {
+            try {
+                $dateTime = Date::excelToDateTimeObject((float) $raw);
+                return Carbon::instance($dateTime)->startOfDay();
+            } catch (\Throwable $e) {
+                // lanjut coba format string biasa di bawah
+            }
+        }
+
+        // Daftar format eksplisit yang umum dipakai, dicoba urut dari yang
+        // paling mungkin ke yang paling longgar
+        $formats = [
+            'd/m/Y',
+            'd-m-Y',
+            'Y-m-d',
+            'Y/m/d',
+            'd.m.Y',
+            'd F Y',   // 17 Agustus 1945 (locale ID) / 17 August 1945 (locale EN)
+            'd M Y',
+            'd/m/y',
+            'd-m-y',
+            'm/d/Y',
+            'd-M-Y',
+        ];
+
+        foreach ($formats as $format) {
+            try {
+                $date = Carbon::createFromFormat('!' . $format, $raw);
+                if ($date !== false) {
+                    return $date->startOfDay();
+                }
+            } catch (\Throwable $e) {
+                continue;
+            }
+        }
+
+        // Fallback terakhir: parsing otomatis Carbon. Ini paling fleksibel
+        // tapi juga paling berisiko salah tafsir untuk format ambigu
+        // (mis. 01/02/2020 -> 1 Feb atau 2 Jan?), jadi sengaja ditaruh
+        // paling akhir setelah format eksplisit di atas gagal semua.
+        try {
+            return Carbon::parse($raw)->startOfDay();
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
     private function validateRow(array $row, int $rowNumber): void
     {
 
@@ -358,6 +454,39 @@ if (!empty($row['namanomor_box'])) {
 
                 $this->errors[] =
                     "Baris {$rowNumber}: Kurun waktu harus berupa angka.";
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | TANGGAL ARSIP
+        |--------------------------------------------------------------------------
+        | Kolom ini opsional. Kalau diisi:
+        |   1) Harus bisa di-parse jadi tanggal yang valid (support angka
+        |      serial Excel maupun berbagai format string tanggal).
+        |   2) Tahun pada tanggal tersebut wajib SAMA dengan Kurun Waktu.
+        |--------------------------------------------------------------------------
+        */
+
+        if (!empty($row['tanggal_arsip'])) {
+
+            $tanggalArsipParsed = $this->parseTanggalExcel($row['tanggal_arsip']);
+
+            if (!$tanggalArsipParsed) {
+
+                $this->errors[] =
+                    "Baris {$rowNumber}: Format Tanggal Arsip tidak valid/tidak bisa dibaca. Gunakan format tanggal pada kolom Excel (mis. 17/08/1945) atau format cell Date bawaan Excel.";
+
+            } elseif (!empty($row['kurun_waktu']) && is_numeric($row['kurun_waktu'])) {
+
+                $tahunTanggalArsip = (int) $tanggalArsipParsed->format('Y');
+                $tahunKurunWaktu   = (int) $row['kurun_waktu'];
+
+                if ($tahunTanggalArsip !== $tahunKurunWaktu) {
+
+                    $this->errors[] =
+                        "Baris {$rowNumber}: Tahun pada Tanggal Arsip ({$tahunTanggalArsip}) harus sama dengan Kurun Waktu ({$tahunKurunWaktu}).";
+                }
             }
         }
 
@@ -713,8 +842,18 @@ $klasifikasiKeamanan = $klasifikasiKeamananMap[$klasifikasiKeamananKey] ?? 'Bias
         $inaktifTahun = $this->parseRetensiString($row['inaktif'] ?? $kode->inaktif_tahun ?? null);
         $keteranganJRA = $kode->keterangan_jra ?? 'BELUM DITENTUKAN';
 
-        // Tanggal arsip (dari tahun)
-        $tanggalArsip = Carbon::createFromDate($tahunArsip, 1, 1);
+        // Tanggal arsip: pakai kolom "tanggal_arsip" dari Excel kalau ada &
+        // berhasil di-parse (validasi format + kecocokan tahun sudah
+        // dilakukan di validateRow()). Kalau kosong / gagal diparse (mis.
+        // saat model() dipanggil tanpa lewat validateExcel dulu), fallback
+        // ke 1 Januari tahun kurun_waktu seperti perilaku lama.
+        $tanggalArsipParsed = $this->parseTanggalExcel($row['tanggal_arsip'] ?? null);
+
+        if ($tanggalArsipParsed) {
+            $tanggalArsip = $tanggalArsipParsed;
+        } else {
+            $tanggalArsip = Carbon::createFromDate($tahunArsip, 1, 1);
+        }
 
         // Hitung retensi
         $perhitungan = $this->hitungRetensi(

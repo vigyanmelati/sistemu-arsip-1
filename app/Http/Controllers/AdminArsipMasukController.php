@@ -995,7 +995,7 @@ public function verifikasi(Request $request, Arsip $arsip)
             $arsip->lokasi_arsip = $request->lokasi_tujuan;
             $arsip->tanggal_diverifikasi = now();
             $arsip->diverifikasi_oleh = auth()->id();
-            $arsip->status_pindah = 'DITERIMA'; // Set DITERIMA
+            $arsip->status_pindah = 'DIPINDAHKAN'; // Set DIPINDAHKAN
             $arsip->catatan_verifikasi = '✅ DISETUJUI: Arsip diverifikasi dan diterima.';
 
             $arsip->skipHistory = true;
