@@ -25,6 +25,11 @@
             <i class="fas fa-file-excel me-1"></i> Export
         </a>
 
+          <a href="{{ route('surat-masuk.index', ['filter' => 'duplikasi']) }}"
+       class="btn btn-warning">
+        <i class="bi bi-files"></i>
+        Cek Duplikasi
+    </a>
         {{-- Tambah --}}
         <a href="{{ route('surat-masuk.create') }}"
            class="btn btn-primary rounded-pill px-4 shadow-sm">
@@ -100,8 +105,31 @@
         </ul>
     </div>
 @endif
+@if(request('filter') == 'duplikasi')
 
+<div class="alert alert-warning shadow-sm rounded-4">
 
+    <h5 class="fw-bold">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        Ditemukan {{ $jumlahDuplikat }} data surat masuk yang terindikasi duplikat.
+    </h5>
+
+    <p class="mb-3">
+        Silakan lakukan pengecekan terhadap data surat masuk yang ditampilkan.
+        Hapus data yang terduplikasi dan sisakan satu data surat masuk yang benar.
+    </p>
+
+    <a href="{{ route('surat-masuk.index') }}"
+       class="btn btn-danger rounded-pill">
+
+        <i class="fas fa-times-circle me-1"></i>
+        Reset Filter Duplikasi
+
+    </a>
+
+</div>
+
+@endif
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead class="bg-light">
@@ -115,6 +143,13 @@
                                     <th width="12%" class="border-0">Asal Dokumen</th>
                                     <th width="10%" class="border-0">Dokumen</th>
                                     <th width="12%" class="border-0">Keterangan</th>
+                                   
+
+                                    @if(request('filter') == 'duplikasi')
+                                        <th>Keterangan Duplikasi</th>
+                                    @endif
+
+                                    
                                     <th width="15%" class="border-0 rounded-end">Aksi</th>
                                 </tr>
                             </thead>
@@ -140,6 +175,34 @@
                                         @endif
                                     </td>
                                     <td>{{ Str::limit($item->catatan, 30, '...') ?? '-' }}</td>
+                                
+                                        @if(request('filter') == 'duplikasi')
+
+                                        <td>
+
+                                        @if(($duplicateCounts[$item->nomor_dokumen] ?? 0) > 1)
+
+                                        <button
+                                        class="badge bg-danger border-0"
+                                        style="cursor:pointer"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#duplicateModal{{$item->id}}">
+
+                                        Duplikat
+
+                                        </button>
+
+                                        @else
+
+                                        <span class="badge bg-success">
+                                        Tidak Duplikat
+                                        </span>
+
+                                        @endif
+
+                                        </td>
+
+                                        @endif
                                         <td>
     <div class="d-flex gap-2 justify-content-center">
 
@@ -183,6 +246,7 @@
     </div>
 </td>
                                 </tr>
+                         
                                 @empty
                                 <tr>
                                     <td colspan="10" class="text-center text-muted py-5">
@@ -190,6 +254,123 @@
                                         Belum ada data surat masuk.
                                     </td>
                                 </tr>
+                                </tr>
+
+@if(($duplicateCounts[$item->nomor_dokumen] ?? 0) > 1)
+
+<div class="modal fade"
+     id="duplicateModal{{$item->id}}"
+     tabindex="-1">
+
+<div class="modal-dialog modal-lg">
+
+<div class="modal-content rounded-4">
+
+<div class="modal-header bg-danger text-white">
+
+<h5 class="modal-title">
+
+    Informasi Data Duplikat
+
+</h5>
+
+<button type="button"
+        class="btn-close btn-close-white"
+        data-bs-dismiss="modal">
+
+</button>
+
+</div>
+
+
+<div class="modal-body">
+
+
+<p>
+
+Nomor Surat :
+
+<strong>
+
+{{ $item->nomor_dokumen }}
+
+</strong>
+
+</p>
+
+<div class="alert alert-warning">
+
+Data surat masuk ini terindikasi memiliki
+nomor surat yang sama dengan data berikut.
+
+</div>
+
+
+<table class="table table-bordered">
+
+<thead>
+
+<tr>
+
+<th>Baris</th>
+<th>Perihal</th>
+<th>Tanggal Dokumen</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+@foreach(\App\Models\SuratMasuk::where('nomor_dokumen',$item->nomor_dokumen)->get() as $duplicate)
+
+<tr>
+
+<td>
+
+{{ $loop->iteration }}
+
+</td>
+
+<td>
+
+{{ $duplicate->perihal }}
+
+</td>
+
+<td>
+
+{{ \Carbon\Carbon::parse($duplicate->tanggal_dokumen)->format('d/m/Y') }}
+
+</td>
+
+</tr>
+
+@endforeach
+
+
+</tbody>
+
+</table>
+
+
+<div class="alert alert-info mb-0">
+
+<i class="fas fa-info-circle me-2"></i>
+
+Silakan hapus data surat masuk yang terduplikasi dan sisakan satu data surat masuk yang paling benar.
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+@endif
                                 @endforelse
                             </tbody>
                         </table>
@@ -207,6 +388,7 @@
     </div>
 </div>
 
+     
 
 <!-- Modal Import -->
 <div class="modal fade" id="importModal" tabindex="-1">

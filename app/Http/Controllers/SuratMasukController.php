@@ -11,26 +11,65 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\SuratMasukExport;
 use App\Imports\SuratMasukImport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\DB;
 
 class SuratMasukController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
-    {
-        $search = $request->input('search');
-        $surat = SuratMasuk::when($search, function ($query) use ($search) {
-            return $query->where('nomor_dokumen', 'like', "%{$search}%")
-                        ->orWhere('perihal', 'like', "%{$search}%")
-                        ->orWhere('instansi_satker', 'like', "%{$search}%");
-        })
+ public function index(Request $request)
+{
+    $search = $request->input('search');
+    $filter = $request->filter;
+
+    $query = SuratMasuk::query();
+
+    if ($search) {
+        $query->where(function ($q) use ($search) {
+            $q->where('nomor_dokumen', 'like', "%{$search}%")
+                ->orWhere('perihal', 'like', "%{$search}%")
+                ->orWhere('instansi_satker', 'like', "%{$search}%");
+        });
+    }
+
+    // Ambil semua nomor dokumen yang duplikat
+    $duplicateNomor = SuratMasuk::select('nomor_dokumen')
+        ->groupBy('nomor_dokumen')
+        ->havingRaw('COUNT(*) > 1')
+        ->pluck('nomor_dokumen');
+
+    // Filter hanya data duplikat
+    if ($filter == 'duplikasi') {
+        $query->whereIn('nomor_dokumen', $duplicateNomor);
+    }
+
+    $surat = $query
         ->orderBy('created_at', 'desc')
         ->paginate(10);
 
-        return view('surat_masuk.index', compact('surat'));
-    }
+    // jumlah data yang duplikat
+    $jumlahDuplikat = SuratMasuk::whereIn(
+        'nomor_dokumen',
+        $duplicateNomor
+    )->count();
 
+    // total masing-masing nomor dokumen
+    $duplicateCounts = SuratMasuk::selectRaw(
+        'nomor_dokumen, COUNT(*) as total'
+    )
+        ->groupBy('nomor_dokumen')
+        ->pluck('total', 'nomor_dokumen');
+
+    return view(
+        'surat_masuk.index',
+        compact(
+            'surat',
+            'duplicateCounts',
+            'jumlahDuplikat'
+        )
+    );
+}
     /**
      * Show the form for creating a new resource.
      */
@@ -315,6 +354,46 @@ public function import(Request $request)
             'Import gagal : ' . $e->getMessage()
         );
     }
+}
+
+public function cekDuplikasi()
+{
+    $duplicates = SuratMasuk::select(
+            'nomor_dokumen',
+            'tanggal_dokumen',
+            DB::raw('COUNT(*) as total')
+        )
+        ->groupBy(
+            'nomor_dokumen',
+            'tanggal_dokumen'
+        )
+        ->having('total', '>', 1)
+        ->get();
+
+    $duplicateData = [];
+
+    foreach ($duplicates as $duplicate) {
+
+        $surats = SuratMasuk::with('subBagian')
+            ->where('nomor_dokumen', $duplicate->nomor_dokumen)
+            ->whereDate(
+                'tanggal_dokumen',
+                $duplicate->tanggal_dokumen
+            )
+            ->get();
+
+        $duplicateData[] = [
+            'nomor_dokumen' => $duplicate->nomor_dokumen,
+            'tanggal_dokumen' => $duplicate->tanggal_dokumen,
+            'total' => $duplicate->total,
+            'data' => $surats
+        ];
+    }
+
+    return view(
+        'surat_masuk.cek_duplikasi',
+        compact('duplicateData')
+    );
 }
 
 

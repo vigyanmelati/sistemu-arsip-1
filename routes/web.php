@@ -240,6 +240,10 @@ Route::get(
 
 
 Route::middleware(['auth', 'nocache'])->group(function () {
+    Route::get('/surat-masuk/cek-duplikasi', [
+    SuratMasukController::class,
+    'cekDuplikasi'
+])->name('surat-masuk.cek-duplikasi');
     Route::post('/arsip-masuk/{id}/update-field', [AdminArsipMasukController::class, 'updateField'])->name('arsip-masuk.update-field');
      Route::resource('arsip', ArsipController::class);
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
