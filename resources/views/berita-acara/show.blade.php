@@ -156,11 +156,26 @@
                             </td>
 
                                 <td class="text-center">
-                                    <a href="{{ route('subbagian.arsip.show', $detail->arsip->id) }}"
-                                       class="btn btn-sm btn-outline-info">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                </td>
+    <a href="{{ route('subbagian.arsip.show', $detail->arsip->id) }}"
+       class="btn btn-sm btn-outline-info">
+        <i class="bi bi-eye"></i>
+    </a>
+
+    @if($berita_acara->status == 'DRAFT')
+    <form action="{{ route('berita-acara.removeArsip', [$berita_acara->id, $detail->arsip->id]) }}"
+          method="POST"
+          class="d-inline"
+          onsubmit="return confirm('Yakin ingin mengeluarkan arsip dari Berita Acara ini?')">
+        @csrf
+        @method('DELETE')
+
+        <button type="submit"
+                class="btn btn-sm btn-outline-danger">
+            <i class="bi bi-x-circle"></i>
+        </button>
+    </form>
+    @endif
+</td>
                             </tr>
                             @empty
                             <tr>

@@ -258,7 +258,10 @@ Route::prefix('lintas-unit')->name('lintas-unit.')->group(function () {
 });
     Route::get('/arsip/{arsip}/download-file', [SubBagianArsipController::class, 'downloadFile'])->name('arsip.downloadFile');
    Route::post('/berita-acara/{berita_acara}/kirim', [BeritaAcaraPindahController::class, 'kirim'])->name('berita-acara.kirim');
-    
+    Route::delete(
+    '/berita-acara/{berita_acara}/arsip/{arsip}',
+    [BeritaAcaraPindahController::class, 'removeArsip']
+)->name('berita-acara.removeArsip');
     // === ROUTE EXPORT LAMPIRAN ===
     Route::get('/berita-acara/{berita_acara}/export-lampiran', [BeritaAcaraPindahController::class, 'exportLampiran'])->name('berita-acara.exportLampiran');
 Route::post('/manajemen-lokasi/rak', [LokasiController::class, 'storeRak'])->name('manajemen-lokasi.store-rak');

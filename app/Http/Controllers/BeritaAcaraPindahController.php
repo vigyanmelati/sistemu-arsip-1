@@ -409,4 +409,34 @@ public function tolak(Request $request, BeritaAcaraPindah $berita_acara)
         
         return true;
     }
+
+    public function removeArsip(BeritaAcaraPindah $berita_acara, Arsip $arsip)
+{
+    $this->authorizeAccess($berita_acara);
+
+    if ($berita_acara->status != BeritaAcaraPindah::STATUS_DRAFT) {
+        return back()->with('error', 'Berita Acara sudah tidak dapat diubah.');
+    }
+
+    $detail = BeritaAcaraDetail::where('bap_id', $berita_acara->id)
+        ->where('arsip_id', $arsip->id)
+        ->first();
+
+    if (!$detail) {
+        return back()->with('error', 'Arsip tidak ditemukan.');
+    }
+
+    // Hapus arsip dari BAP
+    $detail->delete();
+
+    // Kembalikan status arsip
+    $arsip->update([
+        'status_pindah' => 'BELUM',
+    ]);
+
+    return back()->with(
+        'success',
+        'Arsip berhasil dikeluarkan dari Berita Acara.'
+    );
+}
 }
