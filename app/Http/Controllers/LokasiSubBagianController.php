@@ -156,7 +156,7 @@ public function listBox($ruangan, $rak)
         $arsips = Arsip::where('box_id', $boxModel->id)
             ->where('sub_bagian_id', $subBagianId)
              ->whereIn('status_pindah', [
-            'NON_ARSIP',
+            'BELUM, DIAJUKAN',
         ])
             ->orderBy('tahun_arsip', 'desc')
             ->get();

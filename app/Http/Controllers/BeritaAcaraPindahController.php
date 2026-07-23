@@ -132,23 +132,65 @@ class BeritaAcaraPindahController extends Controller
      * Delete BAP
      */
     public function destroy(BeritaAcaraPindah $berita_acara)
-    {
-        $this->authorizeAccess($berita_acara);
+{
+    $this->authorizeAccess($berita_acara);
 
-        if (!$berita_acara->canDelete()) {
-            return back()->with('error', 'Berita Acara yang sudah diajukan tidak dapat dihapus.');
+    if (!$berita_acara->canDelete()) {
+        return back()->with(
+            'error',
+            'Berita Acara yang sudah diajukan tidak dapat dihapus.'
+        );
+    }
+
+    DB::beginTransaction();
+
+    try {
+
+        // Kembalikan status semua arsip
+        foreach ($berita_acara->details as $detail) {
+            if ($detail->arsip) {
+                $detail->arsip->update([
+                    'status_pindah' => 'BELUM',
+                    'file_berita_acara' => null,
+                ]);
+            }
         }
 
-        // Hapus file jika ada
+        // Hapus seluruh detail BAP
+        BeritaAcaraDetail::where(
+            'bap_id',
+            $berita_acara->id
+        )->delete();
+
+        // Hapus file BAP jika ada
         if ($berita_acara->file_bap) {
-            Storage::disk('public')->delete('berita_acara/' . $berita_acara->file_bap);
+            Storage::disk('public')->delete(
+                'berita_acara/' . $berita_acara->file_bap
+            );
         }
 
+        // Hapus BAP
         $berita_acara->delete();
 
-        return redirect()->route('berita-acara.index')
-            ->with('success', 'Berita acara berhasil dihapus.');
+        DB::commit();
+
+        return redirect()
+            ->route('berita-acara.index')
+            ->with(
+                'success',
+                'Berita Acara berhasil dihapus.'
+            );
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        return back()->with(
+            'error',
+            'Gagal menghapus Berita Acara : ' . $e->getMessage()
+        );
     }
+}
 
     /**
      * Upload file dan kirim ke unit kearsipan

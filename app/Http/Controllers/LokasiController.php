@@ -114,7 +114,7 @@ class LokasiController extends Controller
     // Ambil arsip berdasarkan box_id
     $arsips = Arsip::where('box_id', $boxModel->id)
      ->whereIn('status_pindah', [
-            'NON_ARSIP',
+            'LANGSUNG,DIPINDAHKAN',
         ])
         ->orderBy('tahun_arsip', 'desc')
         ->get();
