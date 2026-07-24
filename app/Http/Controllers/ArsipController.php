@@ -1218,7 +1218,7 @@ public function updateInline(Request $request, $id)
         $value = $request->value;
 
         $allowedFields = [
-            'uraian_arsip', 'nomor_rak', 'nomor_box', 'lokasi_arsip',
+            'uraian_arsip', 'lokasi_arsip',
             'aktif_tahun', 'inaktif_tahun', 'keterangan_jra', 'tanggal_arsip'
         ];
 
@@ -1262,12 +1262,9 @@ public function updateInline(Request $request, $id)
 
         $arsip->save();
 
-        // =========================
-        // RETURN JSON AMAN
-        // =========================
         return response()->json([
             'success' => true,
-            'new_values' => [
+            'data' => [
                 'aktif_sampai' => !empty($arsip->aktif_sampai)
                     ? Carbon::parse($arsip->aktif_sampai)->format('d/m/Y')
                     : '-',
@@ -1276,10 +1273,11 @@ public function updateInline(Request $request, $id)
                     ? Carbon::parse($arsip->inaktif_sampai)->format('d/m/Y')
                     : '-',
 
-                'status_arsip' => $this->getStatusBadge($arsip->status_arsip),
+                'status_arsip' => $arsip->status_arsip,
 
                 'aktif_tahun' => $arsip->aktif_tahun ?? '-',
                 'inaktif_tahun' => $arsip->inaktif_tahun ?? '-',
+                'keterangan_jra' => $arsip->keterangan_jra ?? '-',   // <-- TAMBAHKAN INI
             ]
         ]);
 

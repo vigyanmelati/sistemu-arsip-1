@@ -1953,68 +1953,73 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ========== FUNGSI AJAX UNTUK UPDATE ==========
     function sendUpdate(id, field, value, cellElement) {
-        const url = `/arsip/${id}/update-field`;
-        let data = { field: field, value: value };
+    const url = `/arsip/${id}/update-field`;
+    let data = { field: field, value: value };
 
-        const originalText = cellElement.innerText;
-        cellElement.innerHTML = '<span class="text-muted"><i class="bi bi-hourglass-split"></i> Menyimpan...</span>';
+    const originalText = cellElement.innerText;
+    cellElement.innerHTML = '<span class="text-muted"><i class="bi bi-hourglass-split"></i> Menyimpan...</span>';
 
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify(data)
-        })
-        .then(async response => {
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.message || `HTTP ${response.status}`);
-            return result;
-        })
-        .then(data => {
-            if (data.success) {
-                const row = cellElement.closest('tr');
-                const resultData = data.data;
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(async response => {
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || `HTTP ${response.status}`);
+        return result;
+    })
+    .then(data => {
+        if (data.success) {
+            const row = cellElement.closest('tr');
+            const resultData = data.data;
 
-                if (field === 'aktif_tahun') {
-                    cellElement.textContent = resultData.aktif_tahun || '-';
-                    updateRelatedField(row, 'aktif_sampai', resultData.aktif_sampai);
-                    updateRelatedField(row, 'status', resultData.status_arsip);
-                } else if (field === 'inaktif_tahun') {
-                    cellElement.textContent = resultData.inaktif_tahun || '-';
-                    updateRelatedField(row, 'inaktif_sampai', resultData.inaktif_sampai);
-                    updateRelatedField(row, 'status', resultData.status_arsip);
-                } else if (field === 'kode_klasifikasi_id') {
-                    cellElement.textContent = resultData.kode_klasifikasi || 'N/A';
-                    cellElement.dataset.value = resultData.kode_klasifikasi_id || '';
-                } else if (field === 'keterangan_jra') {
-                    cellElement.textContent = resultData.keterangan_jra || '-';
-                    cellElement.dataset.value = resultData.keterangan_jra || '';
-                } else if (field === 'rak_id') {
-                    const rak = rakOptions.find(r => String(r.id) === String(resultData.rak_id));
-                    cellElement.textContent = rak ? rak.nomor_rak : '-';
-                    cellElement.dataset.value = resultData.rak_id || '';
-                } else if (field === 'box_id') {
-                    const box = boxOptions.find(b => String(b.id) === String(resultData.box_id));
-                    cellElement.textContent = box ? box.nomor_box : '-';
-                    cellElement.dataset.value = resultData.box_id || '';
-                }
-
-                cellElement.classList.remove('editing');
-                showNotification('✅ Data berhasil diperbarui', 'success');
-            } else {
-                throw new Error(data.message || 'Gagal memperbarui data');
+            // Update tampilan cell yang sedang diedit
+            if (field === 'aktif_tahun') {
+                cellElement.textContent = resultData.aktif_tahun || '-';
+            } else if (field === 'inaktif_tahun') {
+                cellElement.textContent = resultData.inaktif_tahun || '-';
+            } else if (field === 'kode_klasifikasi_id') {
+                cellElement.textContent = resultData.kode_klasifikasi || 'N/A';
+                cellElement.dataset.value = resultData.kode_klasifikasi_id || '';
+            } else if (field === 'keterangan_jra') {
+                cellElement.textContent = resultData.keterangan_jra || '-';
+                cellElement.dataset.value = resultData.keterangan_jra || '';
+            } else if (field === 'rak_id') {
+                const rak = rakOptions.find(r => String(r.id) === String(resultData.rak_id));
+                cellElement.textContent = rak ? rak.nomor_rak : '-';
+                cellElement.dataset.value = resultData.rak_id || '';
+            } else if (field === 'box_id') {
+                const box = boxOptions.find(b => String(b.id) === String(resultData.box_id));
+                cellElement.textContent = box ? box.nomor_box : '-';
+                cellElement.dataset.value = resultData.box_id || '';
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            cellElement.textContent = originalText || '-';
+
+            // SELALU sync kolom hasil hitung retensi, terlepas dari field mana yang diedit
+            const retensiFields = ['aktif_tahun', 'inaktif_tahun', 'keterangan_jra', 'tanggal_arsip'];
+            if (retensiFields.includes(field)) {
+                updateRelatedField(row, 'aktif_sampai', resultData.aktif_sampai);
+                updateRelatedField(row, 'inaktif_sampai', resultData.inaktif_sampai);
+                updateRelatedField(row, 'status', resultData.status_arsip);
+            }
+
             cellElement.classList.remove('editing');
-            showNotification('❌ ' + error.message, 'danger');
-        });
-    }
+            showNotification('✅ Data berhasil diperbarui', 'success');
+        } else {
+            throw new Error(data.message || 'Gagal memperbarui data');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        cellElement.textContent = originalText || '-';
+        cellElement.classList.remove('editing');
+        showNotification('❌ ' + error.message, 'danger');
+    });
+}
 
     function updateRelatedField(row, fieldName, value) {
         if (!row) return;

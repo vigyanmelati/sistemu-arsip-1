@@ -28,7 +28,8 @@ require __DIR__.'/auth.php';
 
 Route::middleware(['auth', 'nocache'])->group(function () {
     // routes/web.php
-
+Route::post('/arsip/{id}/update-field', [ArsipController::class, 'updateInline'])
+    ->name('arsip.update-field');
 Route::get('/arsip-masuk/{arsip}/download-file', [AdminArsipMasukController::class, 'downloadFile'])
     ->name('arsip-masuk.download-file')
     ->where('arsip', '[0-9]+'); // Hanya menerima angka
