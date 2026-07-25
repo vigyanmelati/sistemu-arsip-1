@@ -45,40 +45,18 @@
 
             <div class="row">
 
-                {{-- SUB BAGIAN --}}
-                <div class="col-md-4 mb-3">
-                    <label class="form-label fw-bold">
-                        Sub Bagian*
-                    </label>
-
-                    <select name="sub_bagian_id"
-                            class="form-control">
-
-                        <option value="">
-                            -- Pilih Sub Bagian --
-                        </option>
-
-                        @foreach($subBagians as $sub)
-                            <option value="{{ $sub->id }}"
-                                {{ old('sub_bagian_id', $surat->sub_bagian_id) == $sub->id ? 'selected' : '' }}>
-                                {{ $sub->nama_sub_bagian }}
-                            </option>
-                        @endforeach
-
-                    </select>
-                </div>
-
                 {{-- INSTANSI --}}
-                <div class="col-md-8 mb-3">
+                <div class="col-md-12 mb-3">
                     <label class="form-label fw-bold">
                         Instansi/Satker*
                     </label>
 
-                    <input type="text"
-                           name="instansi_satker"
-                           class="form-control"
-                           placeholder="Enter Text"
-                           value="{{ old('instansi_satker', $surat->instansi_satker) }}">
+                    <select name="instansi_id" class="form-select" required>
+                        <option value="">-- Pilih Instansi/Satker --</option>
+                        @foreach($instansis as $instansi)
+                            <option value="{{ $instansi->id }}" @selected(old('instansi_id', $surat->instansi_id) == $instansi->id)>{{ $instansi->nama_instansi }}</option>
+                        @endforeach
+                    </select>
                 </div>
 
             </div>
@@ -175,6 +153,17 @@
             </div>
 
             <div class="row">
+
+                @php($selectedTujuan = old('tujuan_disposisi_ids', $surat->tujuanDisposisis->pluck('id')->all()))
+                <div class="col-md-12 mb-3">
+                    <label class="form-label fw-bold">Tujuan Disposisi</label>
+                    <select name="tujuan_disposisi_ids[]" class="form-select" multiple size="5">
+                        @foreach($tujuanDisposisis as $tujuan)
+                            <option value="{{ $tujuan->id }}" @selected(in_array($tujuan->id, $selectedTujuan))>{{ $tujuan->nama_tujuan }}</option>
+                        @endforeach
+                    </select>
+                    <small class="text-muted">Opsional. Tahan Ctrl (Windows) untuk memilih lebih dari satu tujuan.</small>
+                </div>
 
                 {{-- CATATAN --}}
                 <div class="col-md-12 mb-3">

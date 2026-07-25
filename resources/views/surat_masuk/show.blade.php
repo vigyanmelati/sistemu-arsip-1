@@ -77,8 +77,8 @@
                                 <dt class="col-sm-4 text-muted">Asal Dokumen</dt>
                                 <dd class="col-sm-8">{{ $surat->instansi_satker }}</dd>
 
-                                <dt class="col-sm-4 text-muted">Sub Bagian</dt>
-                                <dd class="col-sm-8">{{ $surat->subBagian->nama_sub_bagian ?? '-' }}</dd>
+                                <dt class="col-sm-4 text-muted">Tujuan Disposisi</dt>
+                                <dd class="col-sm-8">{{ $surat->tujuanDisposisis->pluck('nama_tujuan')->join(', ') ?: '-' }}</dd>
                             </dl>
                         </div>
                     </div>

@@ -12,7 +12,8 @@ class SinarV1Document extends Model
         4 => 'Peraturan Presiden', 5 => 'Keputusan Presiden', 6 => 'Peraturan Daerah',
         7 => 'Peraturan KPU', 8 => 'PERMEN/KEPMEN', 9 => 'SE/SK/JUKNIS KPU',
         10 => 'SE/SK/JUKNIS KPU Provinsi Bali',
-        11 => 'SE/SK/JUKNIS KPU Kabupaten/Kota', 13 => 'Surat Keluar',
+        11 => 'SE/SK/JUKNIS KPU Kabupaten/Kota',
+        12 => 'Surat Masuk', 13 => 'Surat Keluar',
     ];
 
     public const HARDCOPY_STATUSES = [
@@ -60,8 +61,8 @@ class SinarV1Document extends Model
 
         return $query->where(function (Builder $visible) use ($user) {
             $visible->whereBetween('legacy_category_id', [1, 11])
-                ->orWhere(function (Builder $outgoing) use ($user) {
-                    $outgoing->where('legacy_category_id', 13)
+                ->orWhere(function (Builder $correspondence) use ($user) {
+                    $correspondence->whereIn('legacy_category_id', [12, 13])
                         ->where('sub_bagian_id', $user->sub_bagian_id);
                 });
         });
@@ -70,5 +71,10 @@ class SinarV1Document extends Model
     public function isOutgoingLetter(): bool
     {
         return $this->legacy_category_id === 13;
+    }
+
+    public function isCorrespondence(): bool
+    {
+        return in_array($this->legacy_category_id, [12, 13], true);
     }
 }

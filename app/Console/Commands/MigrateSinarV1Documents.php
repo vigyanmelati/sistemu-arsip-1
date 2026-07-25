@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\SinarV1Document;
+use App\Models\SinarV1Instansi;
 use App\Models\SubBagian;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -15,12 +16,13 @@ class MigrateSinarV1Documents extends Command
 {
     protected $signature = 'sinar-v1:migrate {--commit : Simpan data; tanpa opsi ini hanya dry-run} {--limit= : Batasi jumlah data} {--skip-files : Jangan salin lampiran}';
 
-    protected $description = 'Migrasikan kategori 1-11 dan Surat Keluar dari database SINAR V1';
+    protected $description = 'Migrasikan seluruh kategori dokumen dari database SINAR V1 ke data historis';
 
     public function handle(): int
     {
         try {
             $source = DB::connection(config('sinar_v1.connection'));
+            $instansiQuery = $source->table('t_instansi')->orderBy('id');
             $query = $source->table('t_smasuk as s')
                 ->leftJoin('t_instansi as i', 's.id_instansi', '=', 'i.id')
                 ->leftJoin('t_bagian as b', 's.id_bagian', '=', 'b.id')
@@ -33,6 +35,7 @@ class MigrateSinarV1Documents extends Command
             }
 
             $total = (clone $query)->count();
+            $totalInstansi = (clone $instansiQuery)->count();
         } catch (Throwable $exception) {
             $this->error('Koneksi atau struktur database SINAR V1 tidak dapat dibaca.');
             $this->line('Periksa SINAR_V1_DB_* pada .env, lalu jalankan php artisan config:clear.');
@@ -40,10 +43,25 @@ class MigrateSinarV1Documents extends Command
 
             return self::FAILURE;
         }
-        $this->info(($this->option('commit') ? 'MIGRASI' : 'DRY-RUN').": {$total} dokumen ditemukan.");
+        $this->info(($this->option('commit') ? 'MIGRASI' : 'DRY-RUN').": {$totalInstansi} instansi dan {$total} dokumen ditemukan.");
         if (! $this->option('commit')) {
             return self::SUCCESS;
         }
+
+        $instansiQuery->chunkById(200, function ($rows) {
+            foreach ($rows as $row) {
+                SinarV1Instansi::updateOrCreate(['legacy_id' => $row->id], [
+                    'nama_instansi' => $row->nama_instansi,
+                    'alamat' => $row->alamat ?? null,
+                    'telepon' => $row->telepon ?? null,
+                    'fax' => $row->fax ?? null,
+                    'email' => $row->email ?? null,
+                    'website' => $row->website ?? null,
+                    'legacy_created_at' => $row->created_at ?? null,
+                    'legacy_updated_at' => $row->updated_at ?? null,
+                ]);
+            }
+        });
 
         $stats = ['saved' => 0, 'files' => 0, 'missing' => 0];
         $query->chunkById(200, function ($rows) use (&$stats) {

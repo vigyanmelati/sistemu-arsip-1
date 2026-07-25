@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Arsip;
 use App\Observers\ArsipObserver;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Pagination\Paginator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-         Arsip::observe(ArsipObserver::class);
+        Paginator::useBootstrapFive();
+        Arsip::observe(ArsipObserver::class);
     }
 }

@@ -23,15 +23,7 @@ class SubBagianSuratMasukController extends Controller
     {
         $search = $request->input('search');
 
-        $surat = SuratMasuk::with('subBagian')
-
-            // FILTER BERDASARKAN SUB BAGIAN USER LOGIN
-            ->when(auth()->user()->role == 'user', function ($query) {
-                $query->where(
-                    'sub_bagian_id',
-                    auth()->user()->sub_bagian_id
-                );
-            })
+        $surat = SuratMasuk::with(['subBagian', 'instansi', 'tujuanDisposisis'])
 
             // SEARCH
             ->when($search, function ($query) use ($search) {
@@ -127,9 +119,7 @@ class SubBagianSuratMasukController extends Controller
      */
     public function show($id)
     {
-        $surat = SuratMasuk::with('subBagian')->findOrFail($id);
-
-        $this->checkAccess($surat);
+        $surat = SuratMasuk::with(['subBagian', 'instansi', 'tujuanDisposisis'])->findOrFail($id);
 
         return view('subbagian.surat_masuk.show', compact('surat'));
     }
@@ -139,9 +129,7 @@ class SubBagianSuratMasukController extends Controller
      */
     public function edit($id)
     {
-        $surat = SuratMasuk::findOrFail($id);
-
-        $this->checkAccess($surat);
+        $surat = SuratMasuk::with('tujuanDisposisis')->findOrFail($id);
 
         $subBagians = SubBagian::all();
 

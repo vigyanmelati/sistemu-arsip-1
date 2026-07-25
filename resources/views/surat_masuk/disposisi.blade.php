@@ -237,6 +237,11 @@
         <td>{{ $surat->instansi_satker }}</td>
     </tr>
     <tr>
+        <td class="label">Tujuan Disposisi</td>
+        <td class="colon">:</td>
+        <td>{{ $surat->tujuanDisposisis->pluck('nama_tujuan')->join(', ') ?: '-' }}</td>
+    </tr>
+    <tr>
         <td class="label">No. Surat</td>
         <td class="colon">:</td>
         <td>{{ $surat->nomor_dokumen }}</td>

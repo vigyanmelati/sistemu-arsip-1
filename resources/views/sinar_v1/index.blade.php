@@ -38,7 +38,7 @@
             <tbody>
             @forelse($documents as $document)
                 <tr>
-                    <td><span class="badge {{ $document->isOutgoingLetter() ? 'bg-warning text-dark' : 'bg-primary' }}">{{ $document->legacy_category_name }}</span></td>
+                    <td><span class="badge {{ $document->isCorrespondence() ? 'bg-warning text-dark' : 'bg-primary' }}">{{ $document->legacy_category_name }}</span></td>
                     <td><strong>{{ $document->nomor_dokumen ?: '—' }}</strong><br><small class="text-muted">{{ $document->tanggal_dokumen?->format('d-m-Y') ?: 'Tanggal tidak tersedia' }}</small></td>
                     <td>{{ $document->instansi_satker ?: '—' }}<br><small class="text-muted">{{ \Illuminate\Support\Str::limit($document->perihal, 90) ?: '—' }}</small></td>
                     <td>{{ $document->subBagian?->nama_sub_bagian ?: $document->legacy_bagian_name ?: 'Belum dipetakan' }}</td>

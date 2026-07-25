@@ -22,6 +22,8 @@ use App\Http\Controllers\TUDashboardController;
 use App\Http\Controllers\SinarV1DocumentController;
 use App\Http\Controllers\MasterRakController;
 use App\Http\Controllers\MasterBoxController;
+use App\Http\Controllers\SuratInstansiController;
+use App\Http\Controllers\TujuanDisposisiController;
 
 
 require __DIR__.'/auth.php';
@@ -223,6 +225,7 @@ Route::prefix('manajemen-lokasi')->name('manajemen-lokasi.')->group(function () 
     
 });
 
+Route::middleware('admin')->group(function () {
 Route::get('/surat-masuk/template', function () {
     return response()->download(
         public_path('template/template_import_surat_masuk.xlsx')
@@ -235,12 +238,26 @@ Route::get('/surat-masuk/export', [SuratMasukController::class, 'export'])
 Route::post('/surat-masuk/import', [SuratMasukController::class, 'import'])
     ->name('surat-masuk.import');
 
+Route::middleware('admin')->group(function () {
+    Route::get('/surat-instansi', [SuratInstansiController::class, 'index'])->name('surat-instansi.index');
+    Route::post('/surat-instansi', [SuratInstansiController::class, 'store'])->name('surat-instansi.store');
+    Route::post('/surat-instansi/tambah-cepat', [SuratInstansiController::class, 'quickStore'])->name('surat-instansi.quick-store');
+    Route::get('/surat-instansi/cek-duplikat', [SuratInstansiController::class, 'duplicates'])->name('surat-instansi.duplicates');
+    Route::post('/surat-instansi/gabung-duplikat', [SuratInstansiController::class, 'mergeDuplicates'])->name('surat-instansi.merge-duplicates');
+    Route::put('/surat-instansi/{instansi}', [SuratInstansiController::class, 'update'])->name('surat-instansi.update');
+    Route::get('/tujuan-disposisi', [TujuanDisposisiController::class, 'index'])->name('tujuan-disposisi.index');
+    Route::post('/tujuan-disposisi', [TujuanDisposisiController::class, 'store'])->name('tujuan-disposisi.store');
+    Route::put('/tujuan-disposisi/{tujuan}', [TujuanDisposisiController::class, 'update'])->name('tujuan-disposisi.update');
+});
+
 Route::resource('surat-masuk', SuratMasukController::class);
 
 Route::get(
     'surat-masuk/{id}/disposisi',
     [SuratMasukController::class, 'disposisi']
 )->name('surat-masuk.disposisi');
+
+});
 
 
 
@@ -251,10 +268,10 @@ Route::get(
 
 
 Route::middleware(['auth', 'nocache'])->group(function () {
-    Route::get('/surat-masuk/cek-duplikasi', [
+Route::get('/surat-masuk/cek-duplikasi', [
     SuratMasukController::class,
     'cekDuplikasi'
-])->name('surat-masuk.cek-duplikasi');
+])->name('surat-masuk.cek-duplikasi')->middleware('admin');
      Route::resource('arsip', ArsipController::class);
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::get('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
@@ -362,27 +379,13 @@ Route::put('/arsip-masuk/{id}', [AdminArsipMasukController::class, 'update'])->n
 });
 
 Route::middleware(['auth'])->prefix('subbagian')->name('subbagian.')->group(function () {
-    Route::get('/surat-masuk/template', function () {
-        return response()->download(
-            public_path('template/template_import_surat_masuk.xlsx')
-        );
-    })->name('surat-masuk.template');
-
-    Route::get('/surat-masuk/export', [SuratMasukController::class, 'export'])
-        ->name('surat-masuk.export');
-
-    Route::post('/surat-masuk/import', [SuratMasukController::class, 'import'])
-        ->name('surat-masuk.import');
-
         Route::get(
             '/surat-masuk/{id}/disposisi',
             [SubBagianSuratMasukController::class, 'disposisi']
         )->name('surat-masuk.disposisi');
 
-        Route::resource(
-            'surat-masuk',
-            SubBagianSuratMasukController::class
-        );
+        Route::resource('surat-masuk', SubBagianSuratMasukController::class)
+            ->only(['index', 'show']);
 });
 Route::prefix('subbagian/riwayat-pemindahan')
     ->name('subbagian.riwayat-pemindahan.')

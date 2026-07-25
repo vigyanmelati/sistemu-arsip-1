@@ -411,14 +411,13 @@
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link d-flex align-items-center {{ request()->routeIs('arsip.*') || request()->routeIs('surat-masuk.*') ? 'active' : '' }}"
-                       data-bs-toggle="collapse" href="#menuArsip" role="button" aria-expanded="{{ request()->routeIs('arsip.*') || request()->routeIs('surat-masuk.*') ? 'true' : 'false' }}">
+                    <a class="nav-link d-flex align-items-center {{ request()->routeIs('arsip.*') ? 'active' : '' }}"
+                       data-bs-toggle="collapse" href="#menuArsip" role="button" aria-expanded="{{ request()->routeIs('arsip.*') ? 'true' : 'false' }}">
                         <i class="bi bi-folder"></i> <span>Kelola Arsip</span>
                         <i class="bi bi-chevron-down ms-auto"></i>
                     </a>
-                    <div class="collapse {{ request()->routeIs('arsip.*') || request()->routeIs('surat-masuk.*') ? 'show' : '' }}" id="menuArsip">
+                    <div class="collapse {{ request()->routeIs('arsip.*') ? 'show' : '' }}" id="menuArsip">
                         <ul class="submenu-list">
-                            <li><a class="nav-link {{ request()->routeIs('surat-masuk.*') ? 'active' : '' }}" href="{{ route('surat-masuk.index') }}"><i class="bi bi-envelope-paper"></i> Surat Masuk</a></li>
                             <li><a class="nav-link {{ request()->routeIs('arsip.*') ? 'active' : '' }}" href="{{ route('arsip.index') }}"><i class="bi bi-folder2-open"></i> Arsip Internal</a></li>
                         </ul>
                     </div>
@@ -468,14 +467,13 @@
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('subbagian.dashboard') ? 'active' : '' }}" href="{{ route('subbagian.dashboard') }}"><i class="bi bi-speedometer2"></i> <span>Dashboard</span></a></li>
                 <!-- <li class="nav-item"><a class="nav-link {{ request()->routeIs('subbagian.arsip.index') ? 'active' : '' }}" href="{{ route('subbagian.arsip.index') }}"><i class="bi bi-search"></i> <span>Kelola Arsip</span></a></li> -->
                 <li class="nav-item">
-                    <a class="nav-link d-flex align-items-center {{ request()->routeIs('subbagian.arsip.*') || request()->routeIs('subbagian.surat-masuk.*') ? 'active' : '' }}"
-                       data-bs-toggle="collapse" href="#menuArsip" role="button" aria-expanded="{{ request()->routeIs('subbagian.arsip.*') || request()->routeIs('subbagian.surat-masuk.*') ? 'true' : 'false' }}">
+                    <a class="nav-link d-flex align-items-center {{ request()->routeIs('subbagian.arsip.*') ? 'active' : '' }}"
+                       data-bs-toggle="collapse" href="#menuArsip" role="button" aria-expanded="{{ request()->routeIs('subbagian.arsip.*') ? 'true' : 'false' }}">
                         <i class="bi bi-folder"></i> <span>Kelola Arsip</span>
                         <i class="bi bi-chevron-down ms-auto"></i>
                     </a>
-                    <div class="collapse {{ request()->routeIs('subbagian.arsip.*') || request()->routeIs('subbagian.surat-masuk.*') ? 'show' : '' }}" id="menuArsip">
+                    <div class="collapse {{ request()->routeIs('subbagian.arsip.*') ? 'show' : '' }}" id="menuArsip">
                         <ul class="submenu-list">
-                            <li><a class="nav-link {{ request()->routeIs('subbagian.surat-masuk.*') ? 'active' : '' }}" href="{{ route('subbagian.surat-masuk.index') }}"><i class="bi bi-envelope-paper"></i> Surat Masuk</a></li>
                             <li><a class="nav-link {{ request()->routeIs('subbagian.arsip.*') ? 'active' : '' }}" href="{{ route('subbagian.arsip.index') }}"><i class="bi bi-folder2-open"></i> Arsip Internal</a></li>
                         </ul>
                     </div>
@@ -500,15 +498,29 @@
         </a>
     </li>
 
-    <li class="nav-item">
-        <a class="nav-link {{ request()->routeIs('surat-masuk.*') ? 'active' : '' }}"
-           href="{{ route('surat-masuk.index') }}">
-            <i class="bi bi-envelope-paper"></i>
-            <span>Surat Masuk</span>
-        </a>
-    </li>
-
             @endif
+
+            @php
+                $isPengelolaSurat = in_array(strtolower((string) auth()->user()->role), ['admin', 'super_admin', 'tu'], true);
+                $suratMenuActive = $isPengelolaSurat
+                    ? request()->routeIs('surat-masuk.*', 'surat-instansi.*', 'tujuan-disposisi.*')
+                    : request()->routeIs('subbagian.surat-masuk.*');
+            @endphp
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center {{ $suratMenuActive ? 'active' : '' }}"
+                   data-bs-toggle="collapse" href="#menuSuratMasuk" role="button">
+                    <i class="bi bi-envelope-paper"></i><span>Surat Masuk</span><i class="bi bi-chevron-down ms-auto"></i>
+                </a>
+                <div class="collapse {{ $suratMenuActive ? 'show' : '' }}" id="menuSuratMasuk">
+                    <ul class="submenu-list">
+                        <li><a class="nav-link {{ request()->routeIs($isPengelolaSurat ? 'surat-masuk.*' : 'subbagian.surat-masuk.*') ? 'active' : '' }}" href="{{ $isPengelolaSurat ? route('surat-masuk.index') : route('subbagian.surat-masuk.index') }}"><i class="bi bi-list-ul"></i> Daftar Surat Masuk</a></li>
+                        @if($isPengelolaSurat)
+                            <li><a class="nav-link {{ request()->routeIs('surat-instansi.*') ? 'active' : '' }}" href="{{ route('surat-instansi.index') }}"><i class="bi bi-building"></i> Instansi/Satker</a></li>
+                            <li><a class="nav-link {{ request()->routeIs('tujuan-disposisi.*') ? 'active' : '' }}" href="{{ route('tujuan-disposisi.index') }}"><i class="bi bi-signpost-split"></i> Tujuan Disposisi</a></li>
+                        @endif
+                    </ul>
+                </div>
+            </li>
 
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('sinar-v1.*') ? 'active' : '' }}" href="{{ route('sinar-v1.index') }}">

@@ -1,39 +1,22 @@
 @extends('layouts.app')
 
+@section('page-title', 'Surat Masuk')
+@section('page-subtitle', 'Daftar Surat Masuk KPU Provinsi Bali')
+
 @section('content')
-<div class="container-fluid px-4">
+<div class="container-fluid px-0">
     <div class="row">
         <div class="col-12">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card">
                 {{-- Header Card with gradient --}}
-               <div class="card-header bg-white border-0 py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+               <div class="card-header">
     <h4 class="mb-2 mb-md-0 fw-bold text-primary">
         <i class="fas fa-envelope-open-text me-2"></i> Surat Masuk
     </h4>
 
-    <div class="d-flex gap-2 flex-wrap">
-        {{-- Import --}}
-        <!-- <button class="btn btn-success rounded-pill px-4 shadow-sm"
-                data-bs-toggle="modal"
-                data-bs-target="#importModal">
-            <i class="fas fa-file-import me-1"></i> Import
-        </button> -->
-
-        {{-- Export --}}
-        <a href="{{ route('surat-masuk.export') }}"
-           class="btn btn-info text-white rounded-pill px-4 shadow-sm">
-            <i class="fas fa-file-excel me-1"></i> Export
-        </a>
-
-        <!-- {{-- Tambah --}}
-        <a href="{{ route('surat-masuk.create') }}"
-           class="btn btn-primary rounded-pill px-4 shadow-sm">
-            <i class="fas fa-plus me-1"></i> Tambah Surat
-        </a> -->
-    </div>
 </div>
 
-                <div class="alert alert-info border-0 rounded-4 shadow-sm mx-3 mt-3 mb-4">
+                <div class="alert alert-info border-0 shadow-sm mb-4">
                     <div class="d-flex align-items-start">
                         <i class="fas fa-info-circle fa-lg me-3 mt-1 text-primary"></i>
 
@@ -43,35 +26,30 @@
                             </h6>
 
                             <p class="mb-0 text-muted">
-                               Menu ini digunakan untuk menginput dan mengelola seluruh <b> surat masuk </b>
-                                yang berasal dari instansi luar, lembaga, maupun satuan kerja lainnya, 
-                                serta melakukan pencetakan lembar disposisi surat untuk tindak lanjut.
+                               Menu ini menampilkan seluruh <b>surat masuk</b> dari instansi luar,
+                               lembaga, maupun satuan kerja lainnya. Pencatatan dan koreksi data
+                               dilakukan oleh petugas TU atau administrator.
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <div class="card-body pt-0">
+                <div class="card-body">
                     {{-- Form pencarian yang lebih responsif --}}
-                    <div class="row mb-4">
-                        <div class="col-md-6 col-lg-5">
-                            <form method="GET" action="{{ route('subbagian.surat-masuk.index') }}" class="d-flex gap-2">
+                    <div class="mb-4">
+                            <form method="GET" action="{{ route('subbagian.surat-masuk.index') }}">
                                 <div class="input-group">
-                                    <span class="input-group-text bg-white border-end-0 rounded-pill rounded-end">
-                                        <i class="fas fa-search text-muted"></i>
-                                    </span>
-                                    <input type="text" name="search" class="form-control border-start-0 rounded-pill rounded-start" 
+                                    <input type="text" name="search" class="form-control"
                                            placeholder="Cari No. Surat, Perihal, atau Instansi..." 
                                            value="{{ request('search') }}">
+                                    <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Cari</button>
                                     @if(request('search'))
-                                        <a href="{{ route('subbagian.surat-masuk.index') }}" class="btn btn-outline-secondary rounded-pill ms-2">
-                                            <i class="fas fa-times"></i> Reset
+                                        <a href="{{ route('subbagian.surat-masuk.index') }}" class="btn btn-outline-secondary">
+                                            <i class="bi bi-x-lg"></i> Reset
                                         </a>
                                     @endif
                                 </div>
-                                <button class="btn btn-primary rounded-pill px-4" type="submit">Cari</button>
                             </form>
-                        </div>
                     </div>
 {{-- ALERT ERROR IMPORT --}}
 @if(session('import_errors'))
@@ -102,20 +80,16 @@
 </div>
 @endif
 
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="bg-light">
+                    <div class="table-scroll-top" aria-label="Geser tabel secara horizontal"><div></div></div>
+                    <div class="table-responsive surat-table-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+                        <table class="table table-hover align-middle" style="min-width:1250px">
+                            <thead>
                                 <tr class="text-center">
-                                    <th width="5%" class="border-0 rounded-start">No</th>
-                                    <th width="8%" class="border-0">No. Agenda</th>
-                                    <th width="12%" class="border-0">Tanggal Dokumen</th>
-                                    <th width="12%" class="border-0">Tanggal Penyelesaian</th>
-                                    <th width="12%" class="border-0">No. Surat</th>
-                                    <th width="15%" class="border-0">Perihal</th>
-                                    <th width="12%" class="border-0">Asal Dokumen</th>
-                                    <th width="10%" class="border-0">Dokumen</th>
-                                    <th width="12%" class="border-0">Keterangan</th>
-                                    <th width="15%" class="border-0 rounded-end">Aksi</th>
+                                    <th style="min-width:55px">No</th><th style="min-width:110px">No. Agenda</th>
+                                    <th style="min-width:130px">Tanggal Dokumen</th><th style="min-width:150px">Tanggal Penyelesaian</th>
+                                    <th style="min-width:180px">No. Surat</th><th style="min-width:260px">Perihal</th>
+                                    <th style="min-width:220px">Asal Dokumen</th><th style="min-width:105px">Dokumen</th>
+                                    <th style="min-width:180px">Keterangan</th><th style="min-width:100px">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -132,7 +106,7 @@
                                         @if($item->file_input)
                                             <a href="{{ asset('storage/surat_masuk/' . $item->file_input) }}" 
                                             target="_blank"
-                                            class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                            class="btn btn-sm btn-outline-primary">
                                                 <i class="fas fa-file-pdf me-1"></i> Lihat
                                             </a>
                                         @else
@@ -141,44 +115,22 @@
                                     </td>
                                     <td>{{ Str::limit($item->catatan, 30, '...') ?? '-' }}</td>
                                     <td>
-    <div class="d-flex gap-2 justify-content-center">
+    <div class="d-flex gap-1 justify-content-center">
 
         <a href="{{ route('subbagian.surat-masuk.show', $item->id) }}"
-           class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+           class="btn btn-sm btn-info text-white"
            data-bs-toggle="tooltip"
            title="Detail">
             <i class="fas fa-eye me-1"></i> Detail
         </a>
 
-        <!-- <a href="{{ route('subbagian.surat-masuk.edit', $item->id) }}"
-           class="btn btn-sm btn-outline-warning rounded-pill px-3"
-           data-bs-toggle="tooltip"
-           title="Edit">
-            <i class="fas fa-edit me-1"></i> Edit
-        </a>
-
         <a href="{{ route('subbagian.surat-masuk.disposisi', $item->id) }}"
            target="_blank"
-           class="btn btn-sm btn-outline-info rounded-pill px-3"
+           class="btn btn-sm btn-primary"
            data-bs-toggle="tooltip"
            title="Cetak Disposisi">
             <i class="fas fa-print me-1"></i> Disposisi
         </a>
-
-        <form action="{{ route('subbagian.surat-masuk.destroy', $item->id) }}"
-              method="POST"
-              style="display:inline-block">
-            @csrf
-            @method('DELETE')
-
-            <button type="submit"
-                    class="btn btn-sm btn-outline-danger rounded-pill px-3"
-                    data-bs-toggle="tooltip"
-                    title="Hapus"
-                    onclick="return confirm('Yakin ingin menghapus surat ini?')">
-                <i class="fas fa-trash-alt me-1"></i> Hapus
-            </button>
-        </form> -->
 
     </div>
 </td>
@@ -197,92 +149,13 @@
 
                     {{-- Pagination dengan styling center --}}
                     @if(method_exists($surat, 'links') && $surat->hasPages())
-                        <div class="d-flex justify-content-center mt-4">
-                            {{ $surat->appends(request()->query())->links() }}
+                        <div class="surat-pagination mt-4">
+                            {{ $surat->appends(request()->query())->links('pagination::bootstrap-5') }}
                         </div>
                     @endif
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- Modal Import -->
-<div class="modal fade" id="importModal" tabindex="-1">
-    <div class="modal-dialog">
-        <form action="{{ route('surat-masuk.import') }}"
-              method="POST"
-              enctype="multipart/form-data"
-              class="modal-content border-0 rounded-4">
-
-            @csrf
-
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">
-                    <i class="fas fa-file-import me-2"></i>
-                    Import Surat Masuk
-                </h5>
-
-                <button type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class="modal-body">
-
-                {{-- Download Template --}}
-                <div class="alert alert-info border-0 rounded-4 mb-3">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-
-                        <div>
-                            <div class="fw-bold mb-1">
-                                Template Excel Import
-                            </div>
-
-                            <small class="text-muted">
-                                Download template terlebih dahulu agar format sesuai sistem.
-                            </small>
-                        </div>
-
-                       <a href="{{ asset('template/template_import_surat_masuk.xlsx') }}"
-                        download
-                        class="btn btn-primary rounded-pill">
-                            <i class="fas fa-download me-1"></i>
-                            Download Template
-                        </a>
-                    </div>
-                </div>
-
-                <label class="form-label fw-semibold">
-                    Upload File Excel
-                </label>
-
-                <input type="file"
-                       name="file"
-                       class="form-control"
-                       accept=".xlsx,.xls,.csv"
-                       required>
-
-                <small class="text-muted">
-                    Format yang didukung: xlsx, xls, csv
-                </small>
-            </div>
-
-            <div class="modal-footer">
-                <button type="button"
-                        class="btn btn-light"
-                        data-bs-dismiss="modal">
-                    Batal
-                </button>
-
-                <button type="submit"
-                        class="btn btn-success">
-                    <i class="fas fa-upload me-1"></i>
-                    Import
-                </button>
-            </div>
-
-        </form>
     </div>
 </div>
 
@@ -358,6 +231,10 @@
         border-radius: 50rem !important;
         margin: 0 2px;
     }
+    .surat-pagination nav > div:first-child { display:none !important; }
+    .surat-pagination nav > div:last-child { display:flex !important; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
+    .surat-pagination nav p { margin-bottom:0; color:#6c757d; font-size:.875rem; }
+    .surat-pagination .pagination { margin-bottom:0; }
     /* Responsive tambahan */
     @media (max-width: 768px) {
         .table td, .table th {
@@ -368,16 +245,42 @@
             font-size: 0.75rem;
         }
     }
+    .table-responsive::-webkit-scrollbar { height: 6px; }
+    .table-responsive::-webkit-scrollbar-track { background: #f1f1f1; }
+    .table-responsive::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+    .table-scroll-top { overflow-x:auto; overflow-y:hidden; height:16px; margin-bottom:6px; border-radius:4px; scrollbar-color:#888 #f1f1f1; }
+    .table-scroll-top > div { height:1px; }
+    .table-scroll-top::-webkit-scrollbar { height:12px; }
+    .table-scroll-top::-webkit-scrollbar-track { background:#f1f1f1; border-radius:4px; }
+    .table-scroll-top::-webkit-scrollbar-thumb { background:#888; border-radius:4px; }
+    .table thead th { background:#f8f9fa; color:#333; font-weight:600; padding:12px 10px; border-bottom:2px solid #dee2e6; position:sticky; top:0; z-index:20; box-shadow:inset 0 -2px 0 #dee2e6; }
+    .table tbody tr:hover { background:#f8f9fa; transform:none; box-shadow:none; }
+    .table tbody td { background:#fff; color:#495057; }
+    .table tbody tr:hover td { background:#f8f9fa; }
+    .surat-table-scroll { max-height:65vh; overflow:auto !important; }
 </style>
 @endpush
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
         // Inisialisasi tooltip Bootstrap
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         tooltipTriggerList.forEach(function (tooltipTriggerEl) {
             new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        document.querySelectorAll('.table-scroll-top').forEach(function(topScroll) {
+            const tableScroll = topScroll.nextElementSibling;
+            const table = tableScroll?.querySelector('table');
+            if (!table) return;
+            const spacer = topScroll.firstElementChild;
+            let syncing = false;
+            const updateWidth = () => { spacer.style.width = table.scrollWidth + 'px'; };
+            topScroll.addEventListener('scroll', () => { if (syncing) return; syncing = true; tableScroll.scrollLeft = topScroll.scrollLeft; syncing = false; });
+            tableScroll.addEventListener('scroll', () => { if (syncing) return; syncing = true; topScroll.scrollLeft = tableScroll.scrollLeft; syncing = false; });
+            updateWidth();
+            window.addEventListener('resize', updateWidth);
+            if (window.ResizeObserver) new ResizeObserver(updateWidth).observe(table);
         });
     });
 </script>

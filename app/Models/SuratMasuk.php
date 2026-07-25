@@ -14,4 +14,20 @@ class SuratMasuk extends Model
     {
         return $this->belongsTo(SubBagian::class);
     }
+
+    public function instansi()
+    {
+        return $this->belongsTo(SuratInstansi::class, 'instansi_id');
+    }
+
+    public function tujuanDisposisis()
+    {
+        return $this->belongsToMany(TujuanDisposisi::class, 'surat_masuk_tujuan_disposisi')
+            ->withTimestamps();
+    }
+
+    public function sinarV1Document()
+    {
+        return $this->belongsTo(SinarV1Document::class);
+    }
 }
