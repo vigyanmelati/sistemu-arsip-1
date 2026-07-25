@@ -19,6 +19,7 @@ use App\Http\Controllers\SuratMasukController;
 use App\Http\Controllers\LintasUnitController;
 use App\Http\Controllers\SubBagianSuratMasukController;
 use App\Http\Controllers\TUDashboardController;
+use App\Http\Controllers\SinarV1DocumentController;
 use App\Http\Controllers\MasterRakController;
 use App\Http\Controllers\MasterBoxController;
 
@@ -27,6 +28,15 @@ require __DIR__.'/auth.php';
 
 
 Route::middleware(['auth', 'nocache'])->group(function () {
+    Route::get('/sinar-v1', [SinarV1DocumentController::class, 'index'])->name('sinar-v1.index');
+    Route::get('/sinar-v1/import', [SinarV1DocumentController::class, 'importPage'])->name('sinar-v1.import');
+    Route::post('/sinar-v1/import', [SinarV1DocumentController::class, 'runImport'])->name('sinar-v1.import.run');
+    Route::post('/sinar-v1/import/stage-files', [SinarV1DocumentController::class, 'stageFiles'])->name('sinar-v1.import.stage-files');
+    Route::delete('/sinar-v1/import/stage-files', [SinarV1DocumentController::class, 'clearStaging'])->name('sinar-v1.import.stage-files.clear');
+    Route::get('/sinar-v1/{document}', [SinarV1DocumentController::class, 'show'])->name('sinar-v1.show');
+    Route::get('/sinar-v1/{document}/download', [SinarV1DocumentController::class, 'download'])->name('sinar-v1.download');
+    Route::put('/sinar-v1/{document}/verifikasi', [SinarV1DocumentController::class, 'updateVerification'])->name('sinar-v1.verification.update');
+    Route::post('/sinar-v1/{document}/siapkan-arsip', [SinarV1DocumentController::class, 'prepareArchive'])->name('sinar-v1.archive.prepare');
     // routes/web.php
 Route::post('/arsip/{id}/update-field', [ArsipController::class, 'updateInline'])
     ->name('arsip.update-field');
@@ -404,5 +414,3 @@ Route::prefix('subbagian/riwayat-pemindahan')
             ->name('kembalikan-internal');
 
     });
-
-
