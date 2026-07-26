@@ -107,9 +107,17 @@ class SuratMasukController extends Controller
                 'kepada'               => 'required',
                 'perihal'              => 'required',
                 'file_input'           => 'nullable|mimes:pdf,jpg,jpeg,png|max:2048',
+                'submit_action'        => 'nullable|in:save,save_print',
+                'allow_duplicate'      => 'nullable|boolean',
             ]);
 
             $instansi = SuratInstansi::findOrFail($request->instansi_id);
+            $duplicate = $this->findPotentialDuplicate($request);
+            if ($duplicate && ! $request->boolean('allow_duplicate')) {
+                return back()->withInput()->withErrors([
+                    'duplicate' => 'Surat yang berpotensi sama sudah tercatat. Periksa data tersebut atau centang konfirmasi untuk tetap menyimpan.',
+                ])->with('potential_duplicate', $duplicate);
+            }
 
             $fileName = null;
 
@@ -139,6 +147,10 @@ class SuratMasukController extends Controller
             ]);
             $surat->tujuanDisposisis()->sync($request->input('tujuan_disposisi_ids', []));
 
+            if ($request->input('submit_action') === 'save_print') {
+                return redirect()->route('surat-masuk.disposisi', $surat->id);
+            }
+
             return redirect()
                 ->route('surat-masuk.index')
                 ->with('success', 'Surat masuk berhasil ditambahkan.');
@@ -151,6 +163,38 @@ class SuratMasukController extends Controller
                 ->withInput()
                 ->with('error', 'Data gagal disimpan!');
         }
+    }
+
+    public function checkPotentialDuplicate(Request $request)
+    {
+        $request->validate([
+            'instansi_id' => 'required|exists:surat_instansis,id',
+            'tanggal_dokumen' => 'required|date',
+            'nomor_dokumen' => 'required|string|max:255',
+        ]);
+
+        $duplicate = $this->findPotentialDuplicate($request);
+
+        return response()->json([
+            'duplicate' => (bool) $duplicate,
+            'data' => $duplicate ? [
+                'id' => $duplicate->id,
+                'nomor_agenda' => $duplicate->nomor_agenda,
+                'nomor_dokumen' => $duplicate->nomor_dokumen,
+                'tanggal_dokumen' => optional($duplicate->tanggal_dokumen)->format('d-m-Y'),
+                'instansi' => $duplicate->instansi_satker,
+                'perihal' => $duplicate->perihal,
+                'detail_url' => route('surat-masuk.show', $duplicate->id),
+            ] : null,
+        ]);
+    }
+
+    private function findPotentialDuplicate(Request $request): ?SuratMasuk
+    {
+        return SuratMasuk::where('instansi_id', $request->input('instansi_id'))
+            ->whereDate('tanggal_dokumen', $request->input('tanggal_dokumen'))
+            ->whereRaw('LOWER(TRIM(nomor_dokumen)) = ?', [mb_strtolower(trim((string) $request->input('nomor_dokumen')))])
+            ->first();
     }
 
     /**
@@ -170,7 +214,10 @@ class SuratMasukController extends Controller
     {
         $surat = SuratMasuk::findOrFail($id);
 
-        $instansis = SuratInstansi::where('aktif', true)->orWhereKey($surat->instansi_id)->orderBy('nama_instansi')->get();
+        $instansis = SuratInstansi::where('aktif', true)
+            ->when($surat->instansi_id, fn ($query, $instansiId) => $query->orWhere('id', $instansiId))
+            ->orderBy('nama_instansi')
+            ->get();
         $tujuanDisposisis = TujuanDisposisi::where('aktif', true)
             ->orWhereIn('id', $surat->tujuanDisposisis()->pluck('tujuan_disposisis.id'))
             ->orderBy('nama_tujuan')->get();
@@ -260,9 +307,16 @@ class SuratMasukController extends Controller
     {
         $surat = SuratMasuk::with('tujuanDisposisis')->findOrFail($id);
 
+        return view('surat_masuk.disposisi_preview', compact('surat'));
+    }
+
+    public function disposisiPdf($id)
+    {
+        $surat = SuratMasuk::with('tujuanDisposisis')->findOrFail($id);
+
         $pdf = Pdf::loadView('surat_masuk.disposisi', compact('surat'));
 
-        return $pdf->stream('disposisi.pdf');
+        return $pdf->stream('disposisi-surat-'.$surat->id.'.pdf');
     }
 
     public function export()

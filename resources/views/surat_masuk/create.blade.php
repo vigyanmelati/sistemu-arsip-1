@@ -41,6 +41,7 @@
               enctype="multipart/form-data" id="formSuratMasuk">
 
             @csrf
+            <input type="hidden" name="submit_action" id="submitAction" value="save">
 
             <div class="row">
 
@@ -74,6 +75,7 @@
 
                     <input type="date"
                            name="tanggal_dokumen"
+                           id="tanggalDokumen"
                            class="form-control"
                            value="{{ old('tanggal_dokumen') }}">
                 </div>
@@ -102,6 +104,7 @@
 
                     <input type="text"
                            name="nomor_dokumen"
+                           id="nomorDokumen"
                            class="form-control"
                            placeholder="Enter Text"
                            value="{{ old('nomor_dokumen') }}">
@@ -120,6 +123,21 @@
                            value="{{ old('nomor_agenda') }}">
                 </div>
 
+            </div>
+
+            <div id="duplicateWarning" class="alert alert-warning d-none" role="alert">
+                <div class="d-flex align-items-start gap-2">
+                    <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="fw-bold mb-1">Surat yang berpotensi sama sudah tercatat</h6>
+                        <div id="duplicateSummary" class="small mb-2"></div>
+                        <a id="duplicateDetailLink" href="#" target="_blank" class="btn btn-sm btn-outline-dark mb-2"><i class="bi bi-eye"></i> Lihat Surat Lama</a>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="allow_duplicate" value="1" id="allowDuplicate" @checked(old('allow_duplicate'))>
+                            <label class="form-check-label fw-semibold" for="allowDuplicate">Surat ini memang berbeda; tetap simpan sebagai data baru.</label>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="row">
@@ -196,9 +214,14 @@
 
             </div>
 
-            <button type="submit"
+            <button type="submit" value="save"
                     class="btn btn-primary" id="btnSubmitSuratMasuk">
-                Submit
+                <i class="bi bi-save me-1"></i> Simpan
+            </button>
+
+            <button type="submit" value="save_print"
+                    class="btn btn-success" id="btnSubmitCetakDisposisi">
+                <i class="bi bi-printer me-1"></i> Simpan & Cetak Disposisi
             </button>
 
             <button type="reset"
@@ -249,6 +272,7 @@ function chooseInstansi(item) {
     document.getElementById('instansiError').classList.add('d-none');
     suggestions.classList.add('d-none');
     instansiSearch.setAttribute('aria-expanded', 'false');
+    scheduleDuplicateCheck();
 }
 
 function showSuggestions() {
@@ -280,9 +304,65 @@ function showSuggestions() {
     instansiSearch.setAttribute('aria-expanded', suggestions.classList.contains('d-none') ? 'false' : 'true');
 }
 
-instansiSearch.addEventListener('input', () => { instansiId.value = ''; showSuggestions(); });
+instansiSearch.addEventListener('input', () => { instansiId.value = ''; showSuggestions(); hideDuplicateWarning(); });
 instansiSearch.addEventListener('focus', showSuggestions);
 document.addEventListener('click', event => { if (!document.getElementById('instansiCombobox').contains(event.target)) suggestions.classList.add('d-none'); });
+
+const tanggalDokumen = document.getElementById('tanggalDokumen');
+const nomorDokumen = document.getElementById('nomorDokumen');
+const duplicateWarning = document.getElementById('duplicateWarning');
+const duplicateSummary = document.getElementById('duplicateSummary');
+const duplicateDetailLink = document.getElementById('duplicateDetailLink');
+const allowDuplicate = document.getElementById('allowDuplicate');
+let duplicateTimer;
+let duplicateRequest;
+
+function hideDuplicateWarning() {
+    duplicateWarning.classList.add('d-none');
+    duplicateSummary.textContent = '';
+    duplicateDetailLink.href = '#';
+    allowDuplicate.checked = false;
+}
+
+async function checkPotentialDuplicate() {
+    const params = new URLSearchParams({
+        instansi_id: instansiId.value,
+        tanggal_dokumen: tanggalDokumen.value,
+        nomor_dokumen: nomorDokumen.value.trim()
+    });
+    if (!instansiId.value || !tanggalDokumen.value || !nomorDokumen.value.trim()) {
+        hideDuplicateWarning();
+        return;
+    }
+    if (duplicateRequest) duplicateRequest.abort();
+    duplicateRequest = new AbortController();
+    try {
+        const response = await fetch('{{ route('surat-masuk.check-potential-duplicate') }}?' + params, {
+            headers: {'Accept': 'application/json'}, signal: duplicateRequest.signal
+        });
+        if (!response.ok) return;
+        const result = await response.json();
+        if (!result.duplicate) {
+            hideDuplicateWarning();
+            return;
+        }
+        const data = result.data;
+        duplicateSummary.textContent = `${data.nomor_dokumen} · Agenda ${data.nomor_agenda || '-'} · ${data.tanggal_dokumen} · ${data.instansi} · ${data.perihal}`;
+        duplicateDetailLink.href = data.detail_url;
+        duplicateWarning.classList.remove('d-none');
+    } catch (error) {
+        if (error.name !== 'AbortError') console.error('Pemeriksaan duplikat gagal.', error);
+    }
+}
+
+function scheduleDuplicateCheck() {
+    clearTimeout(duplicateTimer);
+    duplicateTimer = setTimeout(checkPotentialDuplicate, 400);
+}
+
+tanggalDokumen.addEventListener('change', scheduleDuplicateCheck);
+nomorDokumen.addEventListener('input', scheduleDuplicateCheck);
+if (instansiId.value && tanggalDokumen.value && nomorDokumen.value.trim()) scheduleDuplicateCheck();
 
 document.getElementById('quickInstansiForm').addEventListener('submit', async function (event) {
     event.preventDefault();
@@ -317,9 +397,11 @@ document.getElementById('formSuratMasuk').addEventListener('submit', function (e
         instansiSearch.focus();
         return;
     }
-    const btn = document.getElementById('btnSubmitSuratMasuk');
+    const btn = e.submitter || document.getElementById('btnSubmitSuratMasuk');
+    document.getElementById('submitAction').value = btn.value || 'save';
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' +
+        (btn.value === 'save_print' ? 'Menyimpan & menyiapkan disposisi...' : 'Menyimpan...');
 });
 </script>
 @endpush

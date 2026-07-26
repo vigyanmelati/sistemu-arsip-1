@@ -132,7 +132,7 @@
 @endif
                     <div class="table-scroll-top" aria-label="Geser tabel secara horizontal"><div></div></div>
                     <div class="table-responsive surat-table-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-                        <table class="table table-hover align-middle" style="min-width:1450px">
+                        <table class="table table-hover align-middle" style="min-width:1650px">
                             <thead>
                                 <tr class="text-center">
                                     <th style="min-width:55px">No</th>
@@ -143,6 +143,7 @@
                                     <th style="min-width:260px">Perihal</th>
                                     <th style="min-width:220px">Asal Dokumen</th>
                                     <th style="min-width:105px">Dokumen</th>
+                                    <th style="min-width:200px">Tujuan Disposisi</th>
                                     <th style="min-width:180px">Keterangan</th>
                                    
 
@@ -179,6 +180,13 @@
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
+                                    </td>
+                                    <td>
+                                        @forelse($item->tujuanDisposisis as $tujuan)
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle me-1 mb-1">{{ $tujuan->nama_tujuan }}</span>
+                                        @empty
+                                            <span class="text-muted">-</span>
+                                        @endforelse
                                     </td>
                                     <td>{{ Str::limit($item->catatan, 30, '...') ?? '-' }}</td>
                                 
@@ -255,7 +263,7 @@
                          
                                 @empty
                                 <tr>
-                                    <td colspan="10" class="text-center text-muted py-5">
+                                    <td colspan="{{ request('filter') == 'duplikasi' ? 12 : 11 }}" class="text-center text-muted py-5">
                                         <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
                                         Belum ada data surat masuk.
                                     </td>

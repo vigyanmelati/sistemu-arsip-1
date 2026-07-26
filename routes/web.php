@@ -237,6 +237,8 @@ Route::get('/surat-masuk/export', [SuratMasukController::class, 'export'])
 
 Route::post('/surat-masuk/import', [SuratMasukController::class, 'import'])
     ->name('surat-masuk.import');
+Route::get('/surat-masuk/periksa-duplikat-input', [SuratMasukController::class, 'checkPotentialDuplicate'])
+    ->name('surat-masuk.check-potential-duplicate');
 
 Route::middleware('admin')->group(function () {
     Route::get('/surat-instansi', [SuratInstansiController::class, 'index'])->name('surat-instansi.index');
@@ -256,6 +258,10 @@ Route::get(
     'surat-masuk/{id}/disposisi',
     [SuratMasukController::class, 'disposisi']
 )->name('surat-masuk.disposisi');
+Route::get(
+    'surat-masuk/{id}/disposisi/pdf',
+    [SuratMasukController::class, 'disposisiPdf']
+)->name('surat-masuk.disposisi.pdf');
 
 });
 

@@ -10,6 +10,11 @@ class SuratMasuk extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'tanggal_dokumen' => 'date',
+        'tanggal_penyelesaian' => 'date',
+    ];
+
     public function subBagian()
     {
         return $this->belongsTo(SubBagian::class);
