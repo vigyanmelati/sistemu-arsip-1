@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\SuratMasuk;
-use App\Models\SubBagian;
+use App\Models\SuratInstansi;
+use App\Models\TujuanDisposisi;
+use App\Models\SinarV1Document;
+use App\Models\SinarV1Instansi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\SuratMasukExport;
-use App\Imports\SuratMasukImport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 
@@ -23,7 +25,7 @@ class SuratMasukController extends Controller
     $search = $request->input('search');
     $filter = $request->filter;
 
-    $query = SuratMasuk::query();
+    $query = SuratMasuk::with(['instansi', 'tujuanDisposisis']);
 
     if ($search) {
         $query->where(function ($q) use ($search) {
@@ -61,12 +63,19 @@ class SuratMasukController extends Controller
         ->groupBy('nomor_dokumen')
         ->pluck('total', 'nomor_dokumen');
 
+    $jumlahHistorisV1 = SinarV1Document::where('legacy_category_id', 12)->count();
+    $jumlahSudahDiimport = SuratMasuk::whereNotNull('sinar_v1_document_id')->count();
+    $jumlahInstansiHistoris = SinarV1Instansi::count();
+
     return view(
         'surat_masuk.index',
         compact(
             'surat',
             'duplicateCounts',
             'jumlahDuplikat'
+            , 'jumlahHistorisV1'
+            , 'jumlahSudahDiimport'
+            , 'jumlahInstansiHistoris'
         )
     );
 }
@@ -75,9 +84,9 @@ class SuratMasukController extends Controller
      */
     public function create()
     {
-        $subBagians = SubBagian::all();
-
-        return view('surat_masuk.create', compact('subBagians'));
+        $instansis = SuratInstansi::where('aktif', true)->orderBy('nama_instansi')->get();
+        $tujuanDisposisis = TujuanDisposisi::where('aktif', true)->orderBy('nama_tujuan')->get();
+        return view('surat_masuk.create', compact('instansis', 'tujuanDisposisis'));
     }
 
     /**
@@ -88,7 +97,9 @@ class SuratMasukController extends Controller
         try {
 
             $request->validate([
-                'instansi_satker'      => 'required',
+                'instansi_id'          => 'required|exists:surat_instansis,id',
+                'tujuan_disposisi_ids' => 'nullable|array',
+                'tujuan_disposisi_ids.*' => 'distinct|exists:tujuan_disposisis,id',
                 'tanggal_dokumen'      => 'required|date',
                 'tanggal_penyelesaian' => 'required|date',
                 'nomor_dokumen'        => 'required',
@@ -96,8 +107,17 @@ class SuratMasukController extends Controller
                 'kepada'               => 'required',
                 'perihal'              => 'required',
                 'file_input'           => 'nullable|mimes:pdf,jpg,jpeg,png|max:2048',
-                'sub_bagian_id'        => 'required',
+                'submit_action'        => 'nullable|in:save,save_print',
+                'allow_duplicate'      => 'nullable|boolean',
             ]);
+
+            $instansi = SuratInstansi::findOrFail($request->instansi_id);
+            $duplicate = $this->findPotentialDuplicate($request);
+            if ($duplicate && ! $request->boolean('allow_duplicate')) {
+                return back()->withInput()->withErrors([
+                    'duplicate' => 'Surat yang berpotensi sama sudah tercatat. Periksa data tersebut atau centang konfirmasi untuk tetap menyimpan.',
+                ])->with('potential_duplicate', $duplicate);
+            }
 
             $fileName = null;
 
@@ -112,12 +132,10 @@ class SuratMasukController extends Controller
                 );
             }
 
-            SuratMasuk::create([
-                'sub_bagian_id' => auth()->user()->role == 'user'
-                    ? auth()->user()->sub_bagian_id
-                    : $request->sub_bagian_id,
-
-                'instansi_satker'      => $request->instansi_satker,
+            $surat = SuratMasuk::create([
+                'sub_bagian_id'        => null,
+                'instansi_id'          => $instansi->id,
+                'instansi_satker'      => $instansi->nama_instansi,
                 'tanggal_dokumen'      => $request->tanggal_dokumen,
                 'tanggal_penyelesaian' => $request->tanggal_penyelesaian,
                 'nomor_dokumen'        => $request->nomor_dokumen,
@@ -127,6 +145,11 @@ class SuratMasukController extends Controller
                 'catatan'              => $request->catatan,
                 'file_input'           => $fileName,
             ]);
+            $surat->tujuanDisposisis()->sync($request->input('tujuan_disposisi_ids', []));
+
+            if ($request->input('submit_action') === 'save_print') {
+                return redirect()->route('surat-masuk.disposisi', $surat->id);
+            }
 
             return redirect()
                 ->route('surat-masuk.index')
@@ -142,14 +165,44 @@ class SuratMasukController extends Controller
         }
     }
 
+    public function checkPotentialDuplicate(Request $request)
+    {
+        $request->validate([
+            'instansi_id' => 'required|exists:surat_instansis,id',
+            'tanggal_dokumen' => 'required|date',
+            'nomor_dokumen' => 'required|string|max:255',
+        ]);
+
+        $duplicate = $this->findPotentialDuplicate($request);
+
+        return response()->json([
+            'duplicate' => (bool) $duplicate,
+            'data' => $duplicate ? [
+                'id' => $duplicate->id,
+                'nomor_agenda' => $duplicate->nomor_agenda,
+                'nomor_dokumen' => $duplicate->nomor_dokumen,
+                'tanggal_dokumen' => optional($duplicate->tanggal_dokumen)->format('d-m-Y'),
+                'instansi' => $duplicate->instansi_satker,
+                'perihal' => $duplicate->perihal,
+                'detail_url' => route('surat-masuk.show', $duplicate->id),
+            ] : null,
+        ]);
+    }
+
+    private function findPotentialDuplicate(Request $request): ?SuratMasuk
+    {
+        return SuratMasuk::where('instansi_id', $request->input('instansi_id'))
+            ->whereDate('tanggal_dokumen', $request->input('tanggal_dokumen'))
+            ->whereRaw('LOWER(TRIM(nomor_dokumen)) = ?', [mb_strtolower(trim((string) $request->input('nomor_dokumen')))])
+            ->first();
+    }
+
     /**
      * Display the specified resource.
      */
     public function show($id)
     {
-        $surat = SuratMasuk::with('subBagian')->findOrFail($id);
-
-        $this->checkAccess($surat);
+        $surat = SuratMasuk::with(['subBagian', 'instansi', 'tujuanDisposisis'])->findOrFail($id);
 
         return view('surat_masuk.show', compact('surat'));
     }
@@ -161,11 +214,14 @@ class SuratMasukController extends Controller
     {
         $surat = SuratMasuk::findOrFail($id);
 
-        $this->checkAccess($surat);
-
-        $subBagians = SubBagian::all();
-
-        return view('surat_masuk.edit', compact('surat', 'subBagians'));
+        $instansis = SuratInstansi::where('aktif', true)
+            ->when($surat->instansi_id, fn ($query, $instansiId) => $query->orWhere('id', $instansiId))
+            ->orderBy('nama_instansi')
+            ->get();
+        $tujuanDisposisis = TujuanDisposisi::where('aktif', true)
+            ->orWhereIn('id', $surat->tujuanDisposisis()->pluck('tujuan_disposisis.id'))
+            ->orderBy('nama_tujuan')->get();
+        return view('surat_masuk.edit', compact('surat', 'instansis', 'tujuanDisposisis'));
     }
 
     /**
@@ -175,10 +231,10 @@ class SuratMasukController extends Controller
     {
         $surat = SuratMasuk::findOrFail($id);
 
-        $this->checkAccess($surat);
-
         $request->validate([
-            'instansi_satker'      => 'required',
+            'instansi_id'          => 'required|exists:surat_instansis,id',
+            'tujuan_disposisi_ids' => 'nullable|array',
+            'tujuan_disposisi_ids.*' => 'distinct|exists:tujuan_disposisis,id',
             'tanggal_dokumen'      => 'required|date',
             'tanggal_penyelesaian' => 'required|date',
             'nomor_dokumen'        => 'required',
@@ -186,8 +242,9 @@ class SuratMasukController extends Controller
             'kepada'               => 'required',
             'perihal'              => 'required',
             'file_input'           => 'nullable|mimes:pdf,jpg,jpeg,png|max:2048',
-            'sub_bagian_id'        => 'required',
         ]);
+
+        $instansi = SuratInstansi::findOrFail($request->instansi_id);
 
         $fileName = $surat->file_input;
 
@@ -207,11 +264,8 @@ class SuratMasukController extends Controller
         }
 
         $surat->update([
-            'sub_bagian_id' => auth()->user()->role == 'user'
-                ? auth()->user()->sub_bagian_id
-                : $request->sub_bagian_id,
-
-            'instansi_satker'      => $request->instansi_satker,
+            'instansi_id'          => $instansi->id,
+            'instansi_satker'      => $instansi->nama_instansi,
             'tanggal_dokumen'      => $request->tanggal_dokumen,
             'tanggal_penyelesaian' => $request->tanggal_penyelesaian,
             'nomor_dokumen'        => $request->nomor_dokumen,
@@ -221,6 +275,7 @@ class SuratMasukController extends Controller
             'catatan'              => $request->catatan,
             'file_input'           => $fileName,
         ]);
+        $surat->tujuanDisposisis()->sync($request->input('tujuan_disposisi_ids', []));
 
         return redirect()
             ->route('surat-masuk.index')
@@ -233,8 +288,6 @@ class SuratMasukController extends Controller
     public function destroy($id)
     {
         $surat = SuratMasuk::findOrFail($id);
-
-        $this->checkAccess($surat);
 
         if ($surat->file_input) {
             Storage::delete('surat_masuk/' . $surat->file_input);
@@ -252,26 +305,18 @@ class SuratMasukController extends Controller
      */
    public function disposisi($id)
     {
-        $surat = SuratMasuk::findOrFail($id);
+        $surat = SuratMasuk::with('tujuanDisposisis')->findOrFail($id);
 
-        $this->checkAccess($surat);
+        return view('surat_masuk.disposisi_preview', compact('surat'));
+    }
+
+    public function disposisiPdf($id)
+    {
+        $surat = SuratMasuk::with('tujuanDisposisis')->findOrFail($id);
 
         $pdf = Pdf::loadView('surat_masuk.disposisi', compact('surat'));
 
-        return $pdf->stream('disposisi.pdf');
-    }
-
-    /**
-     * CHECK ACCESS
-     */
-    private function checkAccess($surat)
-    {
-        if (
-            auth()->user()->role == 'user' &&
-            $surat->sub_bagian_id != auth()->user()->sub_bagian_id
-        ) {
-            abort(403);
-        }
+        return $pdf->stream('disposisi-surat-'.$surat->id.'.pdf');
     }
 
     public function export()
@@ -284,75 +329,71 @@ class SuratMasukController extends Controller
 
 public function import(Request $request)
 {
-    $request->validate([
-        'file' => 'required|mimes:xlsx,xls,csv'
-    ]);
+    $request->validate(['confirmation' => 'accepted']);
+
+    $stats = ['instansi_baru' => 0, 'surat_baru' => 0, 'surat_diperbarui' => 0, 'file_disalin' => 0];
 
     try {
+        DB::transaction(function () use (&$stats) {
+            SinarV1Instansi::orderBy('id')->chunk(200, function ($items) use (&$stats) {
+                foreach ($items as $legacy) {
+                    $instansi = SuratInstansi::firstOrNew(['nama_instansi' => trim($legacy->nama_instansi)]);
+                    $isNew = ! $instansi->exists;
+                    foreach (['alamat', 'telepon', 'fax', 'email', 'website'] as $field) {
+                        if ($legacy->{$field} !== null && $legacy->{$field} !== '') {
+                            $instansi->{$field} = $legacy->{$field};
+                        }
+                    }
+                    $instansi->aktif = true;
+                    $instansi->created_by ??= auth()->id();
+                    $instansi->save();
+                    $stats['instansi_baru'] += $isNew ? 1 : 0;
+                }
+            });
 
-        /*
-        |--------------------------------------------------------------------------
-        | BACA EXCEL
-        |--------------------------------------------------------------------------
-        */
+            SinarV1Document::where('legacy_category_id', 12)->orderBy('id')->chunk(200, function ($documents) use (&$stats) {
+                foreach ($documents as $legacy) {
+                    $namaInstansi = trim($legacy->instansi_satker ?: 'Instansi tidak tercatat');
+                    $instansi = SuratInstansi::firstOrCreate(
+                        ['nama_instansi' => $namaInstansi],
+                        ['aktif' => true, 'created_by' => auth()->id()]
+                    );
 
-        $rows = Excel::toArray(
-            new SuratMasukImport(),
-            $request->file('file')
+                    $surat = SuratMasuk::firstOrNew(['sinar_v1_document_id' => $legacy->id]);
+                    $isNew = ! $surat->exists;
+                    $fileName = $surat->file_input;
+                    if ($legacy->file_path && Storage::disk('local')->exists($legacy->file_path)) {
+                        $fileName = 'sinar_v1_'.$legacy->id.'_'.basename($legacy->file_name_original ?: $legacy->file_path);
+                        Storage::disk('public')->put('surat_masuk/'.$fileName, Storage::disk('local')->get($legacy->file_path));
+                        $stats['file_disalin']++;
+                    }
+
+                    $tanggalDokumen = $legacy->tanggal_dokumen ?: $legacy->tanggal_penyelesaian ?: $legacy->legacy_created_at?->toDateString() ?: now()->toDateString();
+                    $surat->fill([
+                        'sub_bagian_id' => $legacy->sub_bagian_id,
+                        'instansi_id' => $instansi->id,
+                        'instansi_satker' => $instansi->nama_instansi,
+                        'tanggal_dokumen' => $tanggalDokumen,
+                        'tanggal_penyelesaian' => $legacy->tanggal_penyelesaian ?: $tanggalDokumen,
+                        'nomor_dokumen' => $legacy->nomor_dokumen ?: 'TANPA-NOMOR-V1-'.$legacy->legacy_id,
+                        'nomor_agenda' => $legacy->nomor_agenda ?: 'V1-'.$legacy->legacy_id,
+                        'kepada' => $legacy->kepada ?: 'KPU Provinsi Bali',
+                        'perihal' => $legacy->perihal ?: 'Surat Masuk SINAR V1',
+                        'catatan' => $legacy->catatan,
+                        'file_input' => $fileName,
+                    ])->save();
+
+                    $stats[$isNew ? 'surat_baru' : 'surat_diperbarui']++;
+                }
+            });
+        });
+
+        return redirect()->route('surat-masuk.index')->with('success',
+            "Import selesai: {$stats['instansi_baru']} instansi baru, {$stats['surat_baru']} surat baru, {$stats['surat_diperbarui']} surat diperbarui, dan {$stats['file_disalin']} lampiran disalin."
         );
-// dd($rows);
-        $rows = $rows[0];
-
-        $validatorImport = new SuratMasukImport();
-
-        $validatorImport->validateExcel($rows);
-   
-
-        /*
-        |--------------------------------------------------------------------------
-        | ADA ERROR
-        |--------------------------------------------------------------------------
-        */
-
-      if (!empty($validatorImport->errors)) {
-
-    return redirect()
-        ->back()
-        ->withInput()
-        ->with([
-            'error' => 'Import dibatalkan karena terdapat data yang tidak valid.',
-            'import_errors' => $validatorImport->errors,
-        ]);
-}
-
-        /*
-        |--------------------------------------------------------------------------
-        | TIDAK ADA ERROR
-        |--------------------------------------------------------------------------
-        */
-
-        $import = new SuratMasukImport();
-
-        Excel::import(
-            $import,
-            $request->file('file')
-        );
-
-        return redirect()
-            ->route('surat-masuk.index')
-            ->with(
-                'success',
-                'Data surat masuk berhasil diimport.'
-            );
-
-    } catch (\Exception $e) {
-
-        \Log::error($e->getMessage());
-
-        return back()->with(
-            'error',
-            'Import gagal : ' . $e->getMessage()
-        );
+    } catch (\Throwable $e) {
+        Log::error('Import Surat Masuk SINAR V1 gagal', ['exception' => $e]);
+        return back()->with('error', 'Import gagal: '.$e->getMessage());
     }
 }
 

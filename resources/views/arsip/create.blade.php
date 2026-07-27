@@ -5,6 +5,14 @@
 
 @section('content')
 
+@if($legacyDocument)
+    <div class="alert alert-info">
+        <strong>Registrasi dari SINAR V1.</strong> Data dasar telah diisi dari dokumen historis
+        <a href="{{ route('sinar-v1.show', $legacyDocument) }}" class="alert-link">{{ $legacyDocument->nomor_dokumen ?: 'Legacy ID '.$legacyDocument->legacy_id }}</a>.
+        Lengkapi klasifikasi, retensi, kondisi, serta lokasi fisik berdasarkan hasil verifikasi aktual.
+    </div>
+@endif
+
 @if ($errors->any())
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
         <strong>Terjadi kesalahan:</strong>
@@ -31,6 +39,9 @@
     <div class="card-body">
         <form action="{{ route('arsip.store') }}" method="POST" enctype="multipart/form-data" id="arsipForm">
             @csrf
+            @if($legacyDocument)
+                <input type="hidden" name="sinar_v1_document_id" value="{{ $legacyDocument->id }}">
+            @endif
             
             <!-- BAGIAN DATA DASAR (WAJIB) -->
             <h6 class="mb-3 text-primary">Data Dasar Arsip (Wajib)</h6>
@@ -59,7 +70,7 @@
                             id="sub_bagian_id" name="sub_bagian_id" required>
                         <option value="">Pilih Sub Bagian</option>
                         @foreach($subBagianOptions as $subBagian)
-                            <option value="{{ $subBagian->id }}" {{ old('sub_bagian_id') == $subBagian->id ? 'selected' : '' }}>
+                            <option value="{{ $subBagian->id }}" {{ old('sub_bagian_id', $legacyDocument?->sub_bagian_id) == $subBagian->id ? 'selected' : '' }}>
                                 {{ $subBagian->nama_sub_bagian}}
                             </option>
                         @endforeach
@@ -88,7 +99,7 @@
 </label>
                     <input type="text" class="form-control @error('uraian_arsip') is-invalid @enderror" 
                         id="uraian_arsip" name="uraian_arsip" 
-                        value="{{ old('uraian_arsip') }}" required>
+                        value="{{ old('uraian_arsip', $legacyDocument ? trim(($legacyDocument->nomor_dokumen ? $legacyDocument->nomor_dokumen.' — ' : '').$legacyDocument->perihal) : null) }}" required>
                     @error('uraian_arsip')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -97,7 +108,7 @@
                   <div class="col-md-3 mb-3">
                     <label for="tahun_arsip" class="form-label">Tahun Arsip <span class="text-danger">*</span></label>
                     <input type="number" class="form-control @error('tahun_arsip') is-invalid @enderror"
-                        id="tahun_arsip" name="tahun_arsip" value="{{ old('tahun_arsip', date('Y')) }}"
+                        id="tahun_arsip" name="tahun_arsip" value="{{ old('tahun_arsip', $legacyDocument?->tanggal_dokumen?->format('Y') ?? date('Y')) }}"
                         min="2000" max="{{ date('Y') + 1 }}" required>
                     <small class="text-muted" id="tahun-info"></small>
                     @error('tahun_arsip')
@@ -108,7 +119,7 @@
                 <div class="col-md-3 mb-3">
                     <label for="tanggal_arsip" class="form-label">Tanggal Arsip <span class="text-danger">*</span></label>
                     <input type="date" class="form-control @error('tanggal_arsip') is-invalid @enderror"
-                        id="tanggal_arsip" name="tanggal_arsip" value="{{ old('tanggal_arsip', date('Y-m-d')) }}" required>
+                        id="tanggal_arsip" name="tanggal_arsip" value="{{ old('tanggal_arsip', $legacyDocument?->tanggal_dokumen?->format('Y-m-d') ?? date('Y-m-d')) }}" required>
                     @error('tanggal_arsip')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror

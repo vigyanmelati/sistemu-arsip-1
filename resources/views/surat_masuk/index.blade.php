@@ -1,44 +1,49 @@
 @extends('layouts.app')
 
+@section('page-title', 'Surat Masuk')
+@section('page-subtitle', 'Pencatatan dan Pengelolaan Surat Masuk')
+
 @section('content')
-<div class="container-fluid px-4">
+<div class="container-fluid px-0">
     <div class="row">
         <div class="col-12">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card">
                 {{-- Header Card with gradient --}}
-               <div class="card-header bg-white border-0 py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+               <div class="card-header">
+<div class="d-flex justify-content-between align-items-center">
     <h4 class="mb-2 mb-md-0 fw-bold text-primary">
         <i class="fas fa-envelope-open-text me-2"></i> Surat Masuk
     </h4>
 
-    <div class="d-flex gap-2 flex-wrap">
+    <div class="action-buttons d-flex gap-2 flex-wrap">
         {{-- Import --}}
-        <button class="btn btn-success rounded-pill px-4 shadow-sm"
+        <button class="btn btn-gradient-green d-flex align-items-center gap-2 shadow-sm"
                 data-bs-toggle="modal"
                 data-bs-target="#importModal">
-            <i class="fas fa-file-import me-1"></i> Import
+            <i class="bi bi-cloud-upload-fill"></i><span>Import</span>
         </button>
 
         {{-- Export --}}
         <a href="{{ route('surat-masuk.export') }}"
-           class="btn btn-info text-white rounded-pill px-4 shadow-sm">
-            <i class="fas fa-file-excel me-1"></i> Export
+           class="btn btn-gradient-purple d-flex align-items-center gap-2 shadow-sm">
+            <i class="bi bi-file-earmark-excel-fill"></i><span>Export</span>
         </a>
 
           <a href="{{ route('surat-masuk.index', ['filter' => 'duplikasi']) }}"
-       class="btn btn-warning">
+       class="btn btn-danger d-flex align-items-center gap-2">
         <i class="bi bi-files"></i>
-        Cek Duplikasi
+        <span>Cek Duplikasi</span>
     </a>
         {{-- Tambah --}}
         <a href="{{ route('surat-masuk.create') }}"
-           class="btn btn-primary rounded-pill px-4 shadow-sm">
-            <i class="fas fa-plus me-1"></i> Tambah Surat
+           class="btn btn-orange d-flex align-items-center gap-2 shadow-sm">
+            <i class="bi bi-plus-circle-fill"></i><span>Tambah Surat</span>
         </a>
     </div>
 </div>
+</div>
 
-                  <div class="alert alert-info border-0 rounded-4 shadow-sm mx-3 mt-3 mb-4">
+                  <div class="alert alert-info border-0 shadow-sm mb-4">
                     <div class="d-flex align-items-start">
                         <i class="fas fa-info-circle fa-lg me-3 mt-1 text-primary"></i>
 
@@ -56,27 +61,22 @@
                     </div>
                 </div>
 
-                <div class="card-body pt-0">
+                <div class="card-body">
                     {{-- Form pencarian yang lebih responsif --}}
-                    <div class="row mb-4">
-                        <div class="col-md-6 col-lg-5">
-                            <form method="GET" action="{{ route('surat-masuk.index') }}" class="d-flex gap-2">
+                    <div class="mb-4">
+                            <form method="GET" action="{{ route('surat-masuk.index') }}">
                                 <div class="input-group">
-                                    <span class="input-group-text bg-white border-end-0 rounded-pill rounded-end">
-                                        <i class="fas fa-search text-muted"></i>
-                                    </span>
-                                    <input type="text" name="search" class="form-control border-start-0 rounded-pill rounded-start" 
+                                    <input type="text" name="search" class="form-control"
                                            placeholder="Cari No. Surat, Perihal, atau Instansi..." 
                                            value="{{ request('search') }}">
+                                    <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Cari</button>
                                     @if(request('search'))
-                                        <a href="{{ route('surat-masuk.index') }}" class="btn btn-outline-secondary rounded-pill ms-2">
-                                            <i class="fas fa-times"></i> Reset
+                                        <a href="{{ route('surat-masuk.index') }}" class="btn btn-outline-secondary">
+                                            <i class="bi bi-x-lg"></i> Reset
                                         </a>
                                     @endif
                                 </div>
-                                <button class="btn btn-primary rounded-pill px-4" type="submit">Cari</button>
                             </form>
-                        </div>
                     </div>
                     {{-- SUCCESS --}}
 @if(session('success'))
@@ -130,19 +130,21 @@
 </div>
 
 @endif
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="bg-light">
+                    <div class="table-scroll-top" aria-label="Geser tabel secara horizontal"><div></div></div>
+                    <div class="table-responsive surat-table-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+                        <table class="table table-hover align-middle" style="min-width:1650px">
+                            <thead>
                                 <tr class="text-center">
-                                    <th width="5%" class="border-0 rounded-start">No</th>
-                                    <th width="8%" class="border-0">No. Agenda</th>
-                                    <th width="12%" class="border-0">Tanggal Dokumen</th>
-                                    <th width="12%" class="border-0">Tanggal Penyelesaian</th>
-                                    <th width="12%" class="border-0">No. Surat</th>
-                                    <th width="15%" class="border-0">Perihal</th>
-                                    <th width="12%" class="border-0">Asal Dokumen</th>
-                                    <th width="10%" class="border-0">Dokumen</th>
-                                    <th width="12%" class="border-0">Keterangan</th>
+                                    <th style="min-width:55px">No</th>
+                                    <th style="min-width:110px">No. Agenda</th>
+                                    <th style="min-width:130px">Tanggal Dokumen</th>
+                                    <th style="min-width:150px">Tanggal Penyelesaian</th>
+                                    <th style="min-width:180px">No. Surat</th>
+                                    <th style="min-width:260px">Perihal</th>
+                                    <th style="min-width:220px">Asal Dokumen</th>
+                                    <th style="min-width:105px">Dokumen</th>
+                                    <th style="min-width:200px">Tujuan Disposisi</th>
+                                    <th style="min-width:180px">Keterangan</th>
                                    
 
                                     @if(request('filter') == 'duplikasi')
@@ -150,14 +152,19 @@
                                     @endif
 
                                     
-                                    <th width="15%" class="border-0 rounded-end">Aksi</th>
+                                    <th style="min-width:370px">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($surat as $item)
                                 <tr class="text-center">
                                     <td class="fw-semibold">{{ $loop->iteration }}</td>
-                                    <td class="fw-semibold">{{ $item->nomor_agenda ?? '-' }}</td>
+                                    <td class="fw-semibold">
+                                        {{ $item->nomor_agenda ?? '-' }}
+                                        @if($item->sinar_v1_document_id)
+                                            <span class="badge bg-secondary d-block mt-1">SINAR V1</span>
+                                        @endif
+                                    </td>
                                     <td>{{ \Carbon\Carbon::parse($item->tanggal_dokumen)->translatedFormat('d M Y') }}</td>
                                     <td>{{ $item->tanggal_penyelesaian ? \Carbon\Carbon::parse($item->tanggal_penyelesaian)->translatedFormat('d M Y') : '-' }}</td>
                                     <td class="fw-semibold">{{ $item->nomor_dokumen ?? '-' }}</td>
@@ -173,6 +180,13 @@
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
+                                    </td>
+                                    <td>
+                                        @forelse($item->tujuanDisposisis as $tujuan)
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle me-1 mb-1">{{ $tujuan->nama_tujuan }}</span>
+                                        @empty
+                                            <span class="text-muted">-</span>
+                                        @endforelse
                                     </td>
                                     <td>{{ Str::limit($item->catatan, 30, '...') ?? '-' }}</td>
                                 
@@ -204,17 +218,17 @@
 
                                         @endif
                                         <td>
-    <div class="d-flex gap-2 justify-content-center">
+    <div class="d-flex gap-1 justify-content-center flex-nowrap surat-actions">
 
         <a href="{{ route('surat-masuk.show', $item->id) }}"
-           class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+           class="btn btn-sm btn-info text-white"
            data-bs-toggle="tooltip"
            title="Detail">
             <i class="fas fa-eye me-1"></i> Detail
         </a>
 
         <a href="{{ route('surat-masuk.edit', $item->id) }}"
-           class="btn btn-sm btn-outline-warning rounded-pill px-3"
+           class="btn btn-sm btn-warning"
            data-bs-toggle="tooltip"
            title="Edit">
             <i class="fas fa-edit me-1"></i> Edit
@@ -222,7 +236,7 @@
 
         <a href="{{ route('surat-masuk.disposisi', $item->id) }}"
            target="_blank"
-           class="btn btn-sm btn-outline-info rounded-pill px-3"
+           class="btn btn-sm btn-primary"
            data-bs-toggle="tooltip"
            title="Cetak Disposisi">
             <i class="fas fa-print me-1"></i> Disposisi
@@ -235,7 +249,7 @@
             @method('DELETE')
 
             <button type="submit"
-                    class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                    class="btn btn-sm btn-danger"
                     data-bs-toggle="tooltip"
                     title="Hapus"
                     onclick="return confirm('Yakin ingin menghapus surat ini?')">
@@ -249,7 +263,7 @@
                          
                                 @empty
                                 <tr>
-                                    <td colspan="10" class="text-center text-muted py-5">
+                                    <td colspan="{{ request('filter') == 'duplikasi' ? 12 : 11 }}" class="text-center text-muted py-5">
                                         <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
                                         Belum ada data surat masuk.
                                     </td>
@@ -378,8 +392,8 @@ Silakan hapus data surat masuk yang terduplikasi dan sisakan satu data surat mas
 
                     {{-- Pagination dengan styling center --}}
                     @if(method_exists($surat, 'links') && $surat->hasPages())
-                        <div class="d-flex justify-content-center mt-4">
-                            {{ $surat->appends(request()->query())->links() }}
+                        <div class="surat-pagination mt-4">
+                            {{ $surat->appends(request()->query())->links('pagination::bootstrap-5') }}
                         </div>
                     @endif
                 </div>
@@ -395,7 +409,6 @@ Silakan hapus data surat masuk yang terduplikasi dan sisakan satu data surat mas
     <div class="modal-dialog">
         <form action="{{ route('surat-masuk.import') }}"
               method="POST"
-              enctype="multipart/form-data"
               class="modal-content border-0 rounded-4">
 
             @csrf
@@ -403,7 +416,7 @@ Silakan hapus data surat masuk yang terduplikasi dan sisakan satu data surat mas
             <div class="modal-header">
                 <h5 class="modal-title fw-bold">
                     <i class="fas fa-file-import me-2"></i>
-                    Import Surat Masuk
+                    Import Surat Masuk dari SINAR V1 Historis
                 </h5>
 
                 <button type="button"
@@ -413,42 +426,22 @@ Silakan hapus data surat masuk yang terduplikasi dan sisakan satu data surat mas
 
             <div class="modal-body">
 
-                {{-- Download Template --}}
                 <div class="alert alert-info border-0 rounded-4 mb-3">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-
-                        <div>
-                            <div class="fw-bold mb-1">
-                                Template Excel Import
-                            </div>
-
-                            <small class="text-muted">
-                                Download template terlebih dahulu agar format sesuai sistem.
-                            </small>
-                        </div>
-
-                       <a href="{{ asset('template/template_import_surat_masuk.xlsx') }}"
-                        download
-                        class="btn btn-primary rounded-pill">
-                            <i class="fas fa-download me-1"></i>
-                            Download Template
-                        </a>
-                    </div>
+                    Master instansi diimpor lebih dahulu, kemudian Surat Masuk kategori 12 beserta lampirannya.
+                    Import ulang aman: data yang sudah pernah masuk akan diperbarui, bukan digandakan.
                 </div>
-
-                <label class="form-label fw-semibold">
-                    Upload File Excel
-                </label>
-
-                <input type="file"
-                       name="file"
-                       class="form-control"
-                       accept=".xlsx,.xls,.csv"
-                       required>
-
-                <small class="text-muted">
-                    Format yang didukung: xlsx, xls, csv
-                </small>
+                <div class="row g-2 text-center mb-3">
+                    <div class="col-4"><div class="border rounded p-2"><strong class="d-block fs-5">{{ number_format($jumlahHistorisV1) }}</strong><small>Surat historis</small></div></div>
+                    <div class="col-4"><div class="border rounded p-2"><strong class="d-block fs-5">{{ number_format($jumlahInstansiHistoris) }}</strong><small>Instansi historis</small></div></div>
+                    <div class="col-4"><div class="border rounded p-2"><strong class="d-block fs-5">{{ number_format($jumlahSudahDiimport) }}</strong><small>Sudah diimpor</small></div></div>
+                </div>
+                @if($jumlahInstansiHistoris === 0)
+                    <div class="alert alert-warning small">Detail tabel instansi historis belum tersedia. Jalankan ulang Import SINAR V1 agar alamat dan data kontak ikut terbaca. Nama instansi tetap dapat dibentuk dari data surat historis.</div>
+                @endif
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="confirmation" value="1" id="confirmImportV1" required>
+                    <label class="form-check-label" for="confirmImportV1">Saya memahami bahwa data Surat Masuk V1 akan dimasukkan atau diperbarui di daftar Surat Masuk.</label>
+                </div>
             </div>
 
             <div class="modal-footer">
@@ -461,7 +454,7 @@ Silakan hapus data surat masuk yang terduplikasi dan sisakan satu data surat mas
                 <button type="submit"
                         class="btn btn-success">
                     <i class="fas fa-upload me-1"></i>
-                    Import
+                    Mulai Import SINAR V1
                 </button>
             </div>
 
@@ -541,6 +534,16 @@ Silakan hapus data surat masuk yang terduplikasi dan sisakan satu data surat mas
         border-radius: 50rem !important;
         margin: 0 2px;
     }
+    .surat-pagination nav > div:first-child { display: none !important; }
+    .surat-pagination nav > div:last-child {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    .surat-pagination nav p { margin-bottom: 0; color: #6c757d; font-size: .875rem; }
+    .surat-pagination .pagination { margin-bottom: 0; }
     /* Responsive tambahan */
     @media (max-width: 768px) {
         .table td, .table th {
@@ -551,16 +554,94 @@ Silakan hapus data surat masuk yang terduplikasi dan sisakan satu data surat mas
             font-size: 0.75rem;
         }
     }
+
+    /* Selaras dengan tabel Arsip Internal */
+    .table-responsive::-webkit-scrollbar { height: 6px; }
+    .table-responsive::-webkit-scrollbar-track { background: #f1f1f1; }
+    .table-responsive::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+    .table-responsive::-webkit-scrollbar-thumb:hover { background: #555; }
+    .table-scroll-top {
+        overflow-x: auto;
+        overflow-y: hidden;
+        height: 16px;
+        margin-bottom: 6px;
+        border-radius: 4px;
+        scrollbar-color: #888 #f1f1f1;
+        scrollbar-width: auto;
+    }
+    .table-scroll-top > div { height: 1px; }
+    .table-scroll-top::-webkit-scrollbar { height: 12px; }
+    .table-scroll-top::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+    .table-scroll-top::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+    .table thead th {
+        background: #f8f9fa;
+        color: #333;
+        font-weight: 600;
+        padding: 12px 10px;
+        border-bottom: 2px solid #dee2e6;
+        vertical-align: middle;
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        box-shadow: inset 0 -2px 0 #dee2e6;
+    }
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+        transform: none;
+        box-shadow: none;
+    }
+    .table tbody td { background-color: #fff; color: #495057; }
+    .table tbody tr:hover td { background-color: #f8f9fa; }
+    .surat-actions .btn { white-space: nowrap; }
+    .surat-table-scroll { max-height: 65vh; overflow: auto !important; }
+    .btn-gradient-purple {
+        background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%);
+        border: none; color: #fff;
+    }
+    .btn-gradient-purple:hover { background: linear-gradient(135deg, #8e24aa 0%, #5e35b1 100%); color: #fff; transform: translateY(-1px); }
+    .btn-gradient-green {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none; color: #fff;
+    }
+    .btn-gradient-green:hover { background: linear-gradient(135deg, #218838 0%, #1ba87e 100%); color: #fff; transform: translateY(-1px); }
+    .btn-orange { background: #fd7e14; border-color: #fd7e14; color: #fff; }
+    .btn-orange:hover { background: #e66a00; border-color: #e66a00; color: #fff; }
+    .action-buttons .btn i { font-size: 1.1em; }
+    @media (max-width: 768px) {
+        .card-header > .d-flex { flex-direction: column; align-items: stretch !important; gap: 12px; }
+        .card-header .action-buttons { width: 100%; }
+        .card-header .action-buttons .btn { flex: 1; min-width: 125px; justify-content: center; }
+    }
 </style>
 @endpush
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
         // Inisialisasi tooltip Bootstrap
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         tooltipTriggerList.forEach(function (tooltipTriggerEl) {
             new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        document.querySelectorAll('.table-scroll-top').forEach(function(topScroll) {
+            const tableScroll = topScroll.nextElementSibling;
+            const table = tableScroll?.querySelector('table');
+            if (!table) return;
+            const spacer = topScroll.firstElementChild;
+            let syncing = false;
+            const updateWidth = () => { spacer.style.width = table.scrollWidth + 'px'; };
+            topScroll.addEventListener('scroll', () => {
+                if (syncing) return; syncing = true;
+                tableScroll.scrollLeft = topScroll.scrollLeft; syncing = false;
+            });
+            tableScroll.addEventListener('scroll', () => {
+                if (syncing) return; syncing = true;
+                topScroll.scrollLeft = tableScroll.scrollLeft; syncing = false;
+            });
+            updateWidth();
+            window.addEventListener('resize', updateWidth);
+            if (window.ResizeObserver) new ResizeObserver(updateWidth).observe(table);
         });
     });
 </script>

@@ -10,8 +10,29 @@ class SuratMasuk extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'tanggal_dokumen' => 'date',
+        'tanggal_penyelesaian' => 'date',
+    ];
+
     public function subBagian()
     {
         return $this->belongsTo(SubBagian::class);
+    }
+
+    public function instansi()
+    {
+        return $this->belongsTo(SuratInstansi::class, 'instansi_id');
+    }
+
+    public function tujuanDisposisis()
+    {
+        return $this->belongsToMany(TujuanDisposisi::class, 'surat_masuk_tujuan_disposisi')
+            ->withTimestamps();
+    }
+
+    public function sinarV1Document()
+    {
+        return $this->belongsTo(SinarV1Document::class);
     }
 }

@@ -125,6 +125,7 @@
     <!-- DATA SURAT -->
     <table>
         <tr><td width="13%">Dari</td><td width="2%">:</td><td>{{ $surat->instansi_satker }}</td></tr>
+        <tr><td>Tujuan Disposisi</td><td>:</td><td>{{ $surat->tujuanDisposisis->pluck('nama_tujuan')->join(', ') ?: '-' }}</td></tr>
         <tr><td>No. Surat</td><td>:</td><td>{{ $surat->nomor_dokumen }}</td></tr>
         <tr><td>Tanggal Surat</td><td>:</td><td>{{ \Carbon\Carbon::parse($surat->tanggal_dokumen)->translatedFormat('d F Y') }}</td></tr>
         <tr><td>Perihal</td><td>:</td><td>{{ $surat->perihal }}</td></tr>

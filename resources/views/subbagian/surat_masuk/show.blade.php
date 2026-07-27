@@ -8,7 +8,7 @@
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('surat-masuk.index') }}">Surat Masuk</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('subbagian.surat-masuk.index') }}">Surat Masuk</a></li>
             <li class="breadcrumb-item active" aria-current="page">Detail #{{ $surat->nomor_agenda }}</li>
         </ol>
     </nav>
@@ -77,8 +77,8 @@
                                 <dt class="col-sm-4 text-muted">Asal Dokumen</dt>
                                 <dd class="col-sm-8">{{ $surat->instansi_satker }}</dd>
 
-                                <dt class="col-sm-4 text-muted">Sub Bagian</dt>
-                                <dd class="col-sm-8">{{ $surat->subBagian->nama_sub_bagian ?? '-' }}</dd>
+                                <dt class="col-sm-4 text-muted">Tujuan Disposisi</dt>
+                                <dd class="col-sm-8">{{ $surat->tujuanDisposisis->pluck('nama_tujuan')->join(', ') ?: '-' }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -150,9 +150,6 @@
         <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2 py-3">
             <a href="{{ route('subbagian.surat-masuk.index') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left me-1"></i> Kembali
-            </a>
-            <a href="{{ route('surat-masuk.edit', $surat->id) }}" class="btn btn-warning text-white">
-                <i class="fas fa-edit me-1"></i> Edit Surat
             </a>
         </div>
     </div>
