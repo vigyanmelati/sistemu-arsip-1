@@ -55,20 +55,25 @@ class SuratMasukController extends Controller
             $query->whereIn('nomor_dokumen', $duplicateNomor);
         }
     
-        // --- Sorting ---
-        // Kolom sort divalidasi terhadap whitelist, default: created_at (surat terbaru dulu).
-        $sortColumn = $request->input('sort');
-        $sortColumn = in_array($sortColumn, $this->sortableColumns, true) ? $sortColumn : 'created_at';
-    
-        $sortDirection = $request->input('direction') === 'asc' ? 'asc' : 'desc';
-    
+      // --- Sorting ---
+    $sortColumn = $request->input('sort');
+    $sortColumn = in_array($sortColumn, $this->sortableColumns, true) ? $sortColumn : 'nomor_agenda';
+
+    $sortDirection = $request->input('direction') === 'asc' ? 'asc' : 'desc';
+
+    if ($sortColumn === 'nomor_agenda') {
+        // nomor_agenda varchar, perlu di-cast supaya urut numerik bukan alfabet
+        $query->orderByRaw('CAST(SUBSTRING_INDEX(nomor_agenda, "/", 1) AS UNSIGNED) ' . $sortDirection);
+    } else {
         $query->orderBy($sortColumn, $sortDirection);
-    
-        // Urutan kedua supaya data dengan nilai sama tetap konsisten urutannya antar halaman
-        if ($sortColumn !== 'created_at') {
-            $query->orderBy('created_at', 'desc');
-        }
-    
+    }
+
+    // Secondary sort: tanggal_dokumen (kecuali memang itu kolom utamanya)
+    if ($sortColumn !== 'tanggal_dokumen') {
+        $query->orderBy('tanggal_dokumen', $sortDirection);
+    }
+
+    $query->orderBy('created_at', 'desc');
         $surat = $query->paginate(10);
     
         // jumlah data yang duplikat

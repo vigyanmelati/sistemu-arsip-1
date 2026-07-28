@@ -192,13 +192,32 @@
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Ganti Berkas Berita Acara (opsional)</label>
-                            <input type="file" name="file_berita_acara_baru" class="form-control">
-                            <small class="text-muted">
-                                Kosongkan jika tidak ingin mengganti berkas berita acara yang sudah ada.
-                                Format: PDF, JPG, JPEG, PNG (Maks: 10MB)
-                            </small>
+                        <hr>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Nomor BAP (Berita Acara Pemindahan)</label>
+                                <input type="text" name="nomor_bap" class="form-control @error('nomor_bap') is-invalid @enderror"
+                                       value="{{ old('nomor_bap', $beritaAcara->nomor_bap ?? '') }}"
+                                       placeholder="cth: 001/BAP/2026">
+                                <small class="text-muted">
+                                    Kosongkan jika nomor BAP tidak perlu diubah. Perhatian: BAP ini bisa
+                                    dipakai bersama arsip lain, jadi perubahan nomor akan berlaku untuk
+                                    semua arsip dalam BAP yang sama.
+                                </small>
+                                @error('nomor_bap')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Ganti Berkas Berita Acara (opsional)</label>
+                                <input type="file" name="file_berita_acara_baru" class="form-control">
+                                <small class="text-muted">
+                                    Kosongkan jika tidak ingin mengganti berkas berita acara yang sudah ada.
+                                    Format: PDF, JPG, JPEG, PNG (Maks: 10MB)
+                                </small>
+                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -262,6 +281,10 @@
                         <tr>
                             <th>Sub Bagian</th>
                             <td>: {{ $arsip->subBagian->nama_sub_bagian ?? '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Nomor BAP</th>
+                            <td>: {{ $beritaAcara->nomor_bap ?? '-' }}</td>
                         </tr>
                         <tr>
                             <th>Status Saat Ini</th>

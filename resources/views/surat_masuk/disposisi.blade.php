@@ -211,6 +211,54 @@
     vertical-align:top;
     padding:4px;
 }
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    font-family: "Times New Roman", serif;
+    font-size: 10pt;
+    background: #fff;
+}
+@page {
+    size: A4;
+    margin: 0.8cm;
+}
+.wrapper {
+    border: 1px solid #000;
+    padding: 4px 8px 8px 8px;
+    page-break-inside: avoid;
+    max-width: 100%;
+}
+/* ... sisanya tetap ... */
+
+/* Aturan cetak */
+@media print {
+    body {
+        margin: 0;
+        font-size: 10pt;
+    }
+    .info-box {
+        min-height: 80px;
+    }
+    .ttd {
+        height: 80px;
+    }
+    .data-surat .label {
+        width: 80px;
+    }
+    .checkbox-list div {
+        margin-bottom: 2px;
+    }
+    .small-gap {
+        margin-top: 3px;
+    }
+    td {
+        font-size: 10pt;
+    }
+}
     </style>
 </head>
 <body onload="window.print()">

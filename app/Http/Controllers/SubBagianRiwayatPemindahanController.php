@@ -151,15 +151,15 @@ class SubBagianRiwayatPemindahanController extends Controller
      * Status arsip diubah menjadi DIPERBAIKI.
      * File berita acara TIDAK wajib diupload ulang di sini.
      */
-    public function simpanPerbaikan(Request $request, Arsip $arsip)
+     public function simpanPerbaikan(Request $request, Arsip $arsip)
     {
         $user = Auth::user();
-
+ 
         if ($arsip->sub_bagian_id != $user->sub_bagian_id
             || !in_array($arsip->status_pindah, ['DITOLAK', 'DIPERBAIKI'])) {
             abort(403);
         }
-
+ 
         $validated = $request->validate([
             'kode_klasifikasi_id' => 'required|exists:kode_klasifikasis,id',
             'uraian_arsip'        => 'required|string|min:30',
@@ -167,22 +167,25 @@ class SubBagianRiwayatPemindahanController extends Controller
             'tanggal_arsip'       => 'required|date',
             'jumlah_berkas'       => 'required|integer|min:1',
             'satuan_arsip'        => 'required|string|max:20',
-
+ 
             'nomor_rak'           => 'nullable|string|max:50',
             'nomor_box'           => 'nullable|string|max:50',
             'nomor_sampul'        => 'nullable|string|max:50',
-
+ 
             'tingkat_perkembangan' => 'required|string|max:50',
             'keterangan'           => 'required|string|max:100',
             'media_arsip'          => 'required|string|max:50',
-
+ 
             // Upload BA baru bersifat OPSIONAL — tidak wajib
             'file_berita_acara_baru' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
-
+ 
+            // Nomor BAP (berita acara pindah) — opsional, hanya jika perlu diperbaiki
+            'nomor_bap' => 'nullable|string|max:255',
+ 
             // Wajib diisi agar jelas apa yang sudah diperbaiki
             'catatan_perbaikan' => 'required|string|max:1000',
         ]);
-
+ 
         DB::beginTransaction();
         try {
             // Upload file berita acara baru (jika ada)
@@ -190,23 +193,38 @@ class SubBagianRiwayatPemindahanController extends Controller
                 if ($arsip->file_berita_acara) {
                     Storage::disk('public')->delete('arsip/' . $arsip->file_berita_acara);
                 }
-
+ 
                 $file = $request->file('file_berita_acara_baru');
                 $fileName = time() . '_' . $file->getClientOriginalName();
                 $file->storeAs('arsip', $fileName, 'public');
                 $validated['file_berita_acara'] = $fileName;
             }
-
+ 
+            // Nomor BAP bukan kolom di tabel arsips, jadi diupdate terpisah
+            // ke tabel berita_acara_pindah lewat relasi berita_acara_detail.
+            $nomorBapBaru = $validated['nomor_bap'] ?? null;
+            unset($validated['nomor_bap']);
+ 
+            if (!empty($nomorBapBaru)) {
+                $beritaAcaraDetail = $arsip->beritaAcaraDetailS()->latest()->first();
+ 
+                if ($beritaAcaraDetail && $beritaAcaraDetail->beritaAcara) {
+                    $beritaAcaraDetail->beritaAcara->update([
+                        'nomor_bap' => $nomorBapBaru,
+                    ]);
+                }
+            }
+ 
             // Tandai sebagai sudah diperbaiki (belum diajukan ulang)
             $validated['status_pindah'] = 'DIPERBAIKI';
             $validated['updated_at'] = now();
-
+ 
             unset($validated['file_berita_acara_baru']);
-
+ 
             $arsip->update($validated);
-
+ 
             DB::commit();
-
+ 
             return redirect()->route('subbagian.riwayat-pemindahan.perbaikan', $arsip->id)
                 ->with('success', 'Perbaikan arsip berhasil disimpan. Silakan klik "Ajukan Kembali" jika sudah yakin.');
         } catch (\Exception $e) {
