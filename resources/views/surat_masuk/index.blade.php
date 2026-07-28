@@ -382,6 +382,7 @@
     <div class="modal-dialog">
         <form action="{{ route('surat-masuk.import') }}"
               method="POST"
+              id="importSuratV1Form"
               class="modal-content border-0 rounded-4">
 
             @csrf
@@ -415,6 +416,14 @@
                     <input class="form-check-input" type="checkbox" name="confirmation" value="1" id="confirmImportV1" required>
                     <label class="form-check-label" for="confirmImportV1">Saya memahami bahwa data Surat Masuk V1 akan dimasukkan atau diperbarui di daftar Surat Masuk.</label>
                 </div>
+                <div id="importSuratV1Progress" class="d-none mt-3">
+                    <div class="progress" role="progressbar" aria-label="Progres import SINAR V1" aria-valuemin="0" aria-valuemax="100">
+                        <div id="importSuratV1ProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%">0%</div>
+                    </div>
+                    <div id="importSuratV1Status" class="small text-muted mt-2">Menyiapkan import...</div>
+                    <div class="small text-warning mt-1"><i class="fas fa-info-circle me-1"></i>Biarkan halaman ini tetap terbuka sampai proses selesai.</div>
+                </div>
+                <div id="importSuratV1Error" class="alert alert-danger d-none mt-3 mb-0"></div>
             </div>
 
             <div class="modal-footer">
@@ -425,6 +434,7 @@
                 </button>
 
                 <button type="submit"
+                        id="importSuratV1Button"
                         class="btn btn-success">
                     <i class="fas fa-upload me-1"></i>
                     Mulai Import SINAR V1
@@ -617,6 +627,85 @@ document.addEventListener('DOMContentLoaded', function() {
             window.addEventListener('resize', updateWidth);
             if (window.ResizeObserver) new ResizeObserver(updateWidth).observe(table);
         });
+
+        const importForm = document.getElementById('importSuratV1Form');
+        if (importForm) {
+            const importButton = document.getElementById('importSuratV1Button');
+            const progressContainer = document.getElementById('importSuratV1Progress');
+            const progressBar = document.getElementById('importSuratV1ProgressBar');
+            const statusText = document.getElementById('importSuratV1Status');
+            const errorBox = document.getElementById('importSuratV1Error');
+            const storageKey = 'sinar-v1-surat-masuk-import-progress';
+
+            importForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                if (!importForm.reportValidity()) return;
+
+                let savedProgress = { cursor: 0, processed: 0 };
+                try {
+                    savedProgress = JSON.parse(sessionStorage.getItem(storageKey)) || savedProgress;
+                } catch (error) {
+                    sessionStorage.removeItem(storageKey);
+                }
+
+                let cursor = Number(savedProgress.cursor) || 0;
+                let processed = Number(savedProgress.processed) || 0;
+                const totals = { instansi_baru: 0, surat_baru: 0, surat_diperbarui: 0, file_disalin: 0 };
+
+                importButton.disabled = true;
+                importButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memproses...';
+                progressContainer.classList.remove('d-none');
+                errorBox.classList.add('d-none');
+
+                try {
+                    while (true) {
+                        const formData = new FormData(importForm);
+                        formData.set('after_id', cursor);
+                        const response = await fetch(importForm.action, {
+                            method: 'POST',
+                            body: formData,
+                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        const raw = await response.text();
+                        let result;
+                        try {
+                            result = JSON.parse(raw);
+                        } catch (error) {
+                            throw new Error('Server tidak mengembalikan respons yang valid. Coba lanjutkan import beberapa saat lagi.');
+                        }
+                        if (!response.ok || !result.success) {
+                            throw new Error(result.message || 'Batch import gagal diproses.');
+                        }
+
+                        cursor = Number(result.next_cursor) || cursor;
+                        processed += Number(result.processed) || 0;
+                        Object.keys(totals).forEach(key => totals[key] += Number(result.stats?.[key]) || 0);
+                        sessionStorage.setItem(storageKey, JSON.stringify({ cursor, processed }));
+
+                        const percentage = result.total > 0 ? Math.min(100, Math.round((processed / result.total) * 100)) : 100;
+                        progressBar.style.width = percentage + '%';
+                        progressBar.textContent = percentage + '%';
+                        statusText.textContent = processed.toLocaleString('id-ID') + ' dari ' + Number(result.total).toLocaleString('id-ID') + ' surat telah diproses.';
+
+                        if (result.done) break;
+                    }
+
+                    sessionStorage.removeItem(storageKey);
+                    progressBar.style.width = '100%';
+                    progressBar.textContent = '100%';
+                    progressBar.classList.remove('progress-bar-animated');
+                    statusText.className = 'small text-success fw-semibold mt-2';
+                    statusText.textContent = `Import selesai. ${totals.surat_baru} surat baru, ${totals.surat_diperbarui} surat diperbarui, dan ${totals.file_disalin} lampiran disalin.`;
+                    importButton.innerHTML = '<i class="fas fa-check me-1"></i>Import Selesai';
+                    setTimeout(() => window.location.reload(), 1500);
+                } catch (error) {
+                    errorBox.textContent = error.message + ' Progres terakhir tersimpan; klik Lanjutkan Import untuk meneruskan.';
+                    errorBox.classList.remove('d-none');
+                    importButton.disabled = false;
+                    importButton.innerHTML = '<i class="fas fa-play me-1"></i>Lanjutkan Import';
+                }
+            });
+        }
     });
 </script>
 @endpush

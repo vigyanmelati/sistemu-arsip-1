@@ -350,71 +350,116 @@ class SuratMasukController extends Controller
 
 public function import(Request $request)
 {
-    $request->validate(['confirmation' => 'accepted']);
+    $validated = $request->validate([
+        'confirmation' => 'accepted',
+        'after_id' => ['nullable', 'integer', 'min:0'],
+    ]);
 
     $stats = ['instansi_baru' => 0, 'surat_baru' => 0, 'surat_diperbarui' => 0, 'file_disalin' => 0];
+    $afterId = (int) ($validated['after_id'] ?? 0);
+    $batchSize = 50;
 
     try {
-        DB::transaction(function () use (&$stats) {
-            SinarV1Instansi::orderBy('id')->chunk(200, function ($items) use (&$stats) {
-                foreach ($items as $legacy) {
-                    $instansi = SuratInstansi::firstOrNew(['nama_instansi' => trim($legacy->nama_instansi)]);
-                    $isNew = ! $instansi->exists;
-                    foreach (['alamat', 'telepon', 'fax', 'email', 'website'] as $field) {
-                        if ($legacy->{$field} !== null && $legacy->{$field} !== '') {
-                            $instansi->{$field} = $legacy->{$field};
+        $documents = SinarV1Document::where('legacy_category_id', 12)
+            ->where('id', '>', $afterId)
+            ->orderBy('id')
+            ->limit($batchSize)
+            ->get();
+
+        DB::transaction(function () use (&$stats, $afterId, $documents) {
+            // Master instansi cukup disinkronkan pada batch pertama.
+            if ($afterId === 0) {
+                SinarV1Instansi::orderBy('id')->chunk(200, function ($items) use (&$stats) {
+                    foreach ($items as $legacy) {
+                        $namaInstansi = trim((string) $legacy->nama_instansi);
+                        if ($namaInstansi === '') {
+                            continue;
                         }
+
+                        $instansi = SuratInstansi::firstOrNew(['nama_instansi' => $namaInstansi]);
+                        $isNew = ! $instansi->exists;
+                        foreach (['alamat', 'telepon', 'fax', 'email', 'website'] as $field) {
+                            if ($legacy->{$field} !== null && $legacy->{$field} !== '') {
+                                $instansi->{$field} = $legacy->{$field};
+                            }
+                        }
+                        $instansi->aktif = true;
+                        $instansi->created_by ??= auth()->id();
+                        $instansi->save();
+                        $stats['instansi_baru'] += $isNew ? 1 : 0;
                     }
-                    $instansi->aktif = true;
-                    $instansi->created_by ??= auth()->id();
-                    $instansi->save();
-                    $stats['instansi_baru'] += $isNew ? 1 : 0;
-                }
-            });
+                });
+            }
 
-            SinarV1Document::where('legacy_category_id', 12)->orderBy('id')->chunk(200, function ($documents) use (&$stats) {
-                foreach ($documents as $legacy) {
-                    $namaInstansi = trim($legacy->instansi_satker ?: 'Instansi tidak tercatat');
-                    $instansi = SuratInstansi::firstOrCreate(
-                        ['nama_instansi' => $namaInstansi],
-                        ['aktif' => true, 'created_by' => auth()->id()]
-                    );
+            foreach ($documents as $legacy) {
+                $namaInstansi = trim($legacy->instansi_satker ?: 'Instansi tidak tercatat');
+                $instansi = SuratInstansi::firstOrCreate(
+                    ['nama_instansi' => $namaInstansi],
+                    ['aktif' => true, 'created_by' => auth()->id()]
+                );
 
-                    $surat = SuratMasuk::firstOrNew(['sinar_v1_document_id' => $legacy->id]);
-                    $isNew = ! $surat->exists;
-                    $fileName = $surat->file_input;
-                    if ($legacy->file_path && Storage::disk('local')->exists($legacy->file_path)) {
-                        $fileName = 'sinar_v1_'.$legacy->id.'_'.basename($legacy->file_name_original ?: $legacy->file_path);
-                        Storage::disk('public')->put('surat_masuk/'.$fileName, Storage::disk('local')->get($legacy->file_path));
+                $surat = SuratMasuk::firstOrNew(['sinar_v1_document_id' => $legacy->id]);
+                $isNew = ! $surat->exists;
+                $fileName = $surat->file_input;
+                if ($legacy->file_path && Storage::disk('local')->exists($legacy->file_path)) {
+                    $fileName = 'sinar_v1_'.$legacy->id.'_'.basename($legacy->file_name_original ?: $legacy->file_path);
+                    $targetPath = 'surat_masuk/'.$fileName;
+
+                    if (! Storage::disk('public')->exists($targetPath)) {
+                        $stream = Storage::disk('local')->readStream($legacy->file_path);
+                        if ($stream === false) {
+                            throw new \RuntimeException('Lampiran tidak dapat dibaca: '.$legacy->file_path);
+                        }
+
+                        try {
+                            Storage::disk('public')->writeStream($targetPath, $stream);
+                        } finally {
+                            if (is_resource($stream)) {
+                                fclose($stream);
+                            }
+                        }
                         $stats['file_disalin']++;
                     }
-
-                    $tanggalDokumen = $legacy->tanggal_dokumen ?: $legacy->tanggal_penyelesaian ?: $legacy->legacy_created_at?->toDateString() ?: now()->toDateString();
-                    $surat->fill([
-                        'sub_bagian_id' => $legacy->sub_bagian_id,
-                        'instansi_id' => $instansi->id,
-                        'instansi_satker' => $instansi->nama_instansi,
-                        'tanggal_dokumen' => $tanggalDokumen,
-                        'tanggal_penyelesaian' => $legacy->tanggal_penyelesaian ?: $tanggalDokumen,
-                        'nomor_dokumen' => $legacy->nomor_dokumen ?: 'TANPA-NOMOR-V1-'.$legacy->legacy_id,
-                        'nomor_agenda' => $legacy->nomor_agenda ?: 'V1-'.$legacy->legacy_id,
-                        'kepada' => $legacy->kepada ?: 'KPU Provinsi Bali',
-                        'perihal' => $legacy->perihal ?: 'Surat Masuk SINAR V1',
-                        'catatan' => $legacy->catatan,
-                        'file_input' => $fileName,
-                    ])->save();
-
-                    $stats[$isNew ? 'surat_baru' : 'surat_diperbarui']++;
                 }
-            });
+
+                $tanggalDokumen = $legacy->tanggal_dokumen ?: $legacy->tanggal_penyelesaian ?: $legacy->legacy_created_at?->toDateString() ?: now()->toDateString();
+                $surat->fill([
+                    'sub_bagian_id' => $legacy->sub_bagian_id,
+                    'instansi_id' => $instansi->id,
+                    'instansi_satker' => $instansi->nama_instansi,
+                    'tanggal_dokumen' => $tanggalDokumen,
+                    'tanggal_penyelesaian' => $legacy->tanggal_penyelesaian ?: $tanggalDokumen,
+                    'nomor_dokumen' => $legacy->nomor_dokumen ?: 'TANPA-NOMOR-V1-'.$legacy->legacy_id,
+                    'nomor_agenda' => $legacy->nomor_agenda ?: 'V1-'.$legacy->legacy_id,
+                    'kepada' => $legacy->kepada ?: 'KPU Provinsi Bali',
+                    'perihal' => $legacy->perihal ?: 'Surat Masuk SINAR V1',
+                    'catatan' => $legacy->catatan,
+                    'file_input' => $fileName,
+                ])->save();
+
+                $stats[$isNew ? 'surat_baru' : 'surat_diperbarui']++;
+            }
         });
 
-        return redirect()->route('surat-masuk.index')->with('success',
-            "Import selesai: {$stats['instansi_baru']} instansi baru, {$stats['surat_baru']} surat baru, {$stats['surat_diperbarui']} surat diperbarui, dan {$stats['file_disalin']} lampiran disalin."
-        );
+        $nextCursor = (int) ($documents->last()?->id ?? $afterId);
+        $hasMore = SinarV1Document::where('legacy_category_id', 12)
+            ->where('id', '>', $nextCursor)
+            ->exists();
+
+        return response()->json([
+            'success' => true,
+            'done' => ! $hasMore,
+            'next_cursor' => $nextCursor,
+            'processed' => $documents->count(),
+            'total' => SinarV1Document::where('legacy_category_id', 12)->count(),
+            'stats' => $stats,
+        ]);
     } catch (\Throwable $e) {
         Log::error('Import Surat Masuk SINAR V1 gagal', ['exception' => $e]);
-        return back()->with('error', 'Import gagal: '.$e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Import gagal: '.$e->getMessage(),
+        ], 500);
     }
 }
 

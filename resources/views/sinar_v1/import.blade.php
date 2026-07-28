@@ -82,17 +82,56 @@
     const outputBox = document.getElementById('processOutput');
     const alertBox = document.getElementById('importAlert');
     let selectedFiles = [];
+    let uploadOffset = 0;
+    const maxBatchFiles = 8;
+    const maxBatchBytes = 8 * 1024 * 1024;
+    const stagingLimitBytes = 5 * 1024 * 1024 * 1024;
+    let currentStagedBytes = {{ (int) $stagedBytes }};
 
     const bytes = value => `${(value / 1048576).toLocaleString('id-ID', {maximumFractionDigits: 2})} MB`;
     const alert = (message, type = 'info') => alertBox.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
 
     folderInput.addEventListener('change', () => {
-        selectedFiles = Array.from(folderInput.files).filter(file => /(^|\/)uploads\//i.test(file.webkitRelativePath));
+        const folderFiles = Array.from(folderInput.files).filter(file => /(^|\/)uploads\//i.test(file.webkitRelativePath));
+        const oversized = folderFiles.filter(file => file.size > 20 * 1024 * 1024);
+        selectedFiles = folderFiles.filter(file => file.size <= 20 * 1024 * 1024);
+        uploadOffset = 0;
         const total = selectedFiles.reduce((sum, file) => sum + file.size, 0);
-        folderSummary.textContent = `${selectedFiles.length.toLocaleString('id-ID')} file valid dipilih (${bytes(total)}).`;
+        folderSummary.textContent = `${selectedFiles.length.toLocaleString('id-ID')} file dapat diunggah (${bytes(total)}).${oversized.length ? ` ${oversized.length.toLocaleString('id-ID')} file di atas 20 MB tidak dapat diunggah lewat browser.` : ''}`;
         uploadButton.disabled = selectedFiles.length === 0;
         if (!selectedFiles.length) alert('Folder yang dipilih harus mengandung folder uploads.', 'warning');
+        else if (currentStagedBytes + total > stagingLimitBytes) alert('Total folder melebihi batas staging browser 5 GB. Unggah per subfolder/kategori lalu import dan kosongkan staging, atau gunakan bind mount read-only yang lebih direkomendasikan.', 'warning');
+        else if (oversized.length) alert(`${oversized.length.toLocaleString('id-ID')} file berukuran lebih dari 20 MB. File tersebut memerlukan metode bind mount/copy langsung server.`, 'warning');
     });
+
+    const responseData = async response => {
+        const raw = await response.text();
+        let result = {};
+        try { result = raw ? JSON.parse(raw) : {}; }
+        catch (error) {
+            const plain = raw.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300);
+            result.message = plain || `Server mengirim respons non-JSON (HTTP ${response.status}).`;
+        }
+        if (!response.ok) {
+            if (response.status === 413) result.message = 'Ukuran batch melebihi batas web server (HTTP 413). Gunakan bind mount folder server atau naikkan client_max_body_size/post_max_size.';
+            if (response.status === 419) result.message = 'Sesi login atau CSRF kedaluwarsa (HTTP 419). Muat ulang halaman lalu lanjutkan upload.';
+            if (response.status >= 500) result.message = `Server mengalami kesalahan (HTTP ${response.status}). ${result.message || ''}`.trim();
+            throw new Error(result.message || `Request gagal (HTTP ${response.status}).`);
+        }
+        return result;
+    };
+
+    const nextBatch = start => {
+        const batch = [];
+        let size = 0;
+        for (let index = start; index < selectedFiles.length && batch.length < maxBatchFiles; index++) {
+            const file = selectedFiles[index];
+            if (batch.length && size + file.size > maxBatchBytes) break;
+            batch.push(file);
+            size += file.size;
+        }
+        return batch;
+    };
 
     uploadButton.addEventListener('click', async () => {
         uploadButton.disabled = true;
@@ -100,23 +139,30 @@
         let uploaded = 0;
         const rejected = [];
         try {
-            for (let offset = 0; offset < selectedFiles.length; offset += 15) {
-                const batch = selectedFiles.slice(offset, offset + 15);
+            while (uploadOffset < selectedFiles.length) {
+                const batch = nextBatch(uploadOffset);
                 const body = new FormData();
                 batch.forEach(file => { body.append('files[]', file); body.append('paths[]', file.webkitRelativePath); });
                 const response = await fetch('{{ route('sinar-v1.import.stage-files') }}', {method:'POST', headers:{'X-CSRF-TOKEN':csrf,'Accept':'application/json'}, body});
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.message || 'Upload batch gagal.');
+                const result = await responseData(response);
                 uploaded += result.stored;
                 rejected.push(...result.rejected);
-                const percent = Math.round(Math.min(offset + batch.length, selectedFiles.length) / selectedFiles.length * 100);
+                uploadOffset += batch.length;
+                const percent = Math.round(uploadOffset / selectedFiles.length * 100);
                 progressBar.style.width = `${percent}%`; progressBar.textContent = `${percent}%`;
                 document.getElementById('stagedCount').textContent = `${result.total_files.toLocaleString('id-ID')} file`;
                 document.getElementById('stagedSize').textContent = bytes(result.total_bytes);
+                currentStagedBytes = result.total_bytes;
             }
             alert(`${uploaded.toLocaleString('id-ID')} file masuk staging.${rejected.length ? ` ${rejected.length} file ditolak karena tipe tidak diizinkan.` : ''}`, rejected.length ? 'warning' : 'success');
-        } catch (error) { alert(error.message, 'danger'); }
-        finally { uploadButton.disabled = false; progressBar.classList.remove('progress-bar-animated'); }
+        } catch (error) {
+            alert(`${error.message} Progres berhenti pada file ${uploadOffset.toLocaleString('id-ID')} dari ${selectedFiles.length.toLocaleString('id-ID')}; klik tombol lagi untuk melanjutkan dari posisi ini.`, 'danger');
+        }
+        finally {
+            uploadButton.disabled = false;
+            progressBar.classList.remove('progress-bar-animated');
+            if (uploadOffset > 0 && uploadOffset < selectedFiles.length) uploadButton.innerHTML = '<i class="bi bi-play-circle"></i> Lanjutkan Upload';
+        }
     });
 
     async function run(mode) {
@@ -128,9 +174,8 @@
         button.disabled = true; const oldHtml = button.innerHTML; button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Memproses...';
         try {
             const response = await fetch(importForm.action, {method:'POST', headers:{'X-CSRF-TOKEN':csrf,'Accept':'application/json'}, body:new FormData(importForm)});
-            const result = await response.json();
+            const result = await responseData(response);
             outputBox.classList.remove('d-none'); outputBox.querySelector('pre').textContent = result.output || result.message || 'Tidak ada keluaran.';
-            if (!response.ok) throw new Error(result.message || 'Proses gagal.');
             alert(mode === 'commit' ? 'Import selesai. Muat ulang halaman untuk melihat statistik terbaru.' : 'Koneksi berhasil dan dry-run selesai.', 'success');
         } catch (error) { alert(error.message, 'danger'); }
         finally { button.disabled = false; button.innerHTML = oldHtml; }
