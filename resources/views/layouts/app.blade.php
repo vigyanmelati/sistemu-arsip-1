@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>SINAR KPU BALI V2 </title>
-<link rel="icon" type="image/png" href="{{ asset('LOGO.png') }}?v=1">
+<link rel="icon" type="image/png" href="{{ asset('logo-sinar-v2-kotak.png') }}?v=1">
 
     <!-- Bootstrap 5 + Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -97,9 +97,10 @@
             font-size: 1.4rem;
         }
         .sidebar.collapsed .logo-container {
-            width: 56px;
-            height: 56px;
+            width: 58px;
+            height: 58px;
             margin: 0 auto;
+            border-radius: 18px;
         }
         .sidebar.collapsed .sidebar-brand {
             padding: 20px 8px;
@@ -121,22 +122,28 @@
             margin-bottom: 24px;
         }
         .logo-container {
-            background: white;
-            border-radius: 18px;
-            width: 88px;
-            height: 88px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 24px;
+            width: 112px;
+            height: 112px;
             margin: 0 auto 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 8px;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.1);
+            padding: 10px;
+            box-shadow:
+                0 16px 32px rgba(32, 8, 8, 0.24),
+                0 0 26px rgba(255, 36, 112, 0.14);
             transition: var(--transition-default);
         }
         .sidebar-logo {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
+            display: block;
+            border-radius: 22px;
+            filter: drop-shadow(0 8px 14px rgba(255, 36, 112, 0.18));
         }
         .brand-text h4 {
             font-weight: 700;
@@ -394,7 +401,7 @@
 <div class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <div class="logo-container">
-            <img src="{{ asset('LOGO.png') }}" alt="Logo KPU Bali" class="sidebar-logo">
+            <img src="{{ asset('logo-sinar-v2-kotak.png') }}?v=1" alt="Logo SINAR KPU Bali V2" class="sidebar-logo">
         </div>
         <div class="brand-text">
             <h4>SINAR KPU BALI</h4>
