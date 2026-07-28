@@ -2,6 +2,8 @@
 
 Tanggal: 25 Juli 2026
 
+Terakhir diperbarui: 27 Juli 2026
+
 Branch: `feature/sinar-v1-dokumen-historis`
 
 Commit dasar fitur historis: `afd6634 feat: add SINAR V1 historical import workflow`
@@ -170,7 +172,70 @@ Setiap Surat Masuk hasil migrasi menyimpan `sinar_v1_document_id` yang unik. Kar
 
 Perintah `sinar-v1:migrate` diperluas agar membaca `t_instansi` dan menyimpannya ke `sinar_v1_instansis`, termasuk alamat dan informasi kontak. Data tersebut kemudian digunakan oleh import Surat Masuk.
 
-Pada verifikasi lokal tanggal 25 Juli 2026, penyegaran sumber V1 tidak dapat dijalankan karena MySQL menolak koneksi `root` tanpa password. Pengguna harus menjalankan halaman Import SINAR V1 dengan host, database, username, dan password yang benar. Setelah itu tabel instansi historis ikut terisi.
+Pada verifikasi awal tanggal 25 Juli 2026, koneksi lokal V1 belum tersedia. Migrasi produksi kemudian berhasil dijalankan pada 27 Juli 2026 menggunakan koneksi database V1 di `10.14.4.103` dan akses lampiran melalui bind mount read-only.
+
+### Konfigurasi bind mount produksi
+
+Lokasi aplikasi dan lampiran SINAR V1 pada host:
+
+```text
+/media/datahp1/web/siarsip/public
+└── uploads/
+```
+
+Lokasi proyek Docker SINAR V2:
+
+```text
+/media/datahp1/Docker
+```
+
+Volume berikut ditambahkan pada service `app4`:
+
+```yaml
+volumes:
+  - ./app4:/var/www/html
+  - ./docker/php/php.ini:/usr/local/etc/php/php.ini
+  - /media/datahp1/web/siarsip/public:/mnt/sinar-v1-public:ro
+```
+
+Konfigurasi lingkungan SINAR V2:
+
+```env
+SINAR_V1_DB_HOST=10.14.4.103
+SINAR_V1_DB_PORT=3306
+SINAR_V1_DB_DATABASE=siarsip
+SINAR_V1_DB_USERNAME=<user-migrasi-read-only>
+SINAR_V1_DB_PASSWORD=<password>
+SINAR_V1_FILES_ROOT=/mnt/sinar-v1-public
+SINAR_V1_COPY_FILES=true
+```
+
+Mount menggunakan opsi `:ro` agar container SINAR V2 hanya dapat membaca dan tidak dapat mengubah file asli SINAR V1.
+
+### Hasil migrasi produksi 27 Juli 2026
+
+Perintah yang dijalankan:
+
+```bash
+cd /media/datahp1/Docker
+docker compose exec app4 php artisan optimize:clear
+docker compose exec app4 php artisan sinar-v1:migrate
+docker compose exec app4 php artisan sinar-v1:migrate --commit
+```
+
+Hasil aktual:
+
+| Komponen | Jumlah |
+|---|---:|
+| Instansi ditemukan | 1.218 |
+| Dokumen ditemukan dan tersimpan | 15.420 |
+| Lampiran berhasil disalin | 14.209 |
+| Lampiran tercatat hilang | 99 |
+| Dokumen tanpa lampiran sumber | 1.112 |
+
+Jumlah dokumen tanpa lampiran dihitung dari `15.420 - 14.209 - 99 = 1.112`. Status ini berbeda dengan file hilang: dokumen tanpa lampiran memang tidak memiliki nama file sumber, sedangkan 99 file hilang memiliki referensi file tetapi file fisiknya belum ditemukan pada lokasi bind mount.
+
+Migrasi dinyatakan berhasil. Tingkat keberhasilan penyalinan terhadap dokumen yang mempunyai referensi lampiran adalah sekitar 99,31% (`14.209 / (14.209 + 99)`). Import dapat dijalankan ulang setelah 99 file ditemukan atau dikembalikan ke struktur folder V1; dokumen tidak akan digandakan dan importer akan mencoba kembali file yang belum tersedia.
 
 ## 8. Struktur database baru
 
@@ -265,6 +330,10 @@ Pagination diubah menggunakan Bootstrap 5 secara global melalui `Paginator::useB
 - Route pengelolaan Surat Masuk dan master data terverifikasi menggunakan middleware `auth`, `nocache`, dan `admin`.
 - Pemeriksaan whitespace/error patch menggunakan `git diff --check` berhasil.
 - Cache aplikasi dibersihkan dengan `php artisan optimize:clear`.
+- Bind mount read-only dari folder `public` SINAR V1 berhasil dibaca oleh container `laravel-app4`.
+- Koneksi database sumber pada `10.14.4.103` berhasil digunakan oleh command migrasi.
+- Migrasi produksi berhasil menyimpan 1.218 instansi dan 15.420 dokumen.
+- Sebanyak 14.209 lampiran berhasil disalin dan 99 referensi lampiran perlu ditindaklanjuti.
 
 Catatan pengujian:
 
@@ -292,9 +361,25 @@ Sebelum import data produksi:
 5. Jalankan import dan periksa beberapa sampel data serta lampirannya.
 6. Gunakan fitur Cek Duplikat Instansi sebelum melakukan penggabungan.
 
-## 14. Kondisi sebelum commit
+Untuk deployment Docker produksi yang digunakan saat migrasi:
+
+```bash
+cd /media/datahp1/Docker
+docker compose config
+docker compose up -d --force-recreate app4
+docker compose exec app4 ls -lah /mnt/sinar-v1-public/uploads
+docker compose exec app4 php artisan optimize:clear
+docker compose exec app4 php artisan sinar-v1:migrate
+docker compose exec app4 php artisan sinar-v1:migrate --commit
+```
+
+Metode bind mount dipilih menggantikan upload folder lewat browser karena jumlah lampiran sangat besar. Staging browser dibatasi 5 GB dan file individual maksimal 20 MB, sedangkan bind mount tidak menggandakan folder sumber ke staging serta lebih stabil untuk proses migrasi satu server.
+
+## 14. Riwayat commit dan kondisi repository
 
 - Branch aktif sudah benar: `feature/sinar-v1-dokumen-historis`.
 - Migration baru sudah dijalankan pada database lokal.
-- Perubahan pekerjaan ini masih berada di working tree dan belum di-commit.
+- Commit `afd6634` menambahkan alur import historis SINAR V1.
+- Commit `72e7539` menyempurnakan workflow Surat Masuk dan import V1.
+- Commit `fef61a3` menambahkan validasi Surat Masuk dan alur pratinjau disposisi.
 - Folder `docs/` dan `tools/` sebelumnya sudah berstatus untracked; commit harus memilih file secara eksplisit agar berkas lain milik pengguna tidak ikut masuk tanpa sengaja.
