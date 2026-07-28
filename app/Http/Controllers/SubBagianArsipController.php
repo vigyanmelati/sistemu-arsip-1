@@ -996,20 +996,34 @@ public function ajukanPindahMultiple(Request $request)
         ->with('success', 'Arsip berhasil diduplikasi.');
 }
 
+// private function getLokasiArsip($user)
+// {
+//     $namaSub = $user->subBagian->nama_sub_bagian ?? null;
+
+//     $mapLokasi = [
+//         'Sub Bagian Umum dan Logistik' => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
+//         'Sub Bagian Partisipasi, Hubungan Masyarakat dan SDM' => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
+//         'Sub Bagian Keuangan' => 'RUANG_SUBBAGIAN_KEUANGAN',
+//         'Sub Bagian Perencanaan, Data, dan Informasi' => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
+//         'Sub Bagian Teknis Penyelenggaraan Pemilu' => 'RUANG_SUBBAGIAN_TEKNIS',
+//         'Sub Bagian Hukum' => 'RUANG_SUBBAGIAN_HUKUM',
+//     ];
+
+//     return $mapLokasi[$namaSub] ?? null;
+// }
+
 private function getLokasiArsip($user)
 {
-    $namaSub = $user->subBagian->nama_sub_bagian ?? null;
-
     $mapLokasi = [
-        'Sub Bagian Umum dan Logistik' => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
-        'Sub Bagian Partisipasi, Hubungan Masyarakat dan SDM' => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
-        'Sub Bagian Keuangan' => 'RUANG_SUBBAGIAN_KEUANGAN',
-        'Sub Bagian Perencanaan, Data, dan Informasi' => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
-        'Sub Bagian Teknis Penyelenggaraan Pemilu' => 'RUANG_SUBBAGIAN_TEKNIS',
-        'Sub Bagian Hukum' => 'RUANG_SUBBAGIAN_HUKUM',
+        1 => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
+        2 => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
+        3 => 'RUANG_SUBBAGIAN_KEUANGAN',
+        7 => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
+        5 => 'RUANG_SUBBAGIAN_TEKNIS',
+        6 => 'RUANG_SUBBAGIAN_HUKUM',
     ];
 
-    return $mapLokasi[$namaSub] ?? null;
+    return $mapLokasi[$user->sub_bagian_id] ?? null;
 }
 
 // Tambahkan method ini di controller
