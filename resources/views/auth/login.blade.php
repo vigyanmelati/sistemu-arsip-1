@@ -10,16 +10,35 @@
         /* Custom Tailwind colors sesuai KPU */
         .bg-kpu-red { background-color: #e60000; }
         .text-kpu-red { color: #e60000; }
+        .login-page-bg {
+            background:
+                linear-gradient(135deg, rgba(116, 0, 0, 0.18), rgba(255, 255, 255, 0.08)),
+                url("{{ asset('login-bg-sinar-bali.png') }}?v=2") right bottom / cover no-repeat;
+        }
+        .login-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(14px);
+        }
+        .login-logo {
+            width: 132px;
+            height: 132px;
+            object-fit: contain;
+            border-radius: 32px;
+            box-shadow:
+                0 18px 35px rgba(139, 0, 0, 0.18),
+                0 0 30px rgba(255, 36, 112, 0.16);
+        }
     </style>
 </head>
 <body class="bg-gray-100">
 
     <!-- Background keren -->
-    <div class="relative min-h-screen flex items-center justify-center bg-gray-100">
-        <div class="absolute inset-0 bg-gradient-to-r from-red-500 to-red-700 opacity-30"></div>
+    <div class="relative min-h-screen flex items-center justify-center login-page-bg">
+        <div class="absolute inset-0 bg-gradient-to-br from-red-950/20 via-white/5 to-red-900/20"></div>
 
         <!-- Card Login -->
-        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md p-8 z-10">
+        <div class="relative login-card rounded-xl shadow-xl w-full max-w-md p-8 z-10">
             @if(session('error'))
                 <div class="mb-4 p-3 bg-red-100 text-red-700 rounded">
                     {{ session('error') }}
@@ -37,7 +56,7 @@
             @endif
             <div class="text-center mb-6">
                 <!-- Logo KPU -->
-                <img src="{{ asset('LOGO.png') }}" alt="Logo KPU Bali" class="mx-auto w-60 h-40">
+                <img src="{{ asset('logo-sinar-v2-kotak.png') }}?v=1" alt="Logo SINAR KPU Bali V2" class="mx-auto login-logo">
                 <h1 class="text-2xl font-bold mt-4 text-gray-800">Sistem Informasi Arsip <br> KPU Provinsi Bali</h1>
                 <p class="text-gray-500 mt-1">Masukkan akun Anda untuk masuk</p>
             </div>
