@@ -16,15 +16,25 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class SubBagianSuratMasukController extends Controller
 {
+      
+    protected array $sortableColumns = [
+        'nomor_agenda',
+        'tanggal_dokumen',
+        'tanggal_penyelesaian',
+        'nomor_dokumen',
+        'perihal',
+        'instansi_satker',
+    ];
+ 
     /**
      * LIST DATA
      */
     public function index(Request $request)
     {
         $search = $request->input('search');
-
-        $surat = SuratMasuk::with(['subBagian', 'instansi', 'tujuanDisposisis'])
-
+ 
+        $query = SuratMasuk::with(['subBagian', 'instansi', 'tujuanDisposisis'])
+ 
             // SEARCH
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
@@ -32,11 +42,24 @@ class SubBagianSuratMasukController extends Controller
                         ->orWhere('perihal', 'like', "%{$search}%")
                         ->orWhere('instansi_satker', 'like', "%{$search}%");
                 });
-            })
-
-            ->latest()
-            ->paginate(10);
-
+            });
+ 
+        // --- Sorting ---
+        // Kolom sort divalidasi terhadap whitelist, default: created_at (surat terbaru dulu).
+        $sortColumn = $request->input('sort');
+        $sortColumn = in_array($sortColumn, $this->sortableColumns, true) ? $sortColumn : 'created_at';
+ 
+        $sortDirection = $request->input('direction') === 'asc' ? 'asc' : 'desc';
+ 
+        $query->orderBy($sortColumn, $sortDirection);
+ 
+        // Urutan kedua supaya data dengan nilai sama tetap konsisten urutannya antar halaman
+        if ($sortColumn !== 'created_at') {
+            $query->orderBy('created_at', 'desc');
+        }
+ 
+        $surat = $query->paginate(10);
+ 
         return view('subbagian.surat_masuk.index', compact('surat'));
     }
 

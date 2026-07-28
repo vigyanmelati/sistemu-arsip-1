@@ -80,16 +80,64 @@
 </div>
 @endif
 
+                    {{-- Helper untuk link sorting header tabel --}}
+                    @php
+                        $currentSort = request('sort', 'created_at');
+                        $currentDir  = request('direction', 'desc');
+                        $sortUrl = function (string $field) use ($currentSort, $currentDir) {
+                            $newDir = ($currentSort === $field && $currentDir === 'asc') ? 'desc' : 'asc';
+                            return request()->fullUrlWithQuery(['sort' => $field, 'direction' => $newDir]);
+                        };
+                        $sortIcon = function (string $field) use ($currentSort, $currentDir) {
+                            if ($currentSort !== $field) {
+                                return '<i class="fas fa-sort text-muted ms-1"></i>';
+                            }
+                            return $currentDir === 'asc'
+                                ? '<i class="fas fa-sort-up ms-1"></i>'
+                                : '<i class="fas fa-sort-down ms-1"></i>';
+                        };
+                    @endphp
+
                     <div class="table-scroll-top" aria-label="Geser tabel secara horizontal"><div></div></div>
                     <div class="table-responsive surat-table-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
                         <table class="table table-hover align-middle" style="min-width:1450px">
                             <thead>
                                 <tr class="text-center">
-                                    <th style="min-width:55px">No</th><th style="min-width:110px">No. Agenda</th>
-                                    <th style="min-width:130px">Tanggal Dokumen</th><th style="min-width:150px">Tanggal Penyelesaian</th>
-                                    <th style="min-width:180px">No. Surat</th><th style="min-width:260px">Perihal</th>
-                                    <th style="min-width:220px">Asal Dokumen</th><th style="min-width:105px">Dokumen</th>
-                                    <th style="min-width:200px">Tujuan Disposisi</th><th style="min-width:180px">Keterangan</th><th style="min-width:170px">Aksi</th>
+                                    <th style="min-width:55px">No</th>
+                                    <th style="min-width:110px">
+                                        <a href="{{ $sortUrl('nomor_agenda') }}" class="text-decoration-none text-dark">
+                                            No. Agenda {!! $sortIcon('nomor_agenda') !!}
+                                        </a>
+                                    </th>
+                                    <th style="min-width:130px">
+                                        <a href="{{ $sortUrl('tanggal_dokumen') }}" class="text-decoration-none text-dark">
+                                            Tanggal Dokumen {!! $sortIcon('tanggal_dokumen') !!}
+                                        </a>
+                                    </th>
+                                    <th style="min-width:150px">
+                                        <a href="{{ $sortUrl('tanggal_penyelesaian') }}" class="text-decoration-none text-dark">
+                                            Tanggal Penyelesaian {!! $sortIcon('tanggal_penyelesaian') !!}
+                                        </a>
+                                    </th>
+                                    <th style="min-width:180px">
+                                        <a href="{{ $sortUrl('nomor_dokumen') }}" class="text-decoration-none text-dark">
+                                            No. Surat {!! $sortIcon('nomor_dokumen') !!}
+                                        </a>
+                                    </th>
+                                    <th style="min-width:260px">
+                                        <a href="{{ $sortUrl('perihal') }}" class="text-decoration-none text-dark">
+                                            Perihal {!! $sortIcon('perihal') !!}
+                                        </a>
+                                    </th>
+                                    <th style="min-width:220px">
+                                        <a href="{{ $sortUrl('instansi_satker') }}" class="text-decoration-none text-dark">
+                                            Asal Dokumen {!! $sortIcon('instansi_satker') !!}
+                                        </a>
+                                    </th>
+                                    <th style="min-width:105px">Dokumen</th>
+                                    <th style="min-width:200px">Tujuan Disposisi</th>
+                                    <th style="min-width:180px">Keterangan</th>
+                                    <th style="min-width:170px">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -261,6 +309,7 @@
     .table-scroll-top::-webkit-scrollbar-track { background:#f1f1f1; border-radius:4px; }
     .table-scroll-top::-webkit-scrollbar-thumb { background:#888; border-radius:4px; }
     .table thead th { background:#f8f9fa; color:#333; font-weight:600; padding:12px 10px; border-bottom:2px solid #dee2e6; position:sticky; top:0; z-index:20; box-shadow:inset 0 -2px 0 #dee2e6; }
+    .table thead th a { display: inline-flex; align-items: center; }
     .table tbody tr:hover { background:#f8f9fa; transform:none; box-shadow:none; }
     .table tbody td { background:#fff; color:#495057; }
     .table tbody tr:hover td { background:#f8f9fa; }

@@ -17,68 +17,89 @@ use Illuminate\Support\Facades\DB;
 
 class SuratMasukController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
- public function index(Request $request)
-{
-    $search = $request->input('search');
-    $filter = $request->filter;
-
-    $query = SuratMasuk::with(['instansi', 'tujuanDisposisis']);
-
-    if ($search) {
-        $query->where(function ($q) use ($search) {
-            $q->where('nomor_dokumen', 'like', "%{$search}%")
-                ->orWhere('perihal', 'like', "%{$search}%")
-                ->orWhere('instansi_satker', 'like', "%{$search}%");
-        });
-    }
-
-    // Ambil semua nomor dokumen yang duplikat
-    $duplicateNomor = SuratMasuk::select('nomor_dokumen')
-        ->groupBy('nomor_dokumen')
-        ->havingRaw('COUNT(*) > 1')
-        ->pluck('nomor_dokumen');
-
-    // Filter hanya data duplikat
-    if ($filter == 'duplikasi') {
-        $query->whereIn('nomor_dokumen', $duplicateNomor);
-    }
-
-    $surat = $query
-        ->orderBy('created_at', 'desc')
-        ->paginate(10);
-
-    // jumlah data yang duplikat
-    $jumlahDuplikat = SuratMasuk::whereIn(
-        'nomor_dokumen',
-        $duplicateNomor
-    )->count();
-
-    // total masing-masing nomor dokumen
-    $duplicateCounts = SuratMasuk::selectRaw(
-        'nomor_dokumen, COUNT(*) as total'
-    )
-        ->groupBy('nomor_dokumen')
-        ->pluck('total', 'nomor_dokumen');
-
-    $jumlahHistorisV1 = SinarV1Document::where('legacy_category_id', 12)->count();
-    $jumlahSudahDiimport = SuratMasuk::whereNotNull('sinar_v1_document_id')->count();
-    $jumlahInstansiHistoris = SinarV1Instansi::count();
-
-    return view(
-        'surat_masuk.index',
-        compact(
-            'surat',
-            'duplicateCounts',
-            'jumlahDuplikat'
-            , 'jumlahHistorisV1'
-            , 'jumlahSudahDiimport'
-            , 'jumlahInstansiHistoris'
+    protected array $sortableColumns = [
+            'nomor_agenda',
+            'tanggal_dokumen',
+            'tanggal_penyelesaian',
+            'nomor_dokumen',
+            'perihal',
+            'instansi_satker',
+        ];
+    
+        /**
+         * Display a listing of the resource.
+         */
+    public function index(Request $request)
+    {
+        $search = $request->input('search');
+        $filter = $request->filter;
+    
+        $query = SuratMasuk::with(['instansi', 'tujuanDisposisis']);
+    
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nomor_dokumen', 'like', "%{$search}%")
+                    ->orWhere('perihal', 'like', "%{$search}%")
+                    ->orWhere('instansi_satker', 'like', "%{$search}%");
+            });
+        }
+    
+        // Ambil semua nomor dokumen yang duplikat
+        $duplicateNomor = SuratMasuk::select('nomor_dokumen')
+            ->groupBy('nomor_dokumen')
+            ->havingRaw('COUNT(*) > 1')
+            ->pluck('nomor_dokumen');
+    
+        // Filter hanya data duplikat
+        if ($filter == 'duplikasi') {
+            $query->whereIn('nomor_dokumen', $duplicateNomor);
+        }
+    
+        // --- Sorting ---
+        // Kolom sort divalidasi terhadap whitelist, default: created_at (surat terbaru dulu).
+        $sortColumn = $request->input('sort');
+        $sortColumn = in_array($sortColumn, $this->sortableColumns, true) ? $sortColumn : 'created_at';
+    
+        $sortDirection = $request->input('direction') === 'asc' ? 'asc' : 'desc';
+    
+        $query->orderBy($sortColumn, $sortDirection);
+    
+        // Urutan kedua supaya data dengan nilai sama tetap konsisten urutannya antar halaman
+        if ($sortColumn !== 'created_at') {
+            $query->orderBy('created_at', 'desc');
+        }
+    
+        $surat = $query->paginate(10);
+    
+        // jumlah data yang duplikat
+        $jumlahDuplikat = SuratMasuk::whereIn(
+            'nomor_dokumen',
+            $duplicateNomor
+        )->count();
+    
+        // total masing-masing nomor dokumen
+        $duplicateCounts = SuratMasuk::selectRaw(
+            'nomor_dokumen, COUNT(*) as total'
         )
-    );
-}
+            ->groupBy('nomor_dokumen')
+            ->pluck('total', 'nomor_dokumen');
+    
+        $jumlahHistorisV1 = SinarV1Document::where('legacy_category_id', 12)->count();
+        $jumlahSudahDiimport = SuratMasuk::whereNotNull('sinar_v1_document_id')->count();
+        $jumlahInstansiHistoris = SinarV1Instansi::count();
+    
+        return view(
+            'surat_masuk.index',
+            compact(
+                'surat',
+                'duplicateCounts',
+                'jumlahDuplikat'
+                , 'jumlahHistorisV1'
+                , 'jumlahSudahDiimport'
+                , 'jumlahInstansiHistoris'
+            )
+        );
+    }
     /**
      * Show the form for creating a new resource.
      */

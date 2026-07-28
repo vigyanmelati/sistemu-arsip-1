@@ -130,28 +130,71 @@
 </div>
 
 @endif
+
+                    {{-- Helper untuk link sorting header tabel --}}
+                    @php
+                        $currentSort = request('sort', 'created_at');
+                        $currentDir  = request('direction', 'desc');
+                        $sortUrl = function (string $field) use ($currentSort, $currentDir) {
+                            $newDir = ($currentSort === $field && $currentDir === 'asc') ? 'desc' : 'asc';
+                            return request()->fullUrlWithQuery(['sort' => $field, 'direction' => $newDir]);
+                        };
+                        $sortIcon = function (string $field) use ($currentSort, $currentDir) {
+                            if ($currentSort !== $field) {
+                                return '<i class="fas fa-sort text-muted ms-1"></i>';
+                            }
+                            return $currentDir === 'asc'
+                                ? '<i class="fas fa-sort-up ms-1"></i>'
+                                : '<i class="fas fa-sort-down ms-1"></i>';
+                        };
+                    @endphp
+
                     <div class="table-scroll-top" aria-label="Geser tabel secara horizontal"><div></div></div>
                     <div class="table-responsive surat-table-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
                         <table class="table table-hover align-middle" style="min-width:1650px">
                             <thead>
                                 <tr class="text-center">
                                     <th style="min-width:55px">No</th>
-                                    <th style="min-width:110px">No. Agenda</th>
-                                    <th style="min-width:130px">Tanggal Dokumen</th>
-                                    <th style="min-width:150px">Tanggal Penyelesaian</th>
-                                    <th style="min-width:180px">No. Surat</th>
-                                    <th style="min-width:260px">Perihal</th>
-                                    <th style="min-width:220px">Asal Dokumen</th>
+                                    <th style="min-width:110px">
+                                        <a href="{{ $sortUrl('nomor_agenda') }}" class="text-decoration-none text-dark">
+                                            No. Agenda {!! $sortIcon('nomor_agenda') !!}
+                                        </a>
+                                    </th>
+                                    <th style="min-width:130px">
+                                        <a href="{{ $sortUrl('tanggal_dokumen') }}" class="text-decoration-none text-dark">
+                                            Tanggal Dokumen {!! $sortIcon('tanggal_dokumen') !!}
+                                        </a>
+                                    </th>
+                                    <th style="min-width:150px">
+                                        <a href="{{ $sortUrl('tanggal_penyelesaian') }}" class="text-decoration-none text-dark">
+                                            Tanggal Penyelesaian {!! $sortIcon('tanggal_penyelesaian') !!}
+                                        </a>
+                                    </th>
+                                    <th style="min-width:180px">
+                                        <a href="{{ $sortUrl('nomor_dokumen') }}" class="text-decoration-none text-dark">
+                                            No. Surat {!! $sortIcon('nomor_dokumen') !!}
+                                        </a>
+                                    </th>
+                                    <th style="min-width:260px">
+                                        <a href="{{ $sortUrl('perihal') }}" class="text-decoration-none text-dark">
+                                            Perihal {!! $sortIcon('perihal') !!}
+                                        </a>
+                                    </th>
+                                    <th style="min-width:220px">
+                                        <a href="{{ $sortUrl('instansi_satker') }}" class="text-decoration-none text-dark">
+                                            Asal Dokumen {!! $sortIcon('instansi_satker') !!}
+                                        </a>
+                                    </th>
                                     <th style="min-width:105px">Dokumen</th>
                                     <th style="min-width:200px">Tujuan Disposisi</th>
                                     <th style="min-width:180px">Keterangan</th>
-                                   
+
 
                                     @if(request('filter') == 'duplikasi')
                                         <th>Keterangan Duplikasi</th>
                                     @endif
 
-                                    
+
                                     <th style="min-width:370px">Aksi</th>
                                 </tr>
                             </thead>
@@ -260,7 +303,7 @@
     </div>
 </td>
                                 </tr>
-                         
+
                                 @empty
                                 <tr>
                                     <td colspan="{{ request('filter') == 'duplikasi' ? 12 : 11 }}" class="text-center text-muted py-5">
@@ -268,123 +311,6 @@
                                         Belum ada data surat masuk.
                                     </td>
                                 </tr>
-                                </tr>
-
-@if(($duplicateCounts[$item->nomor_dokumen] ?? 0) > 1)
-
-<div class="modal fade"
-     id="duplicateModal{{$item->id}}"
-     tabindex="-1">
-
-<div class="modal-dialog modal-lg">
-
-<div class="modal-content rounded-4">
-
-<div class="modal-header bg-danger text-white">
-
-<h5 class="modal-title">
-
-    Informasi Data Duplikat
-
-</h5>
-
-<button type="button"
-        class="btn-close btn-close-white"
-        data-bs-dismiss="modal">
-
-</button>
-
-</div>
-
-
-<div class="modal-body">
-
-
-<p>
-
-Nomor Surat :
-
-<strong>
-
-{{ $item->nomor_dokumen }}
-
-</strong>
-
-</p>
-
-<div class="alert alert-warning">
-
-Data surat masuk ini terindikasi memiliki
-nomor surat yang sama dengan data berikut.
-
-</div>
-
-
-<table class="table table-bordered">
-
-<thead>
-
-<tr>
-
-<th>Baris</th>
-<th>Perihal</th>
-<th>Tanggal Dokumen</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-@foreach(\App\Models\SuratMasuk::where('nomor_dokumen',$item->nomor_dokumen)->get() as $duplicate)
-
-<tr>
-
-<td>
-
-{{ $loop->iteration }}
-
-</td>
-
-<td>
-
-{{ $duplicate->perihal }}
-
-</td>
-
-<td>
-
-{{ \Carbon\Carbon::parse($duplicate->tanggal_dokumen)->format('d/m/Y') }}
-
-</td>
-
-</tr>
-
-@endforeach
-
-
-</tbody>
-
-</table>
-
-
-<div class="alert alert-info mb-0">
-
-<i class="fas fa-info-circle me-2"></i>
-
-Silakan hapus data surat masuk yang terduplikasi dan sisakan satu data surat masuk yang paling benar.
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-@endif
                                 @endforelse
                             </tbody>
                         </table>
@@ -401,6 +327,53 @@ Silakan hapus data surat masuk yang terduplikasi dan sisakan satu data surat mas
         </div>
     </div>
 </div>
+
+{{-- Modal duplikat: dirender DI LUAR <table>, satu per surat yang duplikat.
+     Div tidak boleh berada langsung di dalam <tbody>/di antara <tr> karena itu HTML tidak valid
+     dan bikin browser "membetulkan" strukturnya sendiri sehingga modal jadi tampil langsung
+     di halaman alih-alih tersembunyi sampai tombol Duplikat diklik. --}}
+@foreach($surat as $item)
+    @if(($duplicateCounts[$item->nomor_dokumen] ?? 0) > 1)
+    <div class="modal fade" id="duplicateModal{{ $item->id }}" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content rounded-4">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Informasi Data Duplikat</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Nomor Surat : <strong>{{ $item->nomor_dokumen }}</strong></p>
+                    <div class="alert alert-warning">
+                        Data surat masuk ini terindikasi memiliki nomor surat yang sama dengan data berikut.
+                    </div>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Baris</th>
+                                <th>Perihal</th>
+                                <th>Tanggal Dokumen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach(\App\Models\SuratMasuk::where('nomor_dokumen', $item->nomor_dokumen)->get() as $duplicate)
+                            <tr>
+                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $duplicate->perihal }}</td>
+                                <td>{{ \Carbon\Carbon::parse($duplicate->tanggal_dokumen)->format('d/m/Y') }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Silakan hapus data surat masuk yang terduplikasi dan sisakan satu data surat masuk yang paling benar.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+@endforeach
 
      
 
@@ -585,6 +558,7 @@ Silakan hapus data surat masuk yang terduplikasi dan sisakan satu data surat mas
         z-index: 20;
         box-shadow: inset 0 -2px 0 #dee2e6;
     }
+    .table thead th a { display: inline-flex; align-items: center; }
     .table tbody tr:hover {
         background-color: #f8f9fa;
         transform: none;
