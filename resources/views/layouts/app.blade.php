@@ -81,7 +81,9 @@
         }
         .sidebar.collapsed .brand-text,
         .sidebar.collapsed .nav-link span:not(.ms-auto i),
+        .sidebar.collapsed .nav-link small,
         .sidebar.collapsed .nav-link .badge,
+        .sidebar.collapsed .nav-link .ms-auto,
         .sidebar.collapsed .submenu-list {
             display: none;
         }
@@ -102,9 +104,17 @@
         .sidebar.collapsed .sidebar-brand {
             padding: 20px 8px;
         }
+        .sidebar.collapsed .nav-link.active {
+            border-left: none;
+            box-shadow: none;
+            background: rgba(255, 255, 255, 0.18);
+            outline: 2px solid #ffb347;
+            outline-offset: -2px;
+        }
 
         /* brand */
         .sidebar-brand {
+            position: relative;
             padding: 28px 20px 20px;
             text-align: center;
             border-bottom: 1px solid rgba(255,255,255,0.12);
@@ -138,6 +148,26 @@
         .brand-text small {
             font-size: 0.7rem;
             opacity: 0.8;
+        }
+
+        /* toggle button (desktop) - sekarang di bawah teks brand */
+        .toggle-sidebar-btn {
+            margin: 14px auto 0;
+            width: 32px;
+            height: 32px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,0.25);
+            color: white;
+            cursor: pointer;
+            transition: var(--transition-default);
+        }
+        .toggle-sidebar-btn:hover {
+            background: rgba(255,255,255,0.25);
+            transform: scale(1.08);
         }
 
         /* navigation */
@@ -259,35 +289,6 @@
             z-index: 1060;
         }
 
-        /* toggle button (desktop) */
-        .toggle-sidebar-btn {
-            position: fixed;
-            top: 90px;
-            left: calc(var(--sidebar-width) - 18px);
-            width: 36px;
-            height: 36px;
-            background: white;
-            border-radius: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.08);
-            border: 1px solid #e2e8f0;
-            color: var(--primary);
-            cursor: pointer;
-            transition: 0.2s;
-            z-index: 1040;
-        }
-        .toggle-sidebar-btn:hover {
-            background: var(--primary);
-            color: white;
-            transform: scale(1.05);
-        }
-        .sidebar.collapsed + .main-content .toggle-sidebar-btn,
-        body:not(.sidebar) .toggle-sidebar-btn {
-            left: calc(var(--sidebar-collapsed) - 18px);
-        }
-
         /* Cards & content */
         .card {
             border: none;
@@ -399,6 +400,11 @@
             <h4>SINAR KPU BALI</h4>
             <small>Sistem Arsip Digital</small>
         </div>
+
+        <!-- ========== TOGGLE BUTTON (di bawah teks brand) ========== -->
+        <div class="toggle-sidebar-btn" id="sidebarToggleBtn" aria-label="Toggle sidebar">
+            <i class="bi bi-chevron-left" id="toggleIcon"></i>
+        </div>
     </div>
 
     <ul class="nav flex-column">
@@ -465,7 +471,6 @@
 
             @if(auth()->user()->role === 'user')
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('subbagian.dashboard') ? 'active' : '' }}" href="{{ route('subbagian.dashboard') }}"><i class="bi bi-speedometer2"></i> <span>Dashboard</span></a></li>
-                <!-- <li class="nav-item"><a class="nav-link {{ request()->routeIs('subbagian.arsip.index') ? 'active' : '' }}" href="{{ route('subbagian.arsip.index') }}"><i class="bi bi-search"></i> <span>Kelola Arsip</span></a></li> -->
                 <li class="nav-item">
                     <a class="nav-link d-flex align-items-center {{ request()->routeIs('subbagian.arsip.*') ? 'active' : '' }}"
                        data-bs-toggle="collapse" href="#menuArsip" role="button" aria-expanded="{{ request()->routeIs('subbagian.arsip.*') ? 'true' : 'false' }}">
@@ -537,11 +542,6 @@
             @endif
         @endauth
     </ul>
-</div>
-
-<!-- ========== DESKTOP TOGGLE BUTTON ========== -->
-<div class="toggle-sidebar-btn" id="sidebarToggleBtn" aria-label="Toggle sidebar">
-    <i class="bi bi-chevron-left" id="toggleIcon"></i>
 </div>
 
 <!-- ========== MAIN CONTENT ========== -->
