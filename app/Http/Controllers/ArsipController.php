@@ -39,13 +39,12 @@ class ArsipController extends Controller
                 ->where('status_arsip', '!=', 'NON_ARSIP')
                 ->update([
                     'is_duplicate' => 0,
-
                 ]);
 
             $duplicateGroups = DB::table('arsips')
-                ->select('uraian_arsip', 'tahun_arsip')
-                ->where('status_arsip', '!=', 'NON_ARSIP') // ⬅️ PENTING
-                ->groupBy('uraian_arsip', 'tahun_arsip')
+                ->select('uraian_arsip', 'tahun_arsip', 'tingkat_perkembangan')
+                ->where('status_arsip', '!=', 'NON_ARSIP')
+                ->groupBy('uraian_arsip', 'tahun_arsip', 'tingkat_perkembangan')
                 ->havingRaw('COUNT(*) > 1')
                 ->get();
 
@@ -53,7 +52,8 @@ class ArsipController extends Controller
                 DB::table('arsips')
                     ->where('uraian_arsip', $group->uraian_arsip)
                     ->where('tahun_arsip', $group->tahun_arsip)
-                    ->where('status_arsip', '!=', 'NON_ARSIP') // ⬅️ PENTING
+                    ->where('tingkat_perkembangan', $group->tingkat_perkembangan)
+                    ->where('status_arsip', '!=', 'NON_ARSIP')
                     ->update([
                         'is_duplicate' => 1,
                         'duplicate_reason' => DB::raw("
@@ -869,31 +869,28 @@ class ArsipController extends Controller
             // PENANGANAN DUPLIKAT
             // =========================
             $validated['duplicate_reason'] = $request->duplicate_reason;
-            if ($request->tangani_duplikat == '1') {
+if ($request->tangani_duplikat == '1') {
 
-                if (! $request->duplicate_reason) {
-                    return back()
-                        ->withInput()
-                        ->with('error', 'Alasan wajib diisi untuk penanganan duplikat.');
-                }
+    if (! $request->duplicate_reason) {
+        return back()
+            ->withInput()
+            ->with('error', 'Alasan wajib diisi untuk penanganan duplikat.');
+    }
 
-                // Arsip ini jadi NON ARSIP
-                $validated['status_arsip'] = 'NON_ARSIP';
+    $validated['status_arsip'] = 'NON_ARSIP';
+    $validated['is_duplicate'] = 0;
 
-                // Hilangkan flag duplikat
-                $validated['is_duplicate'] = 0;
+    Arsip::where('uraian_arsip', $arsip->uraian_arsip)
+        ->where('tahun_arsip', $arsip->tahun_arsip)
+        ->where('tingkat_perkembangan', $arsip->tingkat_perkembangan)
+        ->where('id', '!=', $arsip->id)
+        ->where('status_arsip', '!=', 'NON_ARSIP')
+        ->update([
+            'is_duplicate' => 0,
+        ]);
 
-                // Cari arsip lain yang sama → jadikan bukan duplikat juga
-                Arsip::where('uraian_arsip', $arsip->uraian_arsip)
-                    ->where('tahun_arsip', $arsip->tahun_arsip)
-                    ->where('id', '!=', $arsip->id)
-                    ->where('status_arsip', '!=', 'NON_ARSIP')
-                    ->update([
-                        'is_duplicate' => 0,
-                    ]);
-
-                $validated['duplicate_reason'] = $request->duplicate_reason;
-            }
+    $validated['duplicate_reason'] = $request->duplicate_reason;
+}
 
             unset($validated['status_pindah']);
 
@@ -1156,55 +1153,57 @@ class ArsipController extends Controller
         );
     }
 
-    public function checkDuplicates()
-    {
-        try {
-            $duplicates = DB::table('arsips')
-                ->where('status_arsip', '!=', 'NON_ARSIP')
-                ->select(
-                    'uraian_arsip',
-                    'tahun_arsip',
-                    DB::raw('COUNT(*) as total'),
-                    DB::raw('GROUP_CONCAT(id) as ids')
-                )
-                ->groupBy('uraian_arsip', 'tahun_arsip')
-                ->having('total', '>', 1)
-                ->get();
+public function checkDuplicates()
+{
+    try {
+        $duplicates = DB::table('arsips')
+            ->where('status_arsip', '!=', 'NON_ARSIP')
+            ->select(
+                'uraian_arsip',
+                'tahun_arsip',
+                'tingkat_perkembangan',
+                DB::raw('COUNT(*) as total'),
+                DB::raw('GROUP_CONCAT(id) as ids')
+            )
+            ->groupBy('uraian_arsip', 'tahun_arsip', 'tingkat_perkembangan')
+            ->having('total', '>', 1)
+            ->get();
 
-            $result = [];
+        $result = [];
 
-            foreach ($duplicates as $group) {
-                $ids = $group->ids ? explode(',', $group->ids) : [];
+        foreach ($duplicates as $group) {
+            $ids = $group->ids ? explode(',', $group->ids) : [];
 
-                $records = [];
-                foreach ($ids as $id) {
-                    $records[] = [
-                        'id' => $id,
-                        'link' => route('arsip.show', $id),
-                    ];
-                }
-
-                $result[] = [
-                    'ids' => $ids,
-                    'uraian_arsip' => $group->uraian_arsip,
-                    'tahun_arsip' => $group->tahun_arsip,
-                    'records' => $records,
+            $records = [];
+            foreach ($ids as $id) {
+                $records[] = [
+                    'id' => $id,
+                    'link' => route('arsip.show', $id),
                 ];
             }
 
-            return response()->json([
-                'duplicates' => $result,
-                'total' => count($result),
-                'total_records' => $duplicates->sum('total'),
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => true,
-                'message' => $e->getMessage(),
-            ], 500);
+            $result[] = [
+                'ids' => $ids,
+                'uraian_arsip' => $group->uraian_arsip,
+                'tahun_arsip' => $group->tahun_arsip,
+                'tingkat_perkembangan' => $group->tingkat_perkembangan,
+                'records' => $records,
+            ];
         }
+
+        return response()->json([
+            'duplicates' => $result,
+            'total' => count($result),
+            'total_records' => $duplicates->sum('total'),
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => true,
+            'message' => $e->getMessage(),
+        ], 500);
     }
+}
 
     // app/Http/Controllers/ArsipController.php
 

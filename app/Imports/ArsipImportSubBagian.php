@@ -208,21 +208,22 @@ class ArsipImportSubBagian implements
     |--------------------------------------------------------------------------
     */
     private function buildDuplicateKey(
-        int $kodeId,
-        int $subBagianId,
-        string $uraianArsip,
-        $tahunArsip
-    ): string {
-        $uraianNormalized = strtolower(trim(preg_replace('/\s+/', ' ', $uraianArsip)));
+    int $kodeId,
+    int $subBagianId,
+    string $uraianArsip,
+    $tahunArsip,
+    string $tingkatPerkembangan
+): string {
+    $uraianNormalized = strtolower(trim(preg_replace('/\s+/', ' ', $uraianArsip)));
 
-        return implode('|', [
-            $kodeId,
-            $subBagianId,
-            $uraianNormalized,
-            (string) $tahunArsip,
-        ]);
-    }
-
+    return implode('|', [
+        $kodeId,
+        $subBagianId,
+        $uraianNormalized,
+        (string) $tahunArsip,
+        strtoupper(trim($tingkatPerkembangan)),
+    ]);
+}
     /*
     |--------------------------------------------------------------------------
     | HELPER: CEK APAKAH KEY SUDAH ADA DI DATABASE
@@ -232,11 +233,13 @@ class ArsipImportSubBagian implements
         int $kodeId,
         int $subBagianId,
         string $uraianArsip,
-        $tahunArsip
+        $tahunArsip,
+        string $tingkatPerkembangan
     ): bool {
         return Arsip::where('kode_klasifikasi_id', $kodeId)
             ->where('sub_bagian_id', $subBagianId)
             ->where('tahun_arsip', (string) $tahunArsip)
+            ->where('tingkat_perkembangan', strtoupper(trim($tingkatPerkembangan)))
             ->whereRaw('LOWER(TRIM(uraian_arsip)) = ?', [strtolower(trim(preg_replace('/\s+/', ' ', $uraianArsip)))])
             ->exists();
     }
@@ -644,11 +647,17 @@ if (!empty($row['klasifikasi_keamanan'])) {
 
                 $uraianArsip = trim($row['jenis_arsip']);
 
+                $tingkatPerkembangan = strtoupper(trim($row['tingkat_perkembangan'] ?? 'ASLI'));
+                if (!in_array($tingkatPerkembangan, ['ASLI', 'COPY', 'SALINAN'])) {
+                    $tingkatPerkembangan = 'ASLI';
+                }
+
                 $key = $this->buildDuplicateKey(
                     $kode->id,
                     $subBagian->id,
                     $uraianArsip,
-                    $row['kurun_waktu']
+                    $row['kurun_waktu'],
+                    $tingkatPerkembangan
                 );
 
                 // 1) Cek duplikat ANTAR BARIS dalam file Excel
@@ -657,17 +666,17 @@ if (!empty($row['klasifikasi_keamanan'])) {
                     $baseline = $this->seenKeysValidation[$key];
 
                     $this->errors[] =
-                        "Baris {$rowNumber}: Data duplikat dengan baris {$baseline} pada file yang sama (kode klasifikasi, jenis arsip & kurun waktu sama).";
+                        "Baris {$rowNumber}: Data duplikat dengan baris {$baseline} pada file yang sama (kode klasifikasi, jenis arsip, kurun waktu & tingkat perkembangan sama).";
 
                 } else {
 
                     $this->seenKeysValidation[$key] = $rowNumber;
 
                     // 2) Cek duplikat di DATABASE
-                    if ($this->existsInDatabase($kode->id, $subBagian->id, $uraianArsip, $row['kurun_waktu'])) {
+                    if ($this->existsInDatabase($kode->id, $subBagian->id, $uraianArsip, $row['kurun_waktu'], $tingkatPerkembangan)) {
 
                         $this->errors[] =
-                            "Baris {$rowNumber}: Data arsip sudah ada di database (kode klasifikasi, jenis arsip & kurun waktu sama).";
+                            "Baris {$rowNumber}: Data arsip sudah ada di database (kode klasifikasi, jenis arsip, kurun waktu & tingkat perkembangan sama).";
                     }
                 }
             }
@@ -737,53 +746,49 @@ if (!empty($row['klasifikasi_keamanan'])) {
             return null;
         }
 
-        // Parsing data
-        $uraianArsip = trim($row['jenis_arsip'] ?? '');
-        $tahunArsip  = (int) ($row['kurun_waktu'] ?? date('Y'));
+      // Parsing data
+$uraianArsip = trim($row['jenis_arsip'] ?? '');
+$tahunArsip  = (int) ($row['kurun_waktu'] ?? date('Y'));
 
-        // =======================
-        // CEK DUPLIKAT (SAFETY NET SAAT IMPORT BENERAN)
-        // =======================
-        // Catatan: pengecekan utama sebaiknya sudah dilakukan lewat
-        // validateExcel() SEBELUM Excel::import() dipanggil, supaya kalau
-        // ada duplikat import bisa dibatalkan total sebelum menyentuh
-        // database. Blok ini hanya jaring pengaman terakhir: kalau tetap
-        // ketemu duplikat di sini, baris ini di-skip (tidak diimport),
-        // baris lain yang valid tetap lanjut.
-        if (empty($uraianArsip)) {
-            Log::warning('Jenis arsip kosong');
-            return null;
-        }
+if (empty($uraianArsip)) {
+    Log::warning('Jenis arsip kosong');
+    return null;
+}
 
-        $duplicateKey = $this->buildDuplicateKey(
-            $kode->id,
-            $subBagian->id,
-            $uraianArsip,
-            $tahunArsip
-        );
+// Pindahkan resolve tingkat_perkembangan ke sini (sebelum cek duplikat)
+$tingkatPerkembangan = strtoupper(trim($row['tingkat_perkembangan'] ?? 'ASLI'));
+if (!in_array($tingkatPerkembangan, ['ASLI', 'COPY', 'SALINAN'])) {
+    $tingkatPerkembangan = 'ASLI';
+}
 
-        if (isset($this->seenKeysImport[$duplicateKey])) {
-            $pesan = "Baris {$this->currentRow}: Data duplikat dengan baris {$this->seenKeysImport[$duplicateKey]} dalam file yang sama, data tidak diimport.";
-            $this->errors[] = $pesan;
-            $this->duplicateRows++;
-            Log::warning($pesan);
-            return null;
-        }
+// =======================
+// CEK DUPLIKAT (SAFETY NET SAAT IMPORT BENERAN)
+// =======================
+$duplicateKey = $this->buildDuplicateKey(
+    $kode->id,
+    $subBagian->id,
+    $uraianArsip,
+    $tahunArsip,
+    $tingkatPerkembangan
+);
 
-        $this->seenKeysImport[$duplicateKey] = $this->currentRow;
+if (isset($this->seenKeysImport[$duplicateKey])) {
+    $pesan = "Baris {$this->currentRow}: Data duplikat dengan baris {$this->seenKeysImport[$duplicateKey]} dalam file yang sama, data tidak diimport.";
+    $this->errors[] = $pesan;
+    $this->duplicateRows++;
+    Log::warning($pesan);
+    return null;
+}
 
-        if ($this->existsInDatabase($kode->id, $subBagian->id, $uraianArsip, $tahunArsip)) {
-            $pesan = "Baris {$this->currentRow}: Data arsip sudah ada di database, data tidak diimport.";
-            $this->errors[] = $pesan;
-            $this->duplicateRows++;
-            Log::warning($pesan);
-            return null;
-        }
+$this->seenKeysImport[$duplicateKey] = $this->currentRow;
 
-        $tingkatPerkembangan = strtoupper(trim($row['tingkat_perkembangan'] ?? 'ASLI'));
-        if (!in_array($tingkatPerkembangan, ['ASLI', 'COPY', 'SALINAN'])) {
-            $tingkatPerkembangan = 'ASLI';
-        }
+if ($this->existsInDatabase($kode->id, $subBagian->id, $uraianArsip, $tahunArsip, $tingkatPerkembangan)) {
+    $pesan = "Baris {$this->currentRow}: Data arsip sudah ada di database, data tidak diimport.";
+    $this->errors[] = $pesan;
+    $this->duplicateRows++;
+    Log::warning($pesan);
+    return null;
+}
 
 
         // Klasifikasi keamanan
@@ -999,4 +1004,6 @@ if (!empty($nomorRak)) {
 
     return $mapping[$subBagianId] ?? null;
 }
+
+
 }

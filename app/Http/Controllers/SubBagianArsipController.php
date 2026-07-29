@@ -151,7 +151,6 @@ if ($request->filter === 'belum_dokumen') {
  // Filter duplikat
 if ($request->show_duplicates == 1) {
 
-    // Reset flag duplikat
     DB::table('arsips')
         ->where('sub_bagian_id', $user->sub_bagian_id)
         ->update([
@@ -159,7 +158,6 @@ if ($request->show_duplicates == 1) {
             'duplicate_reason' => null
         ]);
 
-    // Cari kelompok data duplikat
     $duplicateGroups = DB::table('arsips')
         ->selectRaw("
             LOWER(
@@ -174,6 +172,7 @@ if ($request->show_duplicates == 1) {
                 '\t', '')
             ) AS cleaned_uraian,
             tahun_arsip,
+            tingkat_perkembangan,
             COUNT(*) AS total
         ")
         ->where('sub_bagian_id', $user->sub_bagian_id)
@@ -190,18 +189,19 @@ if ($request->show_duplicates == 1) {
                     '\r', ''),
                 '\t', '')
             ),
-            tahun_arsip
+            tahun_arsip,
+            tingkat_perkembangan
         ")
         ->having('total', '>', 1)
         ->get();
 
-    // Tandai semua arsip yang termasuk duplikat
     foreach ($duplicateGroups as $group) {
 
         DB::table('arsips')
             ->where('sub_bagian_id', $user->sub_bagian_id)
             ->where('status_pindah', '!=', 'NON_ARSIP')
             ->where('tahun_arsip', $group->tahun_arsip)
+            ->where('tingkat_perkembangan', $group->tingkat_perkembangan)
             ->whereRaw("
                 LOWER(
                     REPLACE(
@@ -612,30 +612,27 @@ if (!$user->canViewArsip($arsip)) {
         // PENANGANAN DUPLIKAT
         // =========================
         $validated['duplicate_reason'] = $request->duplicate_reason;
-       if ($request->tangani_duplikat == '1') {
+if ($request->tangani_duplikat == '1') {
 
-            if (!$request->duplicate_reason) {
-                return back()
-                    ->withInput()
-                    ->with('error', 'Alasan wajib diisi untuk penanganan duplikat.');
-            }
+    if (!$request->duplicate_reason) {
+        return back()
+            ->withInput()
+            ->with('error', 'Alasan wajib diisi untuk penanganan duplikat.');
+    }
 
-            // Arsip ini jadi NON ARSIP
-            $validated['status_pindah'] = 'NON_ARSIP';
+    $validated['status_pindah'] = 'NON_ARSIP';
+    $validated['is_duplicate'] = 0;
 
-            // Hilangkan flag duplikat
-            $validated['is_duplicate'] = 0;
+    Arsip::where('uraian_arsip', $arsip->uraian_arsip)
+        ->where('tahun_arsip', $arsip->tahun_arsip)
+        ->where('tingkat_perkembangan', $arsip->tingkat_perkembangan)
+        ->where('id', '!=', $arsip->id)
+        ->update([
+            'is_duplicate' => 0
+        ]);
 
-            // Cari arsip lain yang sama → jadikan bukan duplikat juga
-            Arsip::where('uraian_arsip', $arsip->uraian_arsip)
-                ->where('tahun_arsip', $arsip->tahun_arsip)
-                ->where('id', '!=', $arsip->id)
-                ->update([
-                    'is_duplicate' => 0
-                ]);
-
-            $validated['duplicate_reason'] = $request->duplicate_reason;
-        }
+    $validated['duplicate_reason'] = $request->duplicate_reason;
+}
         // unset($validated['status_pindah']);
 
 

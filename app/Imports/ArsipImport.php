@@ -107,7 +107,8 @@ class ArsipImport implements
         int $subBagianId,
         string $uraianArsip,
         $tahunArsip,
-        ?string $tanggalArsip
+        ?string $tanggalArsip,
+        string $tingkatPerkembangan
     ): string {
         $uraianNormalized = strtolower(trim(preg_replace('/\s+/', ' ', $uraianArsip)));
 
@@ -117,6 +118,7 @@ class ArsipImport implements
             $uraianNormalized,
             (string) $tahunArsip,
             $tanggalArsip ?? '',
+            strtoupper(trim($tingkatPerkembangan)),
         ]);
     }
 
@@ -305,11 +307,13 @@ class ArsipImport implements
         int $subBagianId,
         string $uraianArsip,
         $tahunArsip,
-        ?string $tanggalKey
+        ?string $tanggalKey,
+        string $tingkatPerkembangan
     ): bool {
         return Arsip::where('kode_klasifikasi_id', $kodeId)
             ->where('sub_bagian_id', $subBagianId)
             ->where('tahun_arsip', (string) $tahunArsip)
+            ->where('tingkat_perkembangan', strtoupper(trim($tingkatPerkembangan)))
             ->whereRaw('LOWER(TRIM(uraian_arsip)) = ?', [strtolower(trim(preg_replace('/\s+/', ' ', $uraianArsip)))])
             ->when($tanggalKey, function ($query) use ($tanggalKey) {
                 $query->whereDate('tanggal_arsip', $tanggalKey);
@@ -658,50 +662,56 @@ if (!empty($row['lokasi_arsip'])) {
         |--------------------------------------------------------------------------
         */
 
-        if (
-            $kode &&
-            !empty($row['uraian_arsip']) &&
-            !empty($row['tahun_arsip'])
-        ) {
+if (
+    $kode &&
+    !empty($row['uraian_arsip']) &&
+    !empty($row['tahun_arsip'])
+) {
 
-            $subBagian = $this->resolveSubBagian($row['sub_bagian'] ?? null);
+    $subBagian = $this->resolveSubBagian($row['sub_bagian'] ?? null);
 
-            if (!$subBagian) {
+    if (!$subBagian) {
+        $this->errors[] =
+            "Baris {$rowNumber}: Sub bagian '{$row['sub_bagian']}' tidak ditemukan, duplikat tidak bisa dicek.";
+    } else {
+
+        $uraianArsip = trim(preg_replace('/\s+/', ' ', $row['uraian_arsip']));
+
+        $tingkatPerkembanganCek = strtoupper(trim($row['tingkat_perkembangan'] ?? 'ASLI'));
+        if (!in_array($tingkatPerkembanganCek, ['ASLI', 'COPY', 'SALINAN'])) {
+            $tingkatPerkembanganCek = 'ASLI';
+        }
+
+        $key = $this->buildDuplicateKey(
+            $kode->id,
+            $subBagian->id,
+            $uraianArsip,
+            $row['tahun_arsip'],
+            $tanggalKey,
+            $tingkatPerkembanganCek
+        );
+
+        // 1) Cek duplikat ANTAR BARIS dalam file Excel
+        if (isset($this->seenKeysValidation[$key])) {
+
+            $baseline = $this->seenKeysValidation[$key];
+
+            $this->errors[] =
+                "Baris {$rowNumber}: Data duplikat dengan baris {$baseline} pada file yang sama (kode klasifikasi, uraian arsip, tahun, tingkat perkembangan & sub bagian sama).";
+
+        } else {
+
+            $this->seenKeysValidation[$key] = $rowNumber;
+
+            // 2) Cek duplikat di DATABASE
+            if ($this->existsInDatabase($kode->id, $subBagian->id, $uraianArsip, $row['tahun_arsip'], $tanggalKey, $tingkatPerkembanganCek)) {
+
                 $this->errors[] =
-                    "Baris {$rowNumber}: Sub bagian '{$row['sub_bagian']}' tidak ditemukan, duplikat tidak bisa dicek.";
-            } else {
-
-                $uraianArsip = trim(preg_replace('/\s+/', ' ', $row['uraian_arsip']));
-
-                $key = $this->buildDuplicateKey(
-                    $kode->id,
-                    $subBagian->id,
-                    $uraianArsip,
-                    $row['tahun_arsip'],
-                    $tanggalKey
-                );
-
-                // 1) Cek duplikat ANTAR BARIS dalam file Excel
-                if (isset($this->seenKeysValidation[$key])) {
-
-                    $baseline = $this->seenKeysValidation[$key];
-
-                    $this->errors[] =
-                        "Baris {$rowNumber}: Data duplikat dengan baris {$baseline} pada file yang sama (kode klasifikasi, uraian arsip, tahun & sub bagian sama).";
-
-                } else {
-
-                    $this->seenKeysValidation[$key] = $rowNumber;
-
-                    // 2) Cek duplikat di DATABASE
-                    if ($this->existsInDatabase($kode->id, $subBagian->id, $uraianArsip, $row['tahun_arsip'], $tanggalKey)) {
-
-                        $this->errors[] =
-                            "Baris {$rowNumber}: Data arsip sudah ada di database (kode klasifikasi, uraian arsip, tahun & sub bagian sama).";
-                    }
-                }
+                    "Baris {$rowNumber}: Data arsip sudah ada di database (kode klasifikasi, uraian arsip, tahun, tingkat perkembangan & sub bagian sama).";
             }
         }
+    }
+}
     }
 
     public function validateExcel(array $rows): void
@@ -919,30 +929,31 @@ $boxId = $box->id;
             $tanggalKeyImport = $tanggalArsip->format('Y-m-d');
 
             $duplicateKey = $this->buildDuplicateKey(
-                $kode->id,
-                $subBagian->id,
-                $uraianArsip,
-                $tahunArsip,
-                $tanggalKeyImport
-            );
+    $kode->id,
+    $subBagian->id,
+    $uraianArsip,
+    $tahunArsip,
+    $tanggalKeyImport,
+    $tingkatPerkembangan
+);
 
-            if (isset($this->seenKeysImport[$duplicateKey])) {
-                $pesan = "Baris {$this->currentRow}: Data duplikat dengan baris {$this->seenKeysImport[$duplicateKey]} dalam file yang sama, data tidak diimport.";
-                $this->errors[] = $pesan;
-                $this->duplicateRows++;
-                Log::warning($pesan);
-                return null;
-            }
+if (isset($this->seenKeysImport[$duplicateKey])) {
+    $pesan = "Baris {$this->currentRow}: Data duplikat dengan baris {$this->seenKeysImport[$duplicateKey]} dalam file yang sama, data tidak diimport.";
+    $this->errors[] = $pesan;
+    $this->duplicateRows++;
+    Log::warning($pesan);
+    return null;
+}
 
-            $this->seenKeysImport[$duplicateKey] = $this->currentRow;
+$this->seenKeysImport[$duplicateKey] = $this->currentRow;
 
-            if ($this->existsInDatabase($kode->id, $subBagian->id, $uraianArsip, $tahunArsip, $tanggalKeyImport)) {
-                $pesan = "Baris {$this->currentRow}: Data arsip sudah ada di database, data tidak diimport.";
-                $this->errors[] = $pesan;
-                $this->duplicateRows++;
-                Log::warning($pesan);
-                return null;
-            }
+if ($this->existsInDatabase($kode->id, $subBagian->id, $uraianArsip, $tahunArsip, $tanggalKeyImport, $tingkatPerkembangan)) {
+    $pesan = "Baris {$this->currentRow}: Data arsip sudah ada di database, data tidak diimport.";
+    $this->errors[] = $pesan;
+    $this->duplicateRows++;
+    Log::warning($pesan);
+    return null;
+}
 
             // =======================
             // JUMLAH BERKAS
