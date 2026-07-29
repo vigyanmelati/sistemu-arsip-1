@@ -1039,4 +1039,58 @@ private function getLabelLokasi($lokasiKey)
     ];
     return $labels[$lokasiKey] ?? $lokasiKey;
 }
+
+public function destroyMultiple(Request $request)
+{
+    $user = Auth::user();
+
+    $request->validate([
+        'arsip_ids'   => 'required|array',
+        'arsip_ids.*' => 'exists:arsips,id',
+    ]);
+
+    // Hanya ambil arsip milik sub bagian user
+    $arsips = Arsip::whereIn('id', $request->arsip_ids)
+        ->where('sub_bagian_id', $user->sub_bagian_id)
+        ->get();
+
+    if ($arsips->isEmpty()) {
+        return back()->with('error', 'Tidak ada arsip yang dapat dihapus.');
+    }
+
+    $gagal = [];
+    $berhasil = 0;
+
+    DB::beginTransaction();
+    try {
+        foreach ($arsips as $arsip) {
+            // Arsip yang sudah diajukan/dipindahkan tidak boleh dihapus
+            if (in_array($arsip->status_pindah, ['DIAJUKAN', 'DIPINDAHKAN'])) {
+                $gagal[] = $arsip->uraian_arsip;
+                continue;
+            }
+
+            if ($arsip->file_dokumen) {
+                Storage::disk('public')->delete('arsip/' . $arsip->file_dokumen);
+            }
+
+            $arsip->delete();
+            $berhasil++;
+        }
+
+        DB::commit();
+
+        $message = "{$berhasil} arsip berhasil dihapus.";
+        if (!empty($gagal)) {
+            $message .= ' ' . count($gagal) . ' arsip tidak dapat dihapus karena statusnya sudah DIAJUKAN/DIPINDAHKAN.';
+        }
+
+        return redirect()->route('subbagian.arsip.index')->with('success', $message);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->with('error', 'Gagal menghapus arsip: ' . $e->getMessage());
+    }
+}
+
 }

@@ -311,7 +311,8 @@ Route::delete('/manajemen-lokasi/box/{id}', [LokasiController::class, 'destroyBo
 });
 
 Route::middleware(['auth', 'subbagian'])->prefix('subbagian')->name('subbagian.')->group(function () {
-
+    Route::post('/arsip/hapus-terpilih', [SubBagianArsipController::class, 'destroyMultiple'])
+        ->name('arsip.destroyMultiple');
     Route::post('/manajemen-lokasi/rak', [LokasiSubBagianController::class, 'storeRak'])->name('manajemen-lokasi.store-rak');
     Route::post('/manajemen-lokasi/box', [LokasiSubBagianController::class, 'storeBox'])->name('manajemen-lokasi.store-box');
     Route::put('/manajemen-lokasi/rak/{id}', [LokasiSubBagianController::class, 'updateRak'])->name('manajemen-lokasi.update-rak');

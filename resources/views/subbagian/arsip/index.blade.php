@@ -37,6 +37,10 @@
                     <i class="bi bi-arrow-right-circle-fill"></i>
                     <span>Ajukan Pindah ke Unit Kearsipan</span>
                 </button>
+                <button class="btn btn-danger d-flex align-items-center gap-2 shadow-sm" id="hapusTerpilihBtn" style="display: none;">
+                    <i class="bi bi-trash-fill"></i>
+                    <span>Hapus Terpilih</span>
+                </button>
                 <a href="{{ route('subbagian.arsip.create') }}" class="btn btn-orange d-flex align-items-center gap-2 shadow-sm">
                     <i class="bi bi-plus-circle-fill"></i>
                     <span>Tambah Baru</span>
@@ -411,7 +415,10 @@
         </div>
     </div>
 </div>
-
+<form method="POST" action="{{ route('subbagian.arsip.destroyMultiple') }}" id="hapusTerpilihForm" style="display:none;">
+    @csrf
+    <div id="hapusTerpilihInputs"></div>
+</form>
 <!-- Filter Modal - CUSTOM MODAL -->
 <div class="modal-container" id="filterModalContainer" style="display: none;">
     <div class="modal-content-wrapper">
@@ -1184,6 +1191,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const ajukanSingleButtons = document.querySelectorAll('.btn-ajukan-single');
 
+    const hapusTerpilihBtn = document.getElementById('hapusTerpilihBtn');
+    const hapusTerpilihForm = document.getElementById('hapusTerpilihForm');
+    const hapusTerpilihInputs = document.getElementById('hapusTerpilihInputs');
+
     let selectedArsips = new Set();
 
     function updateSelectionUI() {
@@ -1194,10 +1205,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (count > 0) {
             selectedCounter.style.display = 'flex';
             ajukanPindahBtn.style.display = 'flex';
+            hapusTerpilihBtn.style.display = 'flex';
             updateArsipListInModal();
         } else {
             selectedCounter.style.display = 'none';
             ajukanPindahBtn.style.display = 'none';
+            hapusTerpilihBtn.style.display = 'none';
             selectedArsipList.innerHTML = '';
         }
 
@@ -1328,6 +1341,33 @@ document.addEventListener('DOMContentLoaded', function() {
         ajukanPindahBtn.addEventListener('click', function(e) {
             e.preventDefault();
             openModal(ajukanPindahModal);
+        });
+    }
+
+    if (hapusTerpilihBtn) {
+        hapusTerpilihBtn.addEventListener('click', function() {
+            if (selectedArsips.size === 0) {
+                alert('Pilih setidaknya satu arsip untuk dihapus.');
+                return;
+            }
+
+            if (!confirm(`Apakah Anda yakin ingin menghapus ${selectedArsips.size} arsip terpilih? Tindakan ini tidak dapat dibatalkan.`)) {
+                return;
+            }
+
+            hapusTerpilihInputs.innerHTML = '';
+            selectedArsips.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'arsip_ids[]';
+                input.value = id;
+                hapusTerpilihInputs.appendChild(input);
+            });
+
+            hapusTerpilihBtn.disabled = true;
+            hapusTerpilihBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Menghapus...`;
+
+            hapusTerpilihForm.submit();
         });
     }
 
