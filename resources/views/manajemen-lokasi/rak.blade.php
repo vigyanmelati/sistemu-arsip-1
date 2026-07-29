@@ -147,9 +147,12 @@
                                 </p>
                             @endif
 
-                            <div class="mb-3">
+                            <div class="mb-3 d-flex justify-content-center gap-2 flex-wrap">
                                 <span class="badge px-3 py-2 rounded-pill" style="background: {{ $bgColor }}; color: {{ $iconColor }}; font-weight: 500;">
                                     <i class="bi bi-box-seam me-1"></i> Kelola box & arsip
+                                </span>
+                                <span class="badge px-3 py-2 rounded-pill {{ $rak->jumlah_arsip > 0 ? 'bg-primary' : 'bg-secondary' }}">
+                                    <i class="bi bi-archive me-1"></i> {{ $rak->jumlah_arsip }} Arsip
                                 </span>
                             </div>
                             

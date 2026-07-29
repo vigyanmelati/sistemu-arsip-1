@@ -369,29 +369,16 @@ if (!empty($row['nama_raklemari'])) {
 }
 
 if (!empty($row['namanomor_box'])) {
-
     $nomorBox = trim($row['namanomor_box']);
 
-    // Kalau rak tidak ditemukan, tidak usah tambah error lagi
-    if (!$rakModel) {
-        return;
-    }
+    if ($rakModel) {   // hanya cek box kalau rak ketemu
+        $boxModel = MasterBox::where('rak_id', $rakModel->id)
+            ->whereRaw('LOWER(TRIM(nomor_box)) = ?', [strtolower($nomorBox)])
+            ->first();
 
-    $boxModel = MasterBox::where(
-            'rak_id',
-            $rakModel->id
-        )
-        ->whereRaw(
-            'LOWER(TRIM(nomor_box)) = ?',
-            [strtolower($nomorBox)]
-        )
-        ->first();
-
-    if (!$boxModel) {
-
-        $this->errors[] =
-        "Baris {$rowNumber}: Box '{$nomorBox}' tidak ditemukan pada Rak '{$rakModel->nomor_rak}'. Silakan periksa kembali Menu Manajemen Lokasi.";
-
+        if (!$boxModel) {
+            $this->errors[] = "Baris {$rowNumber}: Box '{$nomorBox}' tidak ditemukan pada Rak '{$rakModel->nomor_rak}'.";
+        }
     }
 }
         $requiredFields = [
@@ -865,16 +852,17 @@ $klasifikasiKeamanan = $klasifikasiKeamananMap[$klasifikasiKeamananKey] ?? 'Bias
         );
 
         // Lokasi arsip dari mapping sub bagian
-        $lokasiMapping = [
-            'SUB BAGIAN UMUM DAN LOGISTIK' => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
-            'SUB BAGIAN PARTISIPASI MASYARAKAT DAN SDM' => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
-            'SUB BAGIAN KEUANGAN' => 'RUANG_SUBBAGIAN_KEUANGAN',
-            'SUB BAGIAN PERENCANAAN DATA DAN INFORMASI' => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
-            'SUB BAGIAN TEKNIS' => 'RUANG_SUBBAGIAN_TEKNIS',
-            'SUB BAGIAN HUKUM' => 'RUANG_SUBBAGIAN_HUKUM',
-        ];
+        // $lokasiMapping = [
+        //     'SUB BAGIAN UMUM DAN LOGISTIK' => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
+        //     'SUB BAGIAN PARTISIPASI MASYARAKAT DAN SDM' => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
+        //     'SUB BAGIAN KEUANGAN' => 'RUANG_SUBBAGIAN_KEUANGAN',
+        //     'SUB BAGIAN PERENCANAAN DATA DAN INFORMASI' => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
+        //     'SUB BAGIAN TEKNIS' => 'RUANG_SUBBAGIAN_TEKNIS',
+        //     'SUB BAGIAN HUKUM' => 'RUANG_SUBBAGIAN_HUKUM',
+        // ];
         $namaSubBagian = strtoupper(trim($subBagian->nama_sub_bagian ?? ''));
-        $lokasiArsip = $lokasiMapping[$namaSubBagian] ?? null;
+        // $lokasiArsip = $lokasiMapping[$namaSubBagian] ?? null;
+        $lokasiArsip = $this->getRuanganBySubBagian($subBagian->id);
 $rakId = null;
 $boxId = null;
 

@@ -43,48 +43,68 @@ class LokasiController extends Controller
     }
 
     // Layer 2: Rak dalam ruangan
- public function listRak($ruangan)
-{
-    if (empty($ruangan)) {
-        return redirect()->route('manajemen-lokasi.index')
-            ->with('error', 'Ruangan tidak valid.');
+    public function listRak($ruangan)
+    {
+        if (empty($ruangan)) {
+            return redirect()->route('manajemen-lokasi.index')
+                ->with('error', 'Ruangan tidak valid.');
+        }
+
+        $raks = MasterRak::where('lokasi_arsip', $ruangan)
+            ->orderBy('nomor_rak', 'asc')
+            ->get();
+
+        // Hitung jumlah arsip per rak (1 query, hindari N+1)
+        $jumlahPerRak = Arsip::whereIn('rak_id', $raks->pluck('id'))
+            ->whereIn('status_pindah', ['LANGSUNG', 'DIPINDAHKAN'])
+            ->selectRaw('rak_id, COUNT(*) as total')
+            ->groupBy('rak_id')
+            ->pluck('total', 'rak_id');
+
+        $raks->each(function ($rak) use ($jumlahPerRak) {
+            $rak->jumlah_arsip = $jumlahPerRak[$rak->id] ?? 0;
+        });
+
+        $ruanganLabel = $this->getLabelRuangan($ruangan);
+
+        return view('manajemen-lokasi.rak', compact('ruangan', 'ruanganLabel', 'raks'));
     }
-
-    // Ambil objek lengkap (nomor_rak dan keterangan)
-    $raks = MasterRak::where('lokasi_arsip', $ruangan)
-    ->orderBy('nomor_rak', 'asc')
-    ->get(); // ← ambil dua kolom
-//  dd($raks);
-    $ruanganLabel = $this->getLabelRuangan($ruangan);
-
-    return view('manajemen-lokasi.rak', compact('ruangan', 'ruanganLabel', 'raks'));
-}
     // Layer 3: Box dalam rak
-  public function listBox($ruangan, $rak)
-{
-    if (empty($ruangan) || empty($rak)) {
-        return redirect()->route('manajemen-lokasi.index')
-            ->with('error', 'Parameter tidak valid.');
+    public function listBox($ruangan, $rak)
+    {
+        if (empty($ruangan) || empty($rak)) {
+            return redirect()->route('manajemen-lokasi.index')
+                ->with('error', 'Parameter tidak valid.');
+        }
+
+        $rakModel = MasterRak::where('lokasi_arsip', $ruangan)
+            ->where('nomor_rak', $rak)
+            ->first();
+
+        if (!$rakModel) {
+            abort(404, 'Rak tidak ditemukan');
+        }
+
+        $boxes = MasterBox::where('rak_id', $rakModel->id)
+            ->orderBy('nomor_box', 'asc')
+            ->get();
+
+        // Hitung jumlah arsip per box (1 query)
+        $jumlahPerBox = Arsip::whereIn('box_id', $boxes->pluck('id'))
+            ->whereIn('status_pindah', ['LANGSUNG', 'DIPINDAHKAN'])
+            ->selectRaw('box_id, COUNT(*) as total')
+            ->groupBy('box_id')
+            ->pluck('total', 'box_id');
+
+        $boxes->each(function ($box) use ($jumlahPerBox) {
+            $box->jumlah_arsip = $jumlahPerBox[$box->id] ?? 0;
+        });
+
+        $rakId = $rakModel->id;
+        $ruanganLabel = $this->getLabelRuangan($ruangan);
+
+        return view('manajemen-lokasi.box', compact('ruangan', 'ruanganLabel', 'rak', 'boxes', 'rakModel', 'rakId'));
     }
-
-  $rakModel = MasterRak::where('lokasi_arsip', $ruangan)
-        ->where('nomor_rak', $rak)
-        ->first();
-
-    if (!$rakModel) {
-        abort(404, 'Rak tidak ditemukan');
-    }
-
-    $boxes = MasterBox::where('rak_id', $rakModel->id)
-        ->orderBy('nomor_box', 'asc')
-        ->get();
-
-    $rakId = $rakModel->id; // ← tambahkan ini
-
-    $ruanganLabel = $this->getLabelRuangan($ruangan);
-
-    return view('manajemen-lokasi.box', compact('ruangan', 'ruanganLabel', 'rak', 'boxes', 'rakModel', 'rakId'));
-}
     // Layer 4: Daftar arsip dalam box
     public function listArsip($ruangan, $rak, $box)
 {
@@ -114,7 +134,7 @@ class LokasiController extends Controller
     // Ambil arsip berdasarkan box_id
     $arsips = Arsip::where('box_id', $boxModel->id)
      ->whereIn('status_pindah', [
-            'LANGSUNG,DIPINDAHKAN',
+            'LANGSUNG','DIPINDAHKAN',
         ])
         ->orderBy('tahun_arsip', 'desc')
         ->get();

@@ -77,7 +77,7 @@ class LokasiSubBagianController extends Controller
     }
 
     // Layer 2: Rak
-   public function listRak($ruangan)
+  public function listRak($ruangan)
 {
     $subBagianId = Auth::user()->sub_bagian_id;
     $ruanganUser = $this->getRuanganBySubBagian($subBagianId);
@@ -87,10 +87,21 @@ class LokasiSubBagianController extends Controller
             ->with('error', 'Akses ditolak.');
     }
 
-    // Ambil objek rak (bukan pluck)
     $raks = MasterRak::where('lokasi_arsip', $ruangan)
         ->orderBy('nomor_rak', 'asc')
-        ->get(); // ← object
+        ->get();
+
+    // Hitung jumlah arsip per rak dalam satu query (hindari N+1)
+    $jumlahPerRak = Arsip::whereIn('rak_id', $raks->pluck('id'))
+        ->where('sub_bagian_id', $subBagianId)
+        ->whereIn('status_pindah', [Arsip::STATUS_BELUM, Arsip::STATUS_DIAJUKAN])
+        ->selectRaw('rak_id, COUNT(*) as total')
+        ->groupBy('rak_id')
+        ->pluck('total', 'rak_id');
+
+    $raks->each(function ($rak) use ($jumlahPerRak) {
+        $rak->jumlah_arsip = $jumlahPerRak[$rak->id] ?? 0;
+    });
 
     $ruanganLabel = $this->getLabelRuangan($ruangan);
 
@@ -117,7 +128,19 @@ public function listBox($ruangan, $rak)
 
     $boxes = MasterBox::where('rak_id', $rakModel->id)
         ->orderBy('nomor_box', 'asc')
-        ->get(); // ← object
+        ->get();
+
+    // Hitung jumlah arsip per box dalam satu query
+    $jumlahPerBox = Arsip::whereIn('box_id', $boxes->pluck('id'))
+        ->where('sub_bagian_id', $subBagianId)
+        ->whereIn('status_pindah', [Arsip::STATUS_BELUM, Arsip::STATUS_DIAJUKAN])
+        ->selectRaw('box_id, COUNT(*) as total')
+        ->groupBy('box_id')
+        ->pluck('total', 'box_id');
+
+    $boxes->each(function ($box) use ($jumlahPerBox) {
+        $box->jumlah_arsip = $jumlahPerBox[$box->id] ?? 0;
+    });
 
     $ruanganLabel = $this->getLabelRuangan($ruangan);
 
@@ -156,7 +179,7 @@ public function listBox($ruangan, $rak)
         $arsips = Arsip::where('box_id', $boxModel->id)
             ->where('sub_bagian_id', $subBagianId)
              ->whereIn('status_pindah', [
-            'BELUM, DIAJUKAN',
+            'BELUM', 'DIAJUKAN',
         ])
             ->orderBy('tahun_arsip', 'desc')
             ->get();

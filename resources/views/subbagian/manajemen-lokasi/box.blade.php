@@ -152,10 +152,13 @@
                                 </p>
                             @endif
 
-                            {{-- Badge --}}
-                            <div class="mb-3">
+                           {{-- Badge --}}
+                            <div class="mb-3 d-flex justify-content-center gap-2 flex-wrap">
                                 <span class="badge px-3 py-2 rounded-pill" style="background: {{ $bgColor }}; color: {{ $iconColor }}; font-weight: 500;">
                                     <i class="bi bi-files me-1"></i> Kelola arsip
+                                </span>
+                                <span class="badge px-3 py-2 rounded-pill {{ $box->jumlah_arsip > 0 ? 'bg-success' : 'bg-secondary' }}">
+                                    <i class="bi bi-archive me-1"></i> {{ $box->jumlah_arsip }} Arsip
                                 </span>
                             </div>
                             
