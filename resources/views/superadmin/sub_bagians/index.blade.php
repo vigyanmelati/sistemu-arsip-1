@@ -24,15 +24,28 @@
     {{-- TABLE --}}
     <div class="card">
         <div class="card-body">
-            <table class="table table-bordered table-striped">
+
+            {{-- SEARCH BOX --}}
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Cari nama sub bagian...">
+                </div>
+            </div>
+
+            <table class="table table-bordered table-striped" id="tabelSubBagian">
                 <thead class="table-light">
                     <tr>
                         <th width="50">No</th>
-                        <th>Nama Sub Bagian</th>
+                        <th class="sortable" data-col="1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Nama Sub Bagian</span>
+                                <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                            </div>
+                        </th>
                         <th width="150">Aksi</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tabelBody">
                     @forelse ($subBagians as $item)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
@@ -132,4 +145,78 @@
         </form>
     </div>
 </div>
+
+@push('styles')
+<style>
+    .sortable {
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.15s ease;
+    }
+    .sortable:hover {
+        background-color: #e9ecef;
+    }
+    .sort-icon {
+        color: #adb5bd;
+        font-size: 0.85rem;
+        margin-left: 6px;
+        transition: color 0.15s ease;
+    }
+    .sort-icon.active {
+        color: #0d6efd;
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('searchInput');
+    const tabelBody   = document.getElementById('tabelBody');
+    const rows        = () => Array.from(tabelBody.querySelectorAll('tr')).filter(r => r.children.length > 1);
+
+    searchInput.addEventListener('keyup', function () {
+        const keyword = this.value.toLowerCase();
+        rows().forEach(row => {
+            const nama = row.children[1]?.textContent.toLowerCase() || '';
+            row.style.display = nama.includes(keyword) ? '' : 'none';
+        });
+    });
+
+    let sortState = {};
+    document.querySelectorAll('.sortable').forEach(th => {
+        th.addEventListener('click', function () {
+            const col = parseInt(this.dataset.col);
+            const currentDir = sortState[col] === 'asc' ? 'desc' : 'asc';
+            sortState = { [col]: currentDir };
+
+            const sortedRows = rows().sort((a, b) => {
+                const aText = a.children[col]?.textContent.trim().toLowerCase() || '';
+                const bText = b.children[col]?.textContent.trim().toLowerCase() || '';
+                if (aText < bText) return currentDir === 'asc' ? -1 : 1;
+                if (aText > bText) return currentDir === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            sortedRows.forEach(row => tabelBody.appendChild(row));
+
+            document.querySelectorAll('.sort-icon').forEach(icon => {
+                icon.classList.remove('active');
+                icon.innerHTML = '<i class="bi bi-arrow-down-up"></i>';
+            });
+
+            const iconEl = this.querySelector('.sort-icon');
+            iconEl.classList.add('active');
+            iconEl.innerHTML = currentDir === 'asc'
+                ? '<i class="bi bi-sort-alpha-down"></i>'
+                : '<i class="bi bi-sort-alpha-down-alt"></i>';
+
+            rows().forEach((row, i) => {
+                if (row.children[0]) row.children[0].textContent = i + 1;
+            });
+        });
+    });
+});
+</script>
+@endpush
 @endsection
