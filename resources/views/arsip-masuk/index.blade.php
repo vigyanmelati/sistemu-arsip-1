@@ -92,6 +92,7 @@
                         <th>Status</th>
                         <th>Tanggal Diajukan</th>
                         <th>File Berita Acara</th>
+                        <th>Dokumen Arsip</th>
                         <th>Status Pemindahan</th>
                         <!-- <th>Status Lokasi</th> -->
                         <th>Aksi</th>
@@ -159,6 +160,21 @@
                                 <a href="{{ route('arsip-masuk.download-berita-acara', $arsip->id) }}" class="btn btn-sm btn-success"><i class="bi bi-download"></i> Download</a>
                             @else
                                 <span class="badge bg-warning">Tidak ada</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($arsip->file_dokumen)
+                                <a href="{{ route('arsip-masuk.download-file', $arsip->id) }}" class="btn btn-sm btn-primary" title="Download dokumen">
+                                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                                </a>
+                            @elseif($arsip->link_folder)
+                                <a href="{{ $arsip->link_folder }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Buka link dokumen">
+                                    <i class="bi bi-link-45deg"></i> Link
+                                </a>
+                            @else
+                                <span class="badge bg-danger" title="Arsip ini belum memiliki dokumen (PDF/link)">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> Belum Ada Dokumen
+                                </span>
                             @endif
                         </td>
                         <td>
@@ -266,11 +282,26 @@
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold">Status Lokasi</label>
-                            <select name="status_lokasi" class="form-select">
+                            <label class="form-label fw-semibold">Nomor BAP</label>
+                            <select name="nomor_bap" class="form-select">
+                                <option value="">Semua Nomor BAP</option>
+                                @foreach($nomorBapOptions as $nomorBap)
+                                    <option value="{{ $nomorBap }}" {{ request('nomor_bap') == $nomorBap ? 'selected' : '' }}>
+                                        {{ $nomorBap }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Status Dokumen Arsip</label>
+                            <select name="status_dokumen" class="form-select">
                                 <option value="">Semua</option>
-                                <option value="belum">Belum Diverifikasi</option>
-                                <option value="sudah">Sudah Diverifikasi</option>
+                                <option value="belum" {{ request('status_dokumen') == 'belum' ? 'selected' : '' }}>
+                                    ⚠️ Belum Ada Dokumen
+                                </option>
+                                <option value="sudah" {{ request('status_dokumen') == 'sudah' ? 'selected' : '' }}>
+                                    ✅ Sudah Ada Dokumen
+                                </option>
                             </select>
                         </div>
                     </div>

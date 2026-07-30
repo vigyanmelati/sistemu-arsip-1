@@ -210,13 +210,75 @@
                                 @enderror
                             </div>
 
-                            <div class="col-md-6 mb-3">
+                            {{-- <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Ganti Berkas Berita Acara (opsional)</label>
                                 <input type="file" name="file_berita_acara_baru" class="form-control">
                                 <small class="text-muted">
                                     Kosongkan jika tidak ingin mengganti berkas berita acara yang sudah ada.
                                     Format: PDF, JPG, JPEG, PNG (Maks: 10MB)
                                 </small>
+                            </div> --}}
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Dokumen Arsip</label>
+
+                                    @if($arsip->file_dokumen || $arsip->link_folder)
+                                        <div class="mb-2">
+                                            @if($arsip->file_dokumen)
+                                                <a href="{{ asset('storage/arsip/' . $arsip->file_dokumen) }}" target="_blank"
+                                                class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-file-pdf me-1"></i> Lihat PDF Saat Ini
+                                                </a>
+                                            @endif
+                                            @if($arsip->link_folder)
+                                                <a href="{{ $arsip->link_folder }}" target="_blank"
+                                                class="btn btn-sm btn-outline-secondary">
+                                                    <i class="fas fa-link me-1"></i> Lihat Link Saat Ini
+                                                </a>
+                                            @endif
+                                        </div>
+                                    @endif
+
+                                    <div class="btn-group btn-group-sm mb-2" role="group">
+                                        <input type="radio" class="btn-check" name="jenis_dokumen" id="jenis_pdf" value="pdf" autocomplete="off"
+                                            {{ old('jenis_dokumen', $arsip->file_dokumen ? 'pdf' : ($arsip->link_folder ? 'link' : 'pdf')) == 'pdf' ? 'checked' : '' }}>
+                                        <label class="btn btn-outline-primary" for="jenis_pdf">Upload PDF</label>
+
+                                        <input type="radio" class="btn-check" name="jenis_dokumen" id="jenis_link" value="link" autocomplete="off"
+                                            {{ old('jenis_dokumen', $arsip->file_dokumen ? 'pdf' : ($arsip->link_folder ? 'link' : 'pdf')) == 'link' ? 'checked' : '' }}>
+                                        <label class="btn btn-outline-primary" for="jenis_link">Link (Drive, dll)</label>
+                                    </div>
+                                    <small class="text-danger d-block mt-1">
+                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                    Wajib diisi (PDF atau link) jika arsip ini belum pernah memiliki dokumen sebelumnya.
+                                </small>
+                                    <div id="wrap_upload_pdf">
+                                        <input type="file" name="file_dokumen_baru" class="form-control @error('file_dokumen_baru') is-invalid @enderror" accept=".pdf">
+                                        <small class="text-muted">Format: PDF saja. Maks 10MB. Kosongkan jika tidak ingin mengganti.</small>
+                                        @error('file_dokumen_baru')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div id="wrap_link_dokumen" style="display:none;">
+                                        <input type="url" name="link_folder" class="form-control @error('link_folder') is-invalid @enderror"
+                                            value="{{ old('link_folder', $arsip->link_folder) }}"
+                                            placeholder="https://drive.google.com/...">
+                                        <small class="text-muted">Masukkan link folder/dokumen (mis. Google Drive).</small>
+                                        @error('link_folder')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Ganti Berkas Berita Acara (opsional)</label>
+                                    <input type="file" name="file_berita_acara_baru" class="form-control">
+                                    <small class="text-muted">
+                                        Kosongkan jika tidak ingin mengganti berkas berita acara yang sudah ada.
+                                        Format: PDF, JPG, JPEG, PNG (Maks: 10MB)
+                                    </small>
+                                </div>
                             </div>
                         </div>
 
@@ -283,9 +345,37 @@
                             <td>: {{ $arsip->subBagian->nama_sub_bagian ?? '-' }}</td>
                         </tr>
                         <tr>
+                            <th>Dokumen Arsip</th>
+                            <td>:
+                                @if($arsip->file_dokumen)
+                                    <a href="{{ asset('storage/arsip/' . $arsip->file_dokumen) }}" target="_blank">
+                                        <i class="fas fa-file-pdf me-1"></i>Lihat PDF
+                                    </a>
+                                @elseif($arsip->link_folder)
+                                    <a href="{{ $arsip->link_folder }}" target="_blank">
+                                        <i class="fas fa-link me-1"></i>Buka Link
+                                    </a>
+                                @else
+                                    <span class="text-muted">Belum ada dokumen</span>
+                                @endif
+                            </td>
+                        </tr>
+                       <tr>
                             <th>Nomor BAP</th>
                             <td>: {{ $beritaAcara->nomor_bap ?? '-' }}</td>
                         </tr>
+                       <tr>
+    <th>File Berita Acara</th>
+    <td>:
+        @if($arsip->file_berita_acara)
+            <a href="{{ asset('storage/berita_acara/' . $arsip->file_berita_acara) }}" target="_blank">
+                <i class="fas fa-file-pdf me-1"></i>Lihat Berita Acara
+            </a>
+        @else
+            <span class="text-muted">Belum ada</span>
+        @endif
+    </td>
+</tr>
                         <tr>
                             <th>Status Saat Ini</th>
                             <td>:
@@ -376,6 +466,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
     filterRak();
     rakSelect.addEventListener('change', filterBox);
+
+    
 });
+const jenisRadios = document.querySelectorAll('input[name="jenis_dokumen"]');
+const wrapPdf = document.getElementById('wrap_upload_pdf');
+const wrapLink = document.getElementById('wrap_link_dokumen');
+
+function toggleJenisDokumen() {
+    const selected = document.querySelector('input[name="jenis_dokumen"]:checked');
+    if (!selected) return;
+    if (selected.value === 'pdf') {
+        wrapPdf.style.display = '';
+        wrapLink.style.display = 'none';
+    } else {
+        wrapPdf.style.display = 'none';
+        wrapLink.style.display = '';
+    }
+}
+
+jenisRadios.forEach(r => r.addEventListener('change', toggleJenisDokumen));
+toggleJenisDokumen();
 </script>
 @endsection

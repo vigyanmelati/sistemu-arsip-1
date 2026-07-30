@@ -53,6 +53,39 @@ class AdminArsipMasukController extends Controller
             $query->whereNotNull('tanggal_diverifikasi');
         }
 
+        // Filter berdasarkan Nomor BAP
+        // if ($request->filled('nomor_bap')) {
+        //     $query->whereHas('beritaAcaraPindah', function ($q) use ($request) {
+        //         $q->where('nomor_bap', 'like', "%{$request->nomor_bap}%");
+        //     });
+        // }
+
+        if ($request->filled('nomor_bap')) {
+            $query->whereHas('beritaAcaraDetailS.beritaAcara', function ($q) use ($request) {
+                $q->where('nomor_bap', 'like', "%{$request->nomor_bap}%");
+            });
+        }
+
+        if ($request->filled('status_dokumen')) {
+            if ($request->status_dokumen == 'belum') {
+                $query->where(function ($q) {
+                        $q->whereNull('file_dokumen')->orWhere('file_dokumen', '');
+                    })
+                    ->where(function ($q) {
+                        $q->whereNull('link_foto')->orWhere('link_foto', '');
+                    });
+            } elseif ($request->status_dokumen == 'sudah') {
+                $query->where(function ($q) {
+                    $q->where(function ($sub) {
+                            $sub->whereNotNull('file_dokumen')->where('file_dokumen', '!=', '');
+                        })
+                        ->orWhere(function ($sub) {
+                            $sub->whereNotNull('link_foto')->where('link_foto', '!=', '');
+                        });
+                });
+            }
+        }
+
         // Search
         if ($request->has('search') && $request->search != '') {
             $query->where(function($q) use ($request) {
@@ -94,6 +127,13 @@ class AdminArsipMasukController extends Controller
         ->orderBy('kode')
         ->get();
 
+        $nomorBapOptions = BeritaAcaraPindah::whereHas('details.arsip', function ($q) {
+            $q->where('status_pindah', 'DIAJUKAN');
+        })
+        ->distinct()
+        ->orderBy('nomor_bap')
+        ->pluck('nomor_bap');
+        
     return view('arsip-masuk.index', compact(
         'arsips', 
         'subBagianOptions',
@@ -101,7 +141,8 @@ class AdminArsipMasukController extends Controller
         'arsipMasukCount',
         'rakOptions',
         'boxOptions',
-        'kodeKlasifikasiOptions' // <-- TAMBAHKAN INI
+        'kodeKlasifikasiOptions', 
+        'nomorBapOptions' 
     ));
     }
 

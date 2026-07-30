@@ -121,8 +121,6 @@ class SubBagianRiwayatPemindahanController extends Controller
             abort(403);
         }
 
-        // Hanya arsip yang DITOLAK atau sudah DIPERBAIKI (belum diajukan ulang)
-        // yang boleh masuk ke halaman perbaikan.
         if (!in_array($arsip->status_pindah, ['DITOLAK', 'DIPERBAIKI'])) {
             abort(404);
         }
@@ -130,20 +128,28 @@ class SubBagianRiwayatPemindahanController extends Controller
         $arsip->load(['kodeKlasifikasi', 'subBagian']);
         $kodeKlasifikasis = KodeKlasifikasi::orderBy('kode')->get();
 
-    $lokasi = $this->getLokasiArsip($user);
-    $lokasiLabel = $this->getLabelLokasi($lokasi);
+        // Ambil Berita Acara terkait arsip ini (sama seperti di method show())
+        $beritaAcara = optional(
+            $arsip->beritaAcaraDetailS()
+                ->latest()
+                ->first()
+        )->beritaAcara;
 
-    $rakOptions = MasterRak::where('lokasi_arsip', $lokasi)
-        ->orderBy('nomor_rak')
-        ->get(['id', 'nomor_rak', 'lokasi_arsip']);
+        $lokasi = $this->getLokasiArsip($user);
+        $lokasiLabel = $this->getLabelLokasi($lokasi);
 
-    $boxOptions = MasterBox::whereIn('rak_id', $rakOptions->pluck('id'))
-        ->orderBy('nomor_box')
-        ->get(['id', 'nomor_box', 'rak_id']);
+        $rakOptions = MasterRak::where('lokasi_arsip', $lokasi)
+            ->orderBy('nomor_rak')
+            ->get(['id', 'nomor_rak', 'lokasi_arsip']);
 
+        $boxOptions = MasterBox::whereIn('rak_id', $rakOptions->pluck('id'))
+            ->orderBy('nomor_box')
+            ->get(['id', 'nomor_box', 'rak_id']);
 
-
-        return view('subbagian.riwayat-pemindahan.perbaikan', compact('arsip', 'kodeKlasifikasis','rakOptions', 'boxOptions', 'lokasi', 'lokasiLabel'));
+        return view('subbagian.riwayat-pemindahan.perbaikan', compact(
+            'arsip', 'kodeKlasifikasis', 'rakOptions', 'boxOptions',
+            'lokasi', 'lokasiLabel', 'beritaAcara' // <-- TAMBAHKAN INI
+        ));
     }
 
     /**
@@ -178,9 +184,14 @@ class SubBagianRiwayatPemindahanController extends Controller
  
             // Upload BA baru bersifat OPSIONAL — tidak wajib
             'file_berita_acara_baru' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'jenis_dokumen' => 'nullable|in:pdf,link',
+            'file_dokumen_baru' => 'nullable|file|mimes:pdf|max:10240',
+            'link_folder' => 'nullable|url|max:500',
  
             // Nomor BAP (berita acara pindah) — opsional, hanya jika perlu diperbaiki
             'nomor_bap' => 'nullable|string|max:255',
+
+            
  
             // Wajib diisi agar jelas apa yang sudah diperbaiki
             'catatan_perbaikan' => 'required|string|max:1000',
@@ -188,18 +199,80 @@ class SubBagianRiwayatPemindahanController extends Controller
  
         DB::beginTransaction();
         try {
-            // Upload file berita acara baru (jika ada)
-            if ($request->hasFile('file_berita_acara_baru')) {
-                if ($arsip->file_berita_acara) {
-                    Storage::disk('public')->delete('arsip/' . $arsip->file_berita_acara);
+                $jenisDokumen = $request->input('jenis_dokumen', 'pdf');
+
+                // Tentukan kondisi dokumen SETELAH perubahan ini (apa yang akan tersimpan)
+                $akanAdaFileBaru = ($jenisDokumen === 'pdf' && $request->hasFile('file_dokumen_baru'));
+                $akanAdaLinkBaru = ($jenisDokumen === 'link' && !empty($validated['link_folder']));
+
+                // Dokumen dianggap "ada" kalau: sudah ada dari dulu (dan tidak sedang dihapus/diganti tipe),
+                // ATAU baru diisi sekarang (upload baru / link baru)
+                $sudahPunyaFileLama = !empty($arsip->file_dokumen);
+                $sudahPunyaLinkLama = !empty($arsip->link_folder);
+
+                $dokumenAkanKosong = true;
+
+                if ($jenisDokumen === 'pdf') {
+                    // Kalau pilih mode PDF: valid jika ada file baru, atau sudah ada file lama
+                    if ($akanAdaFileBaru || $sudahPunyaFileLama) {
+                        $dokumenAkanKosong = false;
+                    }
+                } elseif ($jenisDokumen === 'link') {
+                    // Kalau pilih mode link: valid jika ada link baru, atau sudah ada link lama
+                    if ($akanAdaLinkBaru || $sudahPunyaLinkLama) {
+                        $dokumenAkanKosong = false;
+                    }
                 }
- 
-                $file = $request->file('file_berita_acara_baru');
-                $fileName = time() . '_' . $file->getClientOriginalName();
-                $file->storeAs('arsip', $fileName, 'public');
-                $validated['file_berita_acara'] = $fileName;
-            }
- 
+
+                // Fallback: kalau field jenis_dokumen tidak dikirim sama sekali (misal request lama),
+                // tetap valid selama arsip sudah punya salah satu dari dulu
+                if ($sudahPunyaFileLama || $sudahPunyaLinkLama) {
+                    // arsip lama sudah punya dokumen, jadi selama tidak sengaja dikosongkan, aman
+                }
+
+                if ($dokumenAkanKosong) {
+                    DB::rollBack();
+                    return back()
+                        ->with('error', 'Dokumen arsip wajib diisi (upload PDF atau isi link) sebelum perbaikan bisa disimpan.')
+                        ->withInput();
+                }
+
+                // Upload file berita acara baru (jika ada)
+// Upload file berita acara baru (jika ada)
+                if ($request->hasFile('file_berita_acara_baru')) {
+                    if ($arsip->file_berita_acara) {
+                        Storage::disk('public')->delete('berita_acara/' . $arsip->file_berita_acara);
+                    }
+
+                    $file = $request->file('file_berita_acara_baru');
+                    $fileName = time() . '_' . $file->getClientOriginalName();
+                    $file->storeAs('berita_acara', $fileName, 'public');
+                    $validated['file_berita_acara'] = $fileName;
+                }
+
+                // Upload / ganti dokumen arsip utama
+                if ($jenisDokumen === 'pdf' && $akanAdaFileBaru) {
+                    if ($arsip->file_dokumen) {
+                        Storage::disk('public')->delete('arsip/' . $arsip->file_dokumen);
+                    }
+
+                    $fileDokumen = $request->file('file_dokumen_baru');
+                    $fileDokumenName = time() . '_' . $fileDokumen->getClientOriginalName();
+                    $fileDokumen->storeAs('arsip', $fileDokumenName, 'public');
+                    $validated['file_dokumen'] = $fileDokumenName;
+                    $validated['link_folder'] = null;
+                } elseif ($jenisDokumen === 'link' && $akanAdaLinkBaru) {
+                    if ($arsip->file_dokumen) {
+                        Storage::disk('public')->delete('arsip/' . $arsip->file_dokumen);
+                    }
+                    $validated['file_dokumen'] = null;
+                    // $validated['link_folder'] sudah otomatis kebawa dari request
+                } else {
+                    // Tidak ada perubahan dokumen — jangan sentuh file_dokumen / link_folder yang sudah ada
+                    unset($validated['link_folder']);
+                }
+// kalau jenis_dokumen dipilih tapi field-nya kosong, biarkan data lama tidak berubah
+            
             // Nomor BAP bukan kolom di tabel arsips, jadi diupdate terpisah
             // ke tabel berita_acara_pindah lewat relasi berita_acara_detail.
             $nomorBapBaru = $validated['nomor_bap'] ?? null;
@@ -220,6 +293,7 @@ class SubBagianRiwayatPemindahanController extends Controller
             $validated['updated_at'] = now();
  
             unset($validated['file_berita_acara_baru']);
+            unset($validated['file_dokumen_baru']);
  
             $arsip->update($validated);
  
