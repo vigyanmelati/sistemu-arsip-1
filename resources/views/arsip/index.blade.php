@@ -561,13 +561,39 @@ $isApprovedForDestruction = in_array($arsip->status_arsip, [
                         </div>
 
                         <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Lokasi Arsip</label>
+                            <select name="lokasi_arsip" class="form-select">
+                                <option value="">Semua Lokasi</option>
+                                @foreach($lokasiOptions as $value => $label)
+                                <option value="{{ $value }}" {{ request('lokasi_arsip') == $value ? 'selected' : '' }}>
+                                    {{ $label }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
                             <label class="form-label fw-semibold">Rak</label>
-                            <input type="text" name="nomor_rak" class="form-control" value="{{ request('nomor_rak') }}" placeholder="Contoh: A-01">
+                            <select name="rak_id" id="filterRakId" class="form-select">
+                                <option value="">Semua Rak</option>
+                                @foreach($rakOptions as $rak)
+                                <option value="{{ $rak->id }}" {{ request('rak_id') == $rak->id ? 'selected' : '' }}>
+                                    {{ $rak->nomor_rak }}
+                                </option>
+                                @endforeach
+                            </select>
                         </div>
 
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-semibold">Box</label>
-                            <input type="text" name="nomor_box" class="form-control" value="{{ request('nomor_box') }}" placeholder="Contoh: B-01">
+                            <select name="box_id" id="filterBoxId" class="form-select">
+                                <option value="">Semua Box</option>
+                                @foreach($boxOptions as $box)
+                                <option value="{{ $box->id }}" data-rak-id="{{ $box->rak_id }}" {{ request('box_id') == $box->id ? 'selected' : '' }}>
+                                    {{ $box->nomor_box }}
+                                </option>
+                                @endforeach
+                            </select>
                         </div>
 
                                                 <div class="col-md-6 mb-3">
@@ -2013,6 +2039,33 @@ document.addEventListener('DOMContentLoaded', function() {
             throw new Error(data.message || 'Gagal memperbarui data');
         }
     })
+    // >>> TAMBAHAN: filter box berdasarkan rak yang dipilih di modal filter <
+const filterRakSelect = document.getElementById('filterRakId');
+const filterBoxSelect = document.getElementById('filterBoxId');
+
+if (filterRakSelect && filterBoxSelect) {
+    const allBoxOptions = Array.from(filterBoxSelect.options);
+
+    function filterBoxByRak() {
+        const rakId = filterRakSelect.value;
+        const currentValue = filterBoxSelect.value;
+
+        filterBoxSelect.innerHTML = '';
+        allBoxOptions.forEach(opt => {
+            if (opt.value === '' || !rakId || opt.dataset.rakId === rakId) {
+                filterBoxSelect.appendChild(opt.cloneNode(true));
+            }
+        });
+
+        if ([...filterBoxSelect.options].some(o => o.value === currentValue)) {
+            filterBoxSelect.value = currentValue;
+        }
+    }
+
+    filterRakSelect.addEventListener('change', filterBoxByRak);
+    filterBoxByRak();
+}
+// >>> END TAMBAHAN <
     .catch(error => {
         console.error('Error:', error);
         cellElement.textContent = originalText || '-';

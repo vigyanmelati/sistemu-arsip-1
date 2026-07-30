@@ -27,44 +27,33 @@ class SubBagianArsipController extends Controller
         $user = Auth::user();
         $showAllStatus = $request->filter === 'belum_dokumen';
 
-$query = Arsip::with(['kodeKlasifikasi', 'subBagian'])
-    ->where('sub_bagian_id', $user->sub_bagian_id);
+        $query = Arsip::with(['kodeKlasifikasi', 'subBagian'])
+            ->where('sub_bagian_id', $user->sub_bagian_id);
 
-if (!$showAllStatus) {
-    $query->where('status_pindah', 'BELUM');
-}
-        // if (!$user->canViewRahasiaArsip()) {
-        //     $query->where('klasifikasi_keamanan', '!=', 'Rahasia');
-        // }
-        // $query->whereDoesntHave('beritaAcaraDetails', function($q) {
-        //         $q->whereIn('status', ['DRAFT', 'DIAJUKAN', 'DITERIMA']);
-        //     });
-                $query->where(function ($q) use ($user) {
+        if (!$showAllStatus) {
+            $query->where('status_pindah', 'BELUM');
+        }
 
-            // selain rahasia
-            $q->where('klasifikasi_keamanan', '!=', 'Rahasia');
+        $query->where(function ($q) use ($user) {
+        $q->where('klasifikasi_keamanan', '!=', 'Rahasia');
+        $q->orWhere(function ($sub) use ($user) {
 
-            // rahasia milik sendiri
-            $q->orWhere(function ($sub) use ($user) {
+        $sub->where('klasifikasi_keamanan', 'Rahasia');
 
-                $sub->where('klasifikasi_keamanan', 'Rahasia');
-
-                // admin, super admin dan TU
-                if (
-                    $user->isAdmin() ||
-                    $user->isSuperAdmin() ||
-                    $user->isTu()
-                ) {
-                    return;
-                }
+               
+        if (
+            $user->isAdmin() ||
+            $user->isSuperAdmin() ||
+            $user->isTu()
+        ) {
+            return;
+        }
 
         // user hanya miliknya sendiri
         $sub->where('created_by', $user->id);
         });
 
         });
-                    
-        // Di dalam method index() controller SubBagianArsipController
 
         if ($request->has('sort')) {
             $sort = $request->sort;
@@ -80,7 +69,7 @@ if (!$showAllStatus) {
                     ->orderBy('master_box.nomor_box', $direction)
                     ->select('arsips.*');
             }
-    }
+        }
 
         $tahunOptions = Arsip::select('tahun_arsip')
             ->distinct()
@@ -91,37 +80,37 @@ if (!$showAllStatus) {
             ->orderBy('nama_sub_bagian')
             ->get();
 
-    $bapOptions = BeritaAcaraPindah::where('sub_bagian_id', $user->sub_bagian_id)
-        ->where('status', 'DRAFT') // <-- GANTI dari DIAJUKAN ke DRAFT
-        ->orderBy('tanggal_bap', 'desc')
-        ->get();
+        $bapOptions = BeritaAcaraPindah::where('sub_bagian_id', $user->sub_bagian_id)
+            ->where('status', 'DRAFT') // <-- GANTI dari DIAJUKAN ke DRAFT
+            ->orderBy('tanggal_bap', 'desc')
+            ->get();
        if ($request->filter === 'tanpa_ruangan') {
-    $query->where('sub_bagian_id', $user->sub_bagian_id)
-          ->where(function ($q) {
-              $q->whereNull('rak_id')
-                ->orWhereNull('box_id');
-          })
-          ->whereIn('status_pindah', ['BELUM']);
-}
-if ($request->filter === 'belum_dokumen') {
-    $query->whereIn('status_pindah', [
-        'BELUM',
-        'DIAJUKAN',
-        'DIPINDAHKAN'
-    ]);
+            $query->where('sub_bagian_id', $user->sub_bagian_id)
+                ->where(function ($q) {
+                    $q->whereNull('rak_id')
+                        ->orWhereNull('box_id');
+                })
+                ->whereIn('status_pindah', ['BELUM']);
+        }
+        if ($request->filter === 'belum_dokumen') {
+            $query->whereIn('status_pindah', [
+                'BELUM',
+                'DIAJUKAN',
+                'DIPINDAHKAN'
+            ]);
 
-    $query->where('status_arsip', '!=', 'NON_ARSIP');
+            $query->where('status_arsip', '!=', 'NON_ARSIP');
 
-    $query->where(function ($q) {
-        $q->whereNull('file_dokumen')
-          ->orWhere('file_dokumen', '');
-    });
+            $query->where(function ($q) {
+                $q->whereNull('file_dokumen')
+                ->orWhere('file_dokumen', '');
+            });
 
-    $query->where(function ($q) {
-        $q->whereNull('link_foto')
-          ->orWhere('link_foto', '');
-    });
-}
+            $query->where(function ($q) {
+                $q->whereNull('link_foto')
+                ->orWhere('link_foto', '');
+            });
+        }
         // Filter & search sama seperti ArsipController
         if ($request->has('status_arsip') && $request->status_arsip != '') {
             $query->where('status_arsip', $request->status_arsip);
@@ -131,6 +120,12 @@ if ($request->filter === 'belum_dokumen') {
         }
         if ($request->has('kode_klasifikasi_id') && $request->kode_klasifikasi_id != '') {
             $query->where('kode_klasifikasi_id', $request->kode_klasifikasi_id);
+        }
+        if ($request->filled('rak_id')) {
+            $query->where('rak_id', $request->rak_id);
+        }
+        if ($request->filled('box_id')) {
+            $query->where('box_id', $request->box_id);
         }
         if ($request->has('keterangan') && $request->keterangan != '') {
             $query->where('keterangan', $request->keterangan);
@@ -148,190 +143,136 @@ if ($request->filter === 'belum_dokumen') {
             });
         }
 
- // Filter duplikat
-if ($request->show_duplicates == 1) {
+        // Filter duplikat
+        if ($request->show_duplicates == 1) {
 
-    DB::table('arsips')
-        ->where('sub_bagian_id', $user->sub_bagian_id)
-        ->update([
-            'is_duplicate' => 0,
-            'duplicate_reason' => null
-        ]);
+            DB::table('arsips')
+                ->where('sub_bagian_id', $user->sub_bagian_id)
+                ->update([
+                    'is_duplicate' => 0,
+                    'duplicate_reason' => null
+                ]);
 
-    $duplicateGroups = DB::table('arsips')
-        ->selectRaw("
-            LOWER(
-                REPLACE(
-                    REPLACE(
-                        REPLACE(
-                            REPLACE(
-                                TRIM(uraian_arsip),
-                            ' ', ''),
-                        '\n', ''),
-                    '\r', ''),
-                '\t', '')
-            ) AS cleaned_uraian,
-            tahun_arsip,
-            tingkat_perkembangan,
-            COUNT(*) AS total
-        ")
-        ->where('sub_bagian_id', $user->sub_bagian_id)
-        ->where('status_pindah', '!=', 'NON_ARSIP')
-        ->groupByRaw("
-            LOWER(
-                REPLACE(
-                    REPLACE(
-                        REPLACE(
-                            REPLACE(
-                                TRIM(uraian_arsip),
-                            ' ', ''),
-                        '\n', ''),
-                    '\r', ''),
-                '\t', '')
-            ),
-            tahun_arsip,
-            tingkat_perkembangan
-        ")
-        ->having('total', '>', 1)
-        ->get();
-
-    foreach ($duplicateGroups as $group) {
-
-        DB::table('arsips')
-            ->where('sub_bagian_id', $user->sub_bagian_id)
-            ->where('status_pindah', '!=', 'NON_ARSIP')
-            ->where('tahun_arsip', $group->tahun_arsip)
-            ->where('tingkat_perkembangan', $group->tingkat_perkembangan)
-            ->whereRaw("
-                LOWER(
-                    REPLACE(
+            $duplicateGroups = DB::table('arsips')
+                ->selectRaw("
+                    LOWER(
                         REPLACE(
                             REPLACE(
                                 REPLACE(
-                                    TRIM(uraian_arsip),
-                                ' ', ''),
-                            '\n', ''),
-                        '\r', ''),
-                    '\t', '')
-                ) = ?
-            ", [$group->cleaned_uraian])
-            ->update([
-                'is_duplicate' => 1,
-                'duplicate_reason' => 'Duplikat otomatis'
-            ]);
-    }
+                                    REPLACE(
+                                        TRIM(uraian_arsip),
+                                    ' ', ''),
+                                '\n', ''),
+                            '\r', ''),
+                        '\t', '')
+                    ) AS cleaned_uraian,
+                    tahun_arsip,
+                    tingkat_perkembangan,
+                    COUNT(*) AS total
+                ")
+                ->where('sub_bagian_id', $user->sub_bagian_id)
+                ->where('status_pindah', '!=', 'NON_ARSIP')
+                ->groupByRaw("
+                    LOWER(
+                        REPLACE(
+                            REPLACE(
+                                REPLACE(
+                                    REPLACE(
+                                        TRIM(uraian_arsip),
+                                    ' ', ''),
+                                '\n', ''),
+                            '\r', ''),
+                        '\t', '')
+                    ),
+                    tahun_arsip,
+                    tingkat_perkembangan
+                ")
+                ->having('total', '>', 1)
+                ->get();
 
-    $query->where('is_duplicate', 1);
-}
-// if ($request->show_duplicates == 1) {
+            foreach ($duplicateGroups as $group) {
 
-//             // RESET hanya yang BUKAN NON_ARSIP
-//             // RESET (hanya sub bagian user)
-// DB::table('arsips')
-//     ->where('sub_bagian_id', $user->sub_bagian_id)
-//     ->update([
-//         'is_duplicate' => 0,
-//         'duplicate_reason' => null
-//     ]);
+                DB::table('arsips')
+                    ->where('sub_bagian_id', $user->sub_bagian_id)
+                    ->where('status_pindah', '!=', 'NON_ARSIP')
+                    ->where('tahun_arsip', $group->tahun_arsip)
+                    ->where('tingkat_perkembangan', $group->tingkat_perkembangan)
+                    ->whereRaw("
+                        LOWER(
+                            REPLACE(
+                                REPLACE(
+                                    REPLACE(
+                                        REPLACE(
+                                            TRIM(uraian_arsip),
+                                        ' ', ''),
+                                    '\n', ''),
+                                '\r', ''),
+                            '\t', '')
+                        ) = ?
+                    ", [$group->cleaned_uraian])
+                    ->update([
+                        'is_duplicate' => 1,
+                        'duplicate_reason' => 'Duplikat otomatis'
+                    ]);
+            }
 
-// // DETEKSI DUPLIKAT (judul + tahun + sub bagian)
-// $duplicateGroups = DB::table(DB::raw("
-//     (
-//         SELECT 
-//             LOWER(
-//                 REPLACE(
-//                     REPLACE(
-//                         REPLACE(
-//                             REPLACE(
-//                                 REPLACE(uraian_arsip, CHAR(160), ''),
-//                             ' ', ''),
-//                         '\n', ''),
-//                     '\r', ''),
-//                 '\t', '')
-//             ) as cleaned_uraian,
-//             tahun_arsip,
-//             COUNT(*) as total
-//         FROM arsips
-//         WHERE sub_bagian_id = {$user->sub_bagian_id}
-//         GROUP BY cleaned_uraian, tahun_arsip
-//         HAVING total > 1
-//     ) as dup
-// "))->get();
-// // UPDATE FLAG
-// foreach ($duplicateGroups as $group) {
-//     DB::table('arsips')
-//         ->where('sub_bagian_id', $user->sub_bagian_id)
-//         ->where('tahun_arsip', $group->tahun_arsip)
-//         ->whereRaw(
-//     'LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(uraian_arsip, CHAR(160), ""), " ", ""), "\n", ""), "\r", ""), "\t", "")) = ?',
-//     [$group->cleaned_uraian]
-// )
-//         ->update([
-//             'is_duplicate' => 1,
-//             'duplicate_reason' => 'Duplikat otomatis'
-//         ]);
-// }
-
-//             $query->where('is_duplicate', 1);
-//         }
-
-// ... semua filter (status, tahun, keterangan, search, duplikat, dll) tetap di posisi yang sama
-
-// ===== SORTING (pindah ke sini, SEBELUM paginate) =====
-$sort = $request->get('sort', 'id');
-$direction = $request->get('direction', 'desc');
-
-$query->reorder();
-
-if ($sort === 'kode_klasifikasi') {
-    $query->leftJoin('kode_klasifikasis', 'arsips.kode_klasifikasi_id', '=', 'kode_klasifikasis.id')
-          ->orderBy('kode_klasifikasis.kode', $direction)
-          ->select('arsips.*');
-} elseif ($sort === 'rak.nomor_rak' || $sort === 'nomor_rak') {
-    $query->leftJoin('master_raks', 'arsips.rak_id', '=', 'master_raks.id')
-          ->orderBy('master_raks.nomor_rak', $direction)
-          ->select('arsips.*');
-} elseif ($sort === 'box.nomor_box' || $sort === 'nomor_box') {
-    $query->leftJoin('master_box', 'arsips.box_id', '=', 'master_box.id')
-          ->orderBy('master_box.nomor_box', $direction)
-          ->select('arsips.*');
-} else {
-    $query->orderBy($sort, $direction);
-}
-
-\Log::info('SORT DEBUG', [
-    'sort' => $sort,
-    'direction' => $direction,
-    'sql' => $query->toSql(),
-    'bindings' => $query->getBindings(),
-]);
+            $query->where('is_duplicate', 1);
+        }
 
 
-        // $arsips = $query->orderBy('id','desc')->paginate(15);
+        // ===== SORTING (pindah ke sini, SEBELUM paginate) =====
+        $sort = $request->get('sort', 'id');
+        $direction = $request->get('direction', 'desc');
+
+        $query->reorder();
+
+        if ($sort === 'kode_klasifikasi') {
+            $query->leftJoin('kode_klasifikasis', 'arsips.kode_klasifikasi_id', '=', 'kode_klasifikasis.id')
+                ->orderBy('kode_klasifikasis.kode', $direction)
+                ->select('arsips.*');
+        } elseif ($sort === 'rak.nomor_rak' || $sort === 'nomor_rak') {
+            $query->leftJoin('master_raks', 'arsips.rak_id', '=', 'master_raks.id')
+                ->orderBy('master_raks.nomor_rak', $direction)
+                ->select('arsips.*');
+        } elseif ($sort === 'box.nomor_box' || $sort === 'nomor_box') {
+            $query->leftJoin('master_box', 'arsips.box_id', '=', 'master_box.id')
+                ->orderBy('master_box.nomor_box', $direction)
+                ->select('arsips.*');
+        } else {
+            $query->orderBy($sort, $direction);
+        }
 
         $perPageInput = $request->get('per_page', 15);
-$allowedPerPage = [10, 15, 25, 50, 100];
+        $allowedPerPage = [10, 15, 25, 50, 100];
 
-if ($perPageInput === 'all') {
-    // Hitung total data sesuai filter yang aktif, lalu jadikan itu sebagai perPage
-    $perPage = (clone $query)->count();
-    $perPage = $perPage > 0 ? $perPage : 1; // hindari paginate(0)
-} elseif (in_array((int) $perPageInput, $allowedPerPage)) {
-    $perPage = (int) $perPageInput;
-} else {
-    $perPage = 15;
-}
+        if ($perPageInput === 'all') {
+            // Hitung total data sesuai filter yang aktif, lalu jadikan itu sebagai perPage
+            $perPage = (clone $query)->count();
+            $perPage = $perPage > 0 ? $perPage : 1; // hindari paginate(0)
+        } elseif (in_array((int) $perPageInput, $allowedPerPage)) {
+            $perPage = (int) $perPageInput;
+        } else {
+            $perPage = 15;
+        }
 
-$arsips = $query->orderBy('id','desc')->paginate($perPage)->withQueryString();
+        $arsips = $query->orderBy('id','desc')->paginate($perPage)->withQueryString();
 
         // Filter dropdown options
         $kodeKlasifikasiOptions = KodeKlasifikasi::orderBy('kode')->get();
         $statusOptions = ['AKTIF'=>'Aktif','INAKTIF'=>'Inaktif','HABIS_RETENSI'=>'HABIS RETENSI','MUSNAH'=>'Musnah','PERMANEN'=>'Permanen'];
         $kondisiOptions = ['BAIK'=>'Baik','RUSAK'=>'Rusak','HILANG'=>'Hilang'];
         $keteranganJraOptions = ['MUSNAH'=>'Musnah','PERMANEN'=>'Permanen'];
-  
+        $lokasi = $this->getLokasiArsip($user);
+
+        $rakOptions = MasterRak::where('lokasi_arsip', $lokasi)
+            ->orderBy('nomor_rak')
+            ->get(['id', 'nomor_rak']);
+
+        $boxOptions = MasterBox::whereIn('rak_id', $rakOptions->pluck('id'))
+            ->orderBy('nomor_box')
+            ->get(['id', 'nomor_box', 'rak_id']);
         return view('subbagian.arsip.index', compact(
-            'arsips','kodeKlasifikasiOptions','statusOptions','kondisiOptions','keteranganJraOptions', 'tahunOptions','subBagianOptions', 'bapOptions'
+            'arsips','kodeKlasifikasiOptions','statusOptions','kondisiOptions','keteranganJraOptions', 'tahunOptions','subBagianOptions', 'bapOptions','rakOptions','boxOptions'
         ));
     }
 

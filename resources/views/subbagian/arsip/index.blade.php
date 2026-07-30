@@ -479,6 +479,29 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">No Rak</label>
+                            <select name="rak_id" id="filterRakId" class="form-select">
+                                <option value="">Semua Rak</option>
+                                @foreach($rakOptions as $rak)
+                                <option value="{{ $rak->id }}" {{ request('rak_id') == $rak->id ? 'selected' : '' }}>
+                                    {{ $rak->nomor_rak }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">No Box</label>
+                            <select name="box_id" id="filterBoxId" class="form-select">
+                                <option value="">Semua Box</option>
+                                @foreach($boxOptions as $box)
+                                <option value="{{ $box->id }}" data-rak-id="{{ $box->rak_id }}" {{ request('box_id') == $box->id ? 'selected' : '' }}>
+                                    {{ $box->nomor_box }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                     
                     <div class="alert alert-info mt-3 mb-0 d-flex align-items-center">

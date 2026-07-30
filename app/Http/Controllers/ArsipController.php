@@ -24,13 +24,12 @@ class ArsipController extends Controller
     public function index(Request $request)
     {
 
-        // Mulai query dengan eager loading
-        // $query = Arsip::with(['kodeKlasifikasi', 'subBagian']);
         $query = Arsip::with(['kodeKlasifikasi', 'subBagian'])
             ->whereIn('status_pindah', [
                 'DIPINDAHKAN',
                 'LANGSUNG',
             ]);
+
         // Filter duplikat
         if ($request->show_duplicates == 1) {
 
@@ -101,6 +100,16 @@ class ArsipController extends Controller
         // Filter berdasarkan kode klasifikasi
         if ($request->has('kode_klasifikasi_id') && $request->kode_klasifikasi_id != '') {
             $query->where('kode_klasifikasi_id', $request->kode_klasifikasi_id);
+        }
+
+        if ($request->filled('lokasi_arsip')) {
+            $query->where('lokasi_arsip', $request->lokasi_arsip);
+        }
+        if ($request->filled('rak_id')) {
+            $query->where('rak_id', $request->rak_id);
+        }
+        if ($request->filled('box_id')) {
+            $query->where('box_id', $request->box_id);
         }
 
         // Filter berdasarkan kondisi fisik
@@ -230,6 +239,14 @@ class ArsipController extends Controller
             'PERMANEN' => 'Permanen',
         ];
 
+        $lokasiOptions = [
+            'RECORD_CENTER_PERMANEN' => 'Record Center (Arsip Permanen)',
+            'RECORD_CENTER_INAKTIF' => 'Record Center (Arsip Inaktif)',
+        ];
+
+        $rakOptions = MasterRak::orderBy('nomor_rak')->get(['id', 'nomor_rak', 'lokasi_arsip']);
+        $boxOptions = MasterBox::orderBy('nomor_box')->get(['id', 'nomor_box', 'rak_id']);
+
         return view('arsip.index', compact(
             'arsips',
             'tahunOptions',
@@ -237,7 +254,10 @@ class ArsipController extends Controller
             'kodeKlasifikasiOptions',
             'statusOptions',
             'kondisiOptions',
-            'keteranganJraOptions'
+            'keteranganJraOptions',
+            'lokasiOptions',   
+            'rakOptions',      
+            'boxOptions'
         ));
     }
 
@@ -504,84 +524,6 @@ class ArsipController extends Controller
                 ->with('error', 'Gagal menyimpan arsip: '.$e->getMessage());
         }
     }
-
-    /**
-     * Fungsi untuk menghitung retensi berdasarkan input dari view
-     */
-    //   public function hitungRetensi($aktif_tahun, $inaktif_tahun, $keterangan_jra, $tanggal_arsip, $tanggal_referensi = null)
-    // {
-    //     $result = [
-    //         'aktif_sampai' => null,
-    //         'inaktif_sampai' => null,
-    //         'status_arsip' => 'AKTIF'
-    //     ];
-
-    //     // Cek apakah mengandung kata SETELAH
-    //     $aktifMengandungSetelah = stripos($aktif_tahun, 'SETELAH') !== false;
-    //     $inaktifMengandungSetelah = stripos($inaktif_tahun, 'SETELAH') !== false;
-
-    //     // Jika mengandung SETELAH tapi tanggal referensi kosong, kembalikan status AKTIF saja
-    //     if (($aktifMengandungSetelah || $inaktifMengandungSetelah) && empty($tanggal_referensi)) {
-    //         $result['status_arsip'] = 'AKTIF';
-    //         return $result;
-    //     }
-
-    //     // Ekstrak angka dari teks
-    //     $aktifTahun = $this->extractNumberFromText($aktif_tahun);
-    //     $inaktifTahun = $this->extractNumberFromText($inaktif_tahun);
-
-    //     if (!$aktifTahun || !$inaktifTahun) {
-    //         $result['status_arsip'] = 'AKTIF';
-    //         return $result;
-    //     }
-
-    //     // Tentukan tanggal dasar perhitungan
-    //     if ($aktifMengandungSetelah || $inaktifMengandungSetelah) {
-    //         $tanggalDasar = Carbon::parse($tanggal_referensi);
-    //     } else {
-    //         $tanggalDasar = Carbon::parse($tanggal_arsip);
-    //     }
-
-    //     // Hitung tanggal aktif sampai
-    //     $aktifSampai = $tanggalDasar->copy()->addYears($aktifTahun);
-
-    //     // Hitung tanggal inaktif sampai (ditambahkan setelah aktif)
-    //     $inaktifSampai = $aktifSampai->copy()->addYears($inaktifTahun);
-
-    //     // Hitung tanggal musnah (untuk keterangan MUSNAH)
-    //     $musnahSampai = $inaktifSampai->copy()->addYears(1);
-
-    //     // Tentukan status arsip berdasarkan tanggal hari ini
-    //     $sekarang = Carbon::now();
-
-    //     if ($keterangan_jra === 'PERMANEN') {
-    //         $result['status_arsip'] = 'PERMANEN';
-    //     } elseif ($keterangan_jra === 'MUSNAH') {
-    //         if ($sekarang <= $aktifSampai) {
-    //             $result['status_arsip'] = 'AKTIF';
-    //         } elseif ($sekarang <= $inaktifSampai) {
-    //             $result['status_arsip'] = 'INAKTIF';
-    //         } elseif ($sekarang <= $musnahSampai) {
-    //             $result['status_arsip'] = 'HABIS_RETENSI';
-    //         } else {
-    //             $result['status_arsip'] = 'HABIS_RETENSI';
-    //         }
-    //     } else {
-    //         if ($sekarang <= $aktifSampai) {
-    //             $result['status_arsip'] = 'AKTIF';
-    //         } elseif ($sekarang <= $inaktifSampai) {
-    //             $result['status_arsip'] = 'INAKTIF';
-    //         } else {
-    //             $result['status_arsip'] = 'INAKTIF';
-    //         }
-    //     }
-
-    //     // Set tanggal hasil perhitungan
-    //     $result['aktif_sampai'] = $aktifSampai->format('Y-m-d');
-    //     $result['inaktif_sampai'] = $inaktifSampai->format('Y-m-d');
-
-    //     return $result;
-    // }
 
     public function hitungRetensi($aktif_tahun, $inaktif_tahun, $keterangan_jra, $tanggal_arsip, $tanggal_referensi = null)
     {
