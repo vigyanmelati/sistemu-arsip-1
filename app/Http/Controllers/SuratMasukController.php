@@ -39,6 +39,7 @@ class SuratMasukController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('nomor_dokumen', 'like', "%{$search}%")
+                    ->orWhere('nomor_agenda', 'like', "%{$search}%")
                     ->orWhere('perihal', 'like', "%{$search}%")
                     ->orWhere('instansi_satker', 'like', "%{$search}%");
             });

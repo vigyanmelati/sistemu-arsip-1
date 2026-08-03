@@ -64,28 +64,28 @@
             <div class="row">
 
                 {{-- TANGGAL DOKUMEN --}}
-                <div class="col-md-6 mb-3">
-                    <label class="form-label fw-bold">
-                        Tanggal Dokumen*
-                    </label>
+<div class="col-md-6 mb-3">
+    <label class="form-label fw-bold">
+        Tanggal Dokumen*
+    </label>
 
-                    <input type="date"
-                           name="tanggal_dokumen"
-                           class="form-control"
-                           value="{{ old('tanggal_dokumen', $surat->tanggal_dokumen) }}">
-                </div>
+    <input type="date"
+           name="tanggal_dokumen"
+           class="form-control"
+           value="{{ old('tanggal_dokumen', optional($surat->tanggal_dokumen)->format('Y-m-d')) }}">
+</div>
 
-                {{-- TANGGAL PENYELESAIAN --}}
-                <div class="col-md-6 mb-3">
-                    <label class="form-label fw-bold">
-                        Tanggal Penyelesaian*
-                    </label>
+{{-- TANGGAL PENYELESAIAN --}}
+<div class="col-md-6 mb-3">
+    <label class="form-label fw-bold">
+        Tanggal Penyelesaian*
+    </label>
 
-                    <input type="date"
-                           name="tanggal_penyelesaian"
-                           class="form-control"
-                           value="{{ old('tanggal_penyelesaian', $surat->tanggal_penyelesaian) }}">
-                </div>
+    <input type="date"
+           name="tanggal_penyelesaian"
+           class="form-control"
+           value="{{ old('tanggal_penyelesaian', optional($surat->tanggal_penyelesaian)->format('Y-m-d')) }}">
+</div>
 
             </div>
 
