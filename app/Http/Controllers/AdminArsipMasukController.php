@@ -1538,7 +1538,7 @@ public function updateField(Request $request, $id)
  */
 public function downloadTemplateImport()
 {
-    $path = public_path('template/template_import_arsip2.xlsx');
+    $path = public_path('template/template_import_arsip.xlsx');
 
     if (!file_exists($path)) {
         return back()->with('error', 'Template import tidak ditemukan di server.');
