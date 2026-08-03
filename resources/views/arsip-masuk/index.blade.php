@@ -8,11 +8,30 @@
     <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Daftar Arsip Masuk</h5>
-            <div class="action-buttons d-flex gap-2">
+            <div class="action-buttons d-flex gap-2 flex-wrap">
                 <button class="btn btn-cyan d-flex align-items-center gap-2" id="openFilterModal">
                     <i class="bi bi-funnel-fill"></i>
                     <span>Filter</span>
                 </button>
+                <button class="btn btn-primary d-flex align-items-center gap-2 shadow-sm" id="openImportModal">
+                    <i class="bi bi-file-earmark-arrow-up-fill"></i>
+                    <span>Import</span>
+                </button>
+                <button class="btn btn-success d-flex align-items-center gap-2 shadow-sm" id="openExportModal">
+                    <i class="bi bi-file-earmark-arrow-down-fill"></i>
+                    <span>Export</span>
+                </button>
+                @if($filterDuplikat)
+                    <a href="{{ route('arsip-masuk.index') }}" class="btn btn-secondary d-flex align-items-center gap-2 shadow-sm">
+                        <i class="bi bi-x-circle"></i>
+                        <span>Keluar Mode Duplikat</span>
+                    </a>
+                @else
+                    <a href="{{ route('arsip-masuk.index', ['filter_duplikat' => 1]) }}" class="btn btn-danger d-flex align-items-center gap-2 shadow-sm">
+                        <i class="bi bi-search"></i>
+                        <span>Cek Duplikat</span>
+                    </a>
+                @endif
                 <button class="btn btn-warning d-flex align-items-center gap-2 shadow-sm" id="prosesMultipleBtn" style="display: none;">
                     <i class="bi bi-gear-fill"></i>
                     <span>Proses Multiple</span>
@@ -49,13 +68,32 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         @endif
-        
+        @if($filterDuplikat)
+<div class="alert alert-warning d-flex align-items-center gap-2 mb-3">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <div>Mode <strong>Cek Duplikat</strong> aktif — hanya menampilkan arsip berstatus DIAJUKAN yang punya kode klasifikasi, sub bagian, tahun, dan judul yang sama.</div>
+</div>
+@endif
         @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             {{ session('error') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         @endif
+      @if(session('import_failed'))
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <strong>
+        <i class="bi bi-x-circle-fill me-2"></i>
+        Import dibatalkan karena terdapat kesalahan:
+    </strong>
+    <ul class="mb-0 mt-2">
+        @foreach(session('import_failed') as $row)
+            <li>Baris {{ $row['baris'] }}: {{ $row['pesan'] }}</li>
+        @endforeach
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
         <div class="alert alert-info d-flex align-items-start gap-2 mb-3">
     <i class="bi bi-info-circle-fill mt-1"></i>
     <div>
@@ -199,11 +237,30 @@
                                 </span>
                             @endif
                         </td> -->
-                        <td>
-                            <a href="{{ route('arsip-masuk.show', $arsip->id) }}" class="btn btn-sm btn-info" title="Detail">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                        </td>
+                       <td class="d-flex gap-1">
+    <a href="{{ route('arsip-masuk.show', $arsip->id) }}" class="btn btn-sm btn-info" title="Detail">
+        <i class="bi bi-eye"></i>
+    </a>
+
+    @if($filterDuplikat)
+        <form action="{{ route('arsip-masuk.tandai-non-arsip', $arsip->id) }}" method="POST" class="d-inline"
+              onsubmit="return confirm('Tandai arsip ini sebagai Non Arsip?');">
+            @csrf
+            <button type="submit" class="btn btn-sm btn-warning" title="Tandai Non Arsip">
+                <i class="bi bi-slash-circle"></i>
+            </button>
+        </form>
+
+        <form action="{{ route('arsip-masuk.hapus-duplikat', $arsip->id) }}" method="POST" class="d-inline"
+              onsubmit="return confirm('Hapus arsip duplikat ini secara permanen?');">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-sm btn-danger" title="Hapus">
+                <i class="bi bi-trash"></i>
+            </button>
+        </form>
+    @endif
+</td>
                     </tr>
                     @empty
                     <tr>
@@ -432,8 +489,128 @@
         </div>
     </div>
 </div>>
-</div>
 
+
+</div>
+<!-- Import Modal -->
+<div class="modal-container" id="importModalContainer" style="display: none;">
+    <div class="modal-content-wrapper">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-file-earmark-arrow-up-fill me-2"></i> Import Arsip dari Excel
+                </h5>
+                <button type="button" class="btn-close-modal" id="closeImportModal">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <form method="POST" action="{{ route('arsip-masuk.import') }}" enctype="multipart/form-data" id="importForm">
+                @csrf
+                <div class="modal-body p-4">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        Gunakan template resmi agar kolom terbaca dengan benar. Kolom
+                        <strong>Nomor Berita Acara</strong>, <strong>Kode Klasifikasi</strong>,
+                        <strong>Sub Bagian</strong>, <strong>Judul Arsip</strong>, dan
+                        <strong>Tahun Arsip</strong> wajib diisi. Jika arsip sudah ada
+                        (dicocokkan otomatis), data retensi (Aktif/Inaktif Tahun,
+                        Keterangan JRA) akan diperbarui. Jika belum ada, arsip baru akan
+                        dibuat dengan asal data <strong>"Import Excel"</strong>.
+                    </div>
+
+                    <a href="{{ route('arsip-masuk.template-import') }}" class="btn btn-sm btn-outline-secondary mb-3">
+                        <i class="bi bi-download me-1"></i> Download Template Excel
+                    </a>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">File Excel <span class="text-danger">*</span></label>
+                        <input type="file" name="file_import" id="file_import" class="form-control" accept=".xlsx,.xls" required>
+                        <small class="text-muted">Format .xlsx atau .xls, maksimal 5MB.</small>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" id="cancelImport">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitImport" style="margin-left:10px">
+                        <i class="bi bi-upload me-1"></i> Proses Import
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Export Modal -->
+<div class="modal-container" id="exportModalContainer" style="display: none;">
+    <div class="modal-content-wrapper">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-file-earmark-arrow-down-fill me-2"></i> Export Arsip Masuk
+                </h5>
+                <button type="button" class="btn-close-modal" id="closeExportModal">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <form method="GET" action="{{ route('arsip-masuk.export') }}" id="exportForm">
+                <div class="modal-body p-4">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        Pilih Nomor Berita Acara yang ingin di-export, atau biarkan
+                        <strong>"Semua Nomor BAP"</strong> untuk export seluruh arsip masuk
+                        (mengikuti filter yang sedang aktif di tabel, kalau ada).
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nomor Berita Acara</label>
+                        <select name="nomor_bap" class="form-select">
+                            <option value="">Semua Nomor BAP</option>
+                            @foreach($nomorBapOptions as $nomorBap)
+                                <option value="{{ $nomorBap }}" {{ request('nomor_bap') == $nomorBap ? 'selected' : '' }}>
+                                    {{ $nomorBap }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Bawa serta filter tabel yang sedang aktif supaya ikut ter-export --}}
+                    <input type="hidden" name="sub_bagian_id" value="{{ request('sub_bagian_id') }}">
+                    <input type="hidden" name="tahun_arsip" value="{{ request('tahun_arsip') }}">
+                    <input type="hidden" name="status_arsip" value="{{ request('status_arsip') }}">
+                    <input type="hidden" name="search" value="{{ request('search') }}">
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" id="cancelExport">Batal</button>
+                    <button type="submit" class="btn btn-success" style="margin-left:10px">
+                        <i class="bi bi-download me-1"></i> Export Sekarang
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Cek Duplikat Modal -->
+<div class="modal-container" id="cekDuplikatModalContainer" style="display: none;">
+    <div class="modal-content-wrapper" style="width: 800px;">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-search me-2"></i> Cek Duplikat Arsip
+                </h5>
+                <button type="button" class="btn-close-modal" id="closeCekDuplikatModal">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-body p-4" id="cekDuplikatBody" style="max-height: 60vh; overflow-y: auto;">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-danger" role="status"></div>
+                    <p class="mt-2 text-muted">Memeriksa data duplikat...</p>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary" id="closeCekDuplikatFooter">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
 <style>
     .modal-container {
         position: fixed;
@@ -588,6 +765,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalOverlay = document.getElementById('modalOverlay');
     const filterModalContainer = document.getElementById('filterModalContainer');
     const prosesMultipleModalContainer = document.getElementById('prosesMultipleModalContainer');
+    const importModalContainer = document.getElementById('importModalContainer');
+    const cekDuplikatModalContainer = document.getElementById('cekDuplikatModalContainer');
+    const exportModalContainer = document.getElementById('exportModalContainer');
     const openFilterBtn = document.getElementById('openFilterModal');
     const prosesMultipleBtn = document.getElementById('prosesMultipleBtn');
     const closeFilterBtn = document.getElementById('closeFilterModal');
@@ -607,6 +787,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const tolakFields = document.getElementById('tolakFields');
     
     const prosesMultipleForm = document.getElementById('prosesMultipleForm');
+    
     
     // Elements untuk filter rak & box
     const lokasiTujuanMultiple = document.getElementById('lokasi_tujuan_multiple');
@@ -714,6 +895,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function openModal(modalContainer) {
         filterModalContainer.style.display = 'none';
         prosesMultipleModalContainer.style.display = 'none';
+        importModalContainer.style.display = 'none';
+        exportModalContainer.style.display = 'none';
+        cekDuplikatModalContainer.style.display = 'none';
         modalOverlay.style.display = 'block';
         modalContainer.style.display = 'flex';
         modalContainer.classList.add('active');
@@ -725,6 +909,9 @@ document.addEventListener('DOMContentLoaded', function() {
         modalOverlay.style.display = 'none';
         filterModalContainer.style.display = 'none';
         prosesMultipleModalContainer.style.display = 'none';
+        importModalContainer.style.display = 'none';
+        exportModalContainer.style.display = 'none';
+        cekDuplikatModalContainer.style.display = 'none';
         filterModalContainer.classList.remove('active');
         prosesMultipleModalContainer.classList.remove('active');
         document.body.classList.remove('modal-open');
@@ -1269,6 +1456,146 @@ function updateRelatedField(arsipId, fieldName, value) {
             closeModal();
         }
     });
+
+    // =========================
+    // IMPORT MODAL
+    // =========================
+    const openImportBtn = document.getElementById('openImportModal');
+    const closeImportBtn = document.getElementById('closeImportModal');
+    const cancelImportBtn = document.getElementById('cancelImport');
+    const importForm = document.getElementById('importForm');
+    const btnSubmitImport = document.getElementById('btnSubmitImport');
+
+    if (openImportBtn) {
+        openImportBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            openModal(importModalContainer);
+        });
+    }
+    if (closeImportBtn) closeImportBtn.addEventListener('click', closeModal);
+    if (cancelImportBtn) cancelImportBtn.addEventListener('click', closeModal);
+
+    if (importForm) {
+        importForm.addEventListener('submit', function(e) {
+            const fileInput = document.getElementById('file_import');
+            if (!fileInput.files.length) {
+                e.preventDefault();
+                alert('Silakan pilih file Excel terlebih dahulu.');
+                return;
+            }
+            btnSubmitImport.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Memproses...';
+            btnSubmitImport.disabled = true;
+        });
+    }
+
+    if (importModalContainer) {
+        importModalContainer.addEventListener('click', function(e) { e.stopPropagation(); });
+    }
+
+    // =========================
+// EXPORT MODAL
+// =========================
+const openExportBtn = document.getElementById('openExportModal');
+const closeExportBtn = document.getElementById('closeExportModal');
+const cancelExportBtn = document.getElementById('cancelExport');
+
+if (openExportBtn) {
+    openExportBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        openModal(exportModalContainer);
+    });
+}
+if (closeExportBtn) closeExportBtn.addEventListener('click', closeModal);
+if (cancelExportBtn) cancelExportBtn.addEventListener('click', closeModal);
+
+if (exportModalContainer) {
+    exportModalContainer.addEventListener('click', function(e) { e.stopPropagation(); });
+}
+
+    // =========================
+    // CEK DUPLIKAT MODAL
+    // =========================
+    const openCekDuplikatBtn = document.getElementById('openCekDuplikatModal');
+    const closeCekDuplikatBtn = document.getElementById('closeCekDuplikatModal');
+    const closeCekDuplikatFooterBtn = document.getElementById('closeCekDuplikatFooter');
+    const cekDuplikatBody = document.getElementById('cekDuplikatBody');
+
+    if (openCekDuplikatBtn) {
+        openCekDuplikatBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            openModal(cekDuplikatModalContainer);
+            loadCekDuplikat();
+        });
+    }
+    if (closeCekDuplikatBtn) closeCekDuplikatBtn.addEventListener('click', closeModal);
+    if (closeCekDuplikatFooterBtn) closeCekDuplikatFooterBtn.addEventListener('click', closeModal);
+
+    if (cekDuplikatModalContainer) {
+        cekDuplikatModalContainer.addEventListener('click', function(e) { e.stopPropagation(); });
+    }
+
+    function loadCekDuplikat() {
+        cekDuplikatBody.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-danger" role="status"></div>
+                <p class="mt-2 text-muted">Memeriksa data duplikat...</p>
+            </div>`;
+
+        fetch("{{ route('arsip-masuk.cek-duplikat') }}", {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (!res.success || res.total_kelompok_duplikat === 0) {
+                cekDuplikatBody.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="bi bi-check-circle-fill text-success fs-1"></i>
+                        <p class="mt-2 text-muted">Tidak ditemukan data duplikat.</p>
+                    </div>`;
+                return;
+            }
+
+            let html = `<p class="text-muted">Ditemukan <strong>${res.total_kelompok_duplikat}</strong> kelompok arsip yang kemungkinan duplikat:</p>`;
+
+            res.data.forEach(group => {
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-1">${group.judul}</h6>
+                            <p class="small text-muted mb-2">
+                                Kode: ${group.kode_klasifikasi} | Sub Bagian: ${group.sub_bagian} | Tahun: ${group.tahun_arsip}
+                                | <span class="badge bg-danger">${group.jumlah} data serupa</span>
+                            </p>
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                    <tr><th>ID</th><th>Status</th><th>Asal Data</th><th>Dibuat</th><th></th></tr>
+                                </thead>
+                                <tbody>
+                                    ${group.items.map(item => `
+                                        <tr>
+                                            <td>${item.id}</td>
+                                            <td>${item.status ?? '-'}</td>
+                                            <td>${item.asal_data}</td>
+                                            <td>${item.dibuat}</td>
+                                            <td><a href="${item.url}" class="btn btn-sm btn-info" target="_blank"><i class="bi bi-eye"></i></a></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>`;
+            });
+
+            cekDuplikatBody.innerHTML = html;
+        })
+        .catch(() => {
+            cekDuplikatBody.innerHTML = `
+                <div class="text-center py-4 text-danger">
+                    <i class="bi bi-exclamation-triangle-fill fs-1"></i>
+                    <p class="mt-2">Gagal memuat data duplikat. Coba lagi.</p>
+                </div>`;
+        });
+    }
     
     // Inisialisasi selection UI
     updateSelectionUI();

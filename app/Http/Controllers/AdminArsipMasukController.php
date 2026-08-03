@@ -15,6 +15,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Imports\ArsipImportMasuk;
+use App\Exports\ArsipExportMasuk;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AdminArsipMasukController extends Controller
 {
@@ -100,6 +103,27 @@ class AdminArsipMasukController extends Controller
             });
         }
 
+        $filterDuplikat = $request->filled('filter_duplikat') && $request->filter_duplikat == '1';
+
+if ($filterDuplikat) {
+    $duplikatKeys = $this->getDuplikatKeys();
+
+    if ($duplikatKeys->isEmpty()) {
+        $query->whereRaw('1 = 0'); // tidak ada duplikat, kosongkan hasil
+    } else {
+        $query->where(function ($q) use ($duplikatKeys) {
+            foreach ($duplikatKeys as $key) {
+                $q->orWhere(function ($sub) use ($key) {
+                    $sub->where('kode_klasifikasi_id', $key->kode_klasifikasi_id)
+                        ->where('sub_bagian_id', $key->sub_bagian_id)
+                        ->where('tahun_arsip', $key->tahun_arsip)
+                        ->whereRaw('LOWER(TRIM(uraian_arsip)) = ?', [$key->uraian_key]);
+                });
+            }
+        });
+    }
+}
+
         $arsips = $query->paginate(15);
 
         // Data untuk filter
@@ -142,7 +166,8 @@ class AdminArsipMasukController extends Controller
         'rakOptions',
         'boxOptions',
         'kodeKlasifikasiOptions', 
-        'nomorBapOptions' 
+        'nomorBapOptions' ,
+        'filterDuplikat'
     ));
     }
 
@@ -1418,7 +1443,7 @@ public function updateField(Request $request, $id)
 {
     try {
         $request->validate([
-            'field' => 'required|string|in:kode_klasifikasi_id,rak_id,box_id,aktif_tahun,inaktif_tahun,keterangan_jra',
+            'field' => 'required|string|in:kode_klasifikasi_id,rak_id,box_id,aktif_tahun,inaktif_tahun,keterangan_jra,asal_data',
             'value' => 'nullable|string'
         ]);
 
@@ -1506,5 +1531,124 @@ public function updateField(Request $request, $id)
             'message' => 'Terjadi kesalahan: ' . $e->getMessage()
         ], 500);
     }
+}
+
+/**
+ * Download template Excel untuk import arsip.
+ */
+public function downloadTemplateImport()
+{
+    $path = storage_path('app/templates/template_import_arsip.xlsx');
+
+    if (!file_exists($path)) {
+        return back()->with('error', 'Template import tidak ditemukan di server.');
+    }
+
+    return response()->download($path, 'Template_Import_Arsip.xlsx');
+}
+
+/**
+ * Handle upload & proses import Excel.
+ */
+public function importExcel(Request $request)
+{
+    $request->validate([
+        'file_import' => 'required|file|mimes:xlsx,xls|max:5120',
+    ]);
+
+    try {
+        $import = new ArsipImportMasuk();
+        Excel::import($import, $request->file('file_import'));
+
+        // Karena import bersifat all-or-nothing: kalau ada yang gagal,
+        // created & updated pasti kosong.
+        if (count($import->failed) > 0) {
+            return back()
+                ->with('error', 'Import dibatalkan karena terdapat kesalahan.')
+                ->with('import_failed', $import->failed);
+        }
+
+        $jumlahDibuat   = count($import->created);
+        $jumlahDiupdate = count($import->updated);
+
+        return back()->with(
+            'success',
+            "Import berhasil. Ditambahkan: {$jumlahDibuat} arsip baru, Diperbarui: {$jumlahDiupdate} arsip."
+        );
+
+    } catch (\Throwable $e) {
+        \Log::error('Import Arsip Error:', ['error' => $e->getMessage()]);
+        return back()->with('error', 'Gagal memproses file: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Export daftar arsip masuk ke Excel (mengikuti filter yang aktif).
+ */
+public function exportExcel(Request $request)
+{
+    $namaFile = 'Arsip_Masuk_' . now()->format('Ymd_His') . '.xlsx';
+    return Excel::download(new ArsipExportMasuk($request), $namaFile);
+}
+
+private function getDuplikatKeys()
+{
+    return Arsip::where('status_pindah', 'DIAJUKAN')
+        ->select('kode_klasifikasi_id', 'sub_bagian_id', 'tahun_arsip')
+        ->selectRaw('LOWER(TRIM(uraian_arsip)) as uraian_key')
+        ->groupBy('kode_klasifikasi_id', 'sub_bagian_id', 'tahun_arsip', 'uraian_key')
+        ->havingRaw('COUNT(*) > 1')
+        ->get();
+}
+
+/**
+ * Cek duplikat arsip berdasarkan kombinasi kode klasifikasi + sub bagian + tahun + judul.
+ */
+public function cekDuplikat(Request $request)
+{
+    $duplikatKeys = $this->getDuplikatKeys();
+
+    return response()->json([
+        'success' => true,
+        'total_kelompok_duplikat' => $duplikatKeys->count(),
+    ]);
+}
+
+public function hapusDuplikat($id)
+{
+    $arsip = Arsip::findOrFail($id);
+
+    if ($arsip->status_pindah !== 'DIAJUKAN') {
+        return back()->with('error', 'Hanya arsip berstatus DIAJUKAN yang bisa dihapus lewat menu duplikat.');
+    }
+
+    DB::beginTransaction();
+    try {
+        BeritaAcaraDetail::where('arsip_id', $arsip->id)->delete();
+        HistoryPindah::where('arsip_id', $arsip->id)->delete();
+        $arsip->delete();
+
+        DB::commit();
+        return back()->with('success', 'Arsip duplikat berhasil dihapus.');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+    }
+}
+
+public function tandaiNonArsip($id)
+{
+    $arsip = Arsip::findOrFail($id);
+
+    if ($arsip->status_pindah !== 'DIAJUKAN') {
+        return back()->with('error', 'Hanya arsip berstatus DIAJUKAN yang bisa ditandai Non Arsip.');
+    }
+
+    $arsip->status_arsip = 'NON_ARSIP';
+    $arsip->catatan_verifikasi = ($arsip->catatan_verifikasi ? $arsip->catatan_verifikasi . "\n\n" : '')
+        . '🚫 DITANDAI NON ARSIP (duplikat) oleh ' . (auth()->user()->name ?? 'admin') . ' pada ' . now()->format('d/m/Y H:i');
+    $arsip->save();
+
+    return back()->with('success', 'Arsip berhasil ditandai sebagai Non Arsip.');
 }
 }

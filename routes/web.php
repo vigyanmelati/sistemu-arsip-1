@@ -40,6 +40,10 @@ Route::middleware(['auth', 'nocache'])->group(function () {
     Route::put('/sinar-v1/{document}/verifikasi', [SinarV1DocumentController::class, 'updateVerification'])->name('sinar-v1.verification.update');
     Route::post('/sinar-v1/{document}/siapkan-arsip', [SinarV1DocumentController::class, 'prepareArchive'])->name('sinar-v1.archive.prepare');
     // routes/web.php
+    Route::delete('/arsip-masuk/{id}/hapus-duplikat', [AdminArsipMasukController::class, 'hapusDuplikat'])
+    ->name('arsip-masuk.hapus-duplikat');
+Route::post('/arsip-masuk/{id}/tandai-non-arsip', [AdminArsipMasukController::class, 'tandaiNonArsip'])
+    ->name('arsip-masuk.tandai-non-arsip');
 Route::post('/arsip/{id}/update-field', [ArsipController::class, 'updateInline'])
     ->name('arsip.update-field');
 Route::get('/arsip-masuk/{arsip}/download-file', [AdminArsipMasukController::class, 'downloadFile'])
@@ -49,6 +53,17 @@ Route::get('/arsip-masuk/{arsip}/download-file', [AdminArsipMasukController::cla
 Route::get('/arsip-masuk/{id}/edit', [AdminArsipMasukController::class, 'edit'])->name('arsip-masuk.edit');
 Route::put('/arsip-masuk/{id}', [AdminArsipMasukController::class, 'update'])->name('arsip-masuk.update');
 Route::post('/arsip-masuk/{id}/update-field', [AdminArsipMasukController::class, 'updateField'])->name('arsip-masuk.update-field');
+Route::get('arsip-masuk/template-import', [AdminArsipMasukController::class, 'downloadTemplateImport'])
+    ->name('arsip-masuk.template-import');
+
+Route::post('arsip-masuk/import', [AdminArsipMasukController::class, 'importExcel'])
+    ->name('arsip-masuk.import');
+
+Route::get('arsip-masuk/export', [AdminArsipMasukController::class, 'exportExcel'])
+    ->name('arsip-masuk.export');
+
+Route::get('arsip-masuk/cek-duplikat', [AdminArsipMasukController::class, 'cekDuplikat'])
+    ->name('arsip-masuk.cek-duplikat');
 
 // Route resource (jika ada)
 // Route::resource('arsip-masuk', AdminArsipMasukController::class);
