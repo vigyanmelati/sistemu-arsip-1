@@ -55,21 +55,21 @@ class SubBagianArsipController extends Controller
 
         });
 
-        if ($request->has('sort')) {
-            $sort = $request->sort;
-            $direction = $request->direction ?? 'asc';
+        // if ($request->has('sort')) {
+        //     $sort = $request->sort;
+        //     $direction = $request->direction ?? 'asc';
             
-            // Handle sorting untuk relasi
-            if ($sort == 'rak.nomor_rak') {
-                $query->join('master_raks', 'arsips.rak_id', '=', 'master_raks.id')
-                    ->orderBy('master_raks.nomor_rak', $direction)
-                    ->select('arsips.*');
-            } elseif ($sort == 'box.nomor_box') {
-                $query->join('master_box', 'arsips.box_id', '=', 'master_box.id')
-                    ->orderBy('master_box.nomor_box', $direction)
-                    ->select('arsips.*');
-            }
-        }
+        //     // Handle sorting untuk relasi
+        //     if ($sort == 'rak.nomor_rak') {
+        //         $query->join('master_raks', 'arsips.rak_id', '=', 'master_raks.id')
+        //             ->orderBy('master_raks.nomor_rak', $direction)
+        //             ->select('arsips.*');
+        //     } elseif ($sort == 'box.nomor_box') {
+        //         $query->join('master_box', 'arsips.box_id', '=', 'master_box.id')
+        //             ->orderBy('master_box.nomor_box', $direction)
+        //             ->select('arsips.*');
+        //     }
+        // }
 
         $tahunOptions = Arsip::select('tahun_arsip')
             ->distinct()
@@ -255,7 +255,12 @@ class SubBagianArsipController extends Controller
             $perPage = 15;
         }
 
-        $arsips = $query->orderBy('id','desc')->paginate($perPage)->withQueryString();
+        // $arsips = $query->orderBy('id','desc')->paginate($perPage)->withQueryString();
+        if (!$request->has('sort')) {
+            $query->orderBy('id', 'desc');
+        }
+
+        $arsips = $query->paginate($perPage)->withQueryString();
 
         // Filter dropdown options
         $kodeKlasifikasiOptions = KodeKlasifikasi::orderBy('kode')->get();
