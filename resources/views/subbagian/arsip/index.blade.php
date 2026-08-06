@@ -457,7 +457,21 @@
                                 @endforeach
                             </select>
                         </div>
-                        
+
+                        <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Triwulan</label>
+                        <select name="triwulan" class="form-select">
+                            <option value="">Semua Triwulan</option>
+                            <option value="1" {{ request('triwulan') == '1' ? 'selected' : '' }}>Triwulan I (Jan - Mar)</option>
+                            <option value="2" {{ request('triwulan') == '2' ? 'selected' : '' }}>Triwulan II (Apr - Jun)</option>
+                            <option value="3" {{ request('triwulan') == '3' ? 'selected' : '' }}>Triwulan III (Jul - Sep)</option>
+                            <option value="4" {{ request('triwulan') == '4' ? 'selected' : '' }}>Triwulan IV (Okt - Des)</option>
+                        </select>
+                        <small class="text-muted d-block mt-1">
+                            Kombinasikan dengan pilihan <b>Tahun Arsip</b> di atas.
+                        </small>
+                    </div>
+                                            
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-semibold">Kondisi Fisik</label>
                             <select class="form-select" name="keterangan">

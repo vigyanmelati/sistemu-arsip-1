@@ -525,6 +525,20 @@ $isApprovedForDestruction = in_array($arsip->status_arsip, [
                                 @endforeach
                             </select>
                         </div>
+
+                        <div class="col-md-6 mb-3">
+    <label class="form-label fw-semibold">Triwulan</label>
+    <select name="triwulan" class="form-select">
+        <option value="">Semua Triwulan</option>
+        <option value="1" {{ request('triwulan') == '1' ? 'selected' : '' }}>Triwulan I (Jan - Mar)</option>
+        <option value="2" {{ request('triwulan') == '2' ? 'selected' : '' }}>Triwulan II (Apr - Jun)</option>
+        <option value="3" {{ request('triwulan') == '3' ? 'selected' : '' }}>Triwulan III (Jul - Sep)</option>
+        <option value="4" {{ request('triwulan') == '4' ? 'selected' : '' }}>Triwulan IV (Okt - Des)</option>
+    </select>
+    <small class="text-muted d-block mt-1">
+        Kombinasikan dengan pilihan <b>Tahun Arsip</b> di atas.
+    </small>
+</div>
                         
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-semibold">Sub Bagian</label>
@@ -532,7 +546,7 @@ $isApprovedForDestruction = in_array($arsip->status_arsip, [
                                 <option value="">Semua Sub Bagian</option>
                                 @foreach($subBagianOptions as $subBagian)
                                 <option value="{{ $subBagian->id }}" {{ request('sub_bagian_id') == $subBagian->id ? 'selected' : '' }}>
-                                    {{ $subBagian->nama }}
+                                    {{ $subBagian->nama_sub_bagian }}
                                 </option>
                                 @endforeach
                             </select>

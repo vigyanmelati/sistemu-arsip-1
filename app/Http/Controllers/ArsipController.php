@@ -91,7 +91,20 @@ class ArsipController extends Controller
         if ($request->has('tahun_arsip') && $request->tahun_arsip != '') {
             $query->where('tahun_arsip', $request->tahun_arsip);
         }
+        if ($request->filled('triwulan')) {
+            $triwulanRanges = [
+                '1' => [1, 3],   // Jan - Mar
+                '2' => [4, 6],   // Apr - Jun
+                '3' => [7, 9],   // Jul - Sep
+                '4' => [10, 12], // Okt - Des
+            ];
 
+            if (isset($triwulanRanges[$request->triwulan])) {
+                [$startMonth, $endMonth] = $triwulanRanges[$request->triwulan];
+                $query->whereMonth('tanggal_arsip', '>=', $startMonth)
+                    ->whereMonth('tanggal_arsip', '<=', $endMonth);
+            }
+        }
         // Filter berdasarkan sub bagian
         if ($request->has('sub_bagian_id') && $request->sub_bagian_id != '') {
             $query->where('sub_bagian_id', $request->sub_bagian_id);
