@@ -14,7 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\SuratMasukExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
-
+use App\Models\Satker;
 class SuratMasukController extends Controller
 {
     protected array $sortableColumns = [
@@ -437,7 +437,7 @@ public function import(Request $request)
                     'tanggal_penyelesaian' => $legacy->tanggal_penyelesaian ?: $tanggalDokumen,
                     'nomor_dokumen' => $legacy->nomor_dokumen ?: 'TANPA-NOMOR-V1-'.$legacy->legacy_id,
                     'nomor_agenda' => $legacy->nomor_agenda ?: 'V1-'.$legacy->legacy_id,
-                    'kepada' => $legacy->kepada ?: 'KPU Provinsi Bali',
+                    'kepada' => $legacy->kepada ?: optional(Satker::aktif())->nama_satker ?? 'KPU Provinsi Bali',
                     'perihal' => $legacy->perihal ?: 'Surat Masuk SINAR V1',
                     'catatan' => $legacy->catatan,
                     'file_input' => $fileName,

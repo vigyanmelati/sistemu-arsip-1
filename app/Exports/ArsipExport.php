@@ -17,6 +17,7 @@ use PhpOffice\PhpSpreadsheet\Style\{
     Border
 };
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use App\Models\Satker;
 
 class ArsipExport implements
     FromQuery,
@@ -206,10 +207,12 @@ class ArsipExport implements
                 }
                 $lastColumn = Coordinate::stringFromColumnIndex($columnCount);
 
-                // ===== 1. Tambahkan judul di baris 1 =====
                 $sheet->insertNewRowBefore(1, 2);
                 $sheet->mergeCells("A1:{$lastColumn}1");
-                $sheet->setCellValue('A1', 'DAFTAR ARSIP KPU PROVINSI BALI');
+
+                $satkerAktif = Satker::aktif();
+                $namaSatker = $satkerAktif ? $satkerAktif->nama_satker : 'KPU PROVINSI BALI';
+                $sheet->setCellValue('A1', 'DAFTAR ARSIP ' . strtoupper($namaSatker));
                 $sheet->getStyle('A1')->applyFromArray([
                     'font' => ['bold' => true, 'size' => 12],
                     'alignment' => [

@@ -11,7 +11,7 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
-
+use App\Models\Satker;
 class DaftarArsipUsulMusnahExport implements
     FromCollection,
     WithMapping,
@@ -92,9 +92,11 @@ class DaftarArsipUsulMusnahExport implements
                  ================================================= */
                 // Baris 4 dikosongkan → jarak visual
                 $sheet->mergeCells('A5:F5');
+                $satkerAktif = Satker::aktif();
+                $namaSatker = $satkerAktif ? $satkerAktif->nama_satker : 'KPU PROVINSI BALI';
                 $sheet->setCellValue(
                     'A5',
-                    'Daftar Arsip Musnah KPU Provinsi Bali'
+                    'Daftar Arsip Musnah'. strtoupper($namaSatker)
                 );
 
                 $sheet->getStyle('A5')->applyFromArray([

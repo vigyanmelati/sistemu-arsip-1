@@ -473,6 +473,7 @@
             @if(auth()->user()->role === 'super_admin')
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('superadmin.sub-bagians.*') ? 'active' : '' }}" href="{{ route('superadmin.sub-bagians.index') }}"><i class="bi bi-layers"></i> <span>Kelola Sub Bagian</span></a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('superadmin.kode-klasifikasis.*') ? 'active' : '' }}" href="{{ route('superadmin.kode-klasifikasis.index') }}"><i class="bi bi-card-list"></i> <span>Kode Klasifikasi</span></a></li>
+                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('superadmin.satkers.*') ? 'active' : '' }}" href="{{ route('superadmin.satkers.index') }}"><i class="bi bi-building-fill-gear"></i> <span>Kelola Satker</span></a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('superadmin.users.*') ? 'active' : '' }}" href="{{ route('superadmin.users.index') }}"><i class="bi bi-shield-check"></i> <span>Manajemen User</span></a></li>
             @endif
 
@@ -560,7 +561,13 @@
             </button>
             <div class="page-title">
                 <h3>@yield('page-title', 'Dashboard')</h3>
-                <p>@yield('page-subtitle', 'Sistem Informasi Arsip KPU Provinsi Bali')</p>
+                <p>@yield('page-subtitle', 'Sistem Informasi Arsip KPU Bali')</p>
+                @php $satkerAktif = \App\Models\Satker::aktif(); @endphp
+                @if($satkerAktif)
+                    <span class="badge bg-primary-soft text-primary-dark fs-sm mt-1">
+                        <i class="bi bi-building"></i> {{ $satkerAktif->nama_satker }}
+                    </span>
+                @endif
             </div>
         </div>
 
@@ -614,7 +621,7 @@
     </div>
 
     <div class="footer">
-        <p class="mb-0">&copy; {{ date('Y') }} SINAR - KPU Provinsi Bali <br><small>Versi 2.0</small></p>
+        <p class="mb-0">&copy; {{ date('Y') }} SINAR - KPU Bali <br><small>Versi 2.0</small></p>
     </div>
 </div>
 

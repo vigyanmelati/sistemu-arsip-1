@@ -24,6 +24,7 @@ use App\Http\Controllers\MasterRakController;
 use App\Http\Controllers\MasterBoxController;
 use App\Http\Controllers\SuratInstansiController;
 use App\Http\Controllers\TujuanDisposisiController;
+use App\Http\Controllers\SatkerController;
 
 
 require __DIR__.'/auth.php';
@@ -231,7 +232,6 @@ Route::delete('/usulan/{pemusnahan}', [PemusnahanController::class, 'destroy'])
 });
 
     // Manajemen Lokasi (tanpa tabel baru)
-// routes/web.php
 Route::prefix('manajemen-lokasi')->name('manajemen-lokasi.')->group(function () {
     Route::get('/', [LokasiController::class, 'index'])->name('index');                  // card ruangan
     Route::get('/ruangan/{ruangan}', [LokasiController::class, 'listRak'])->name('rak'); // card rak
@@ -240,6 +240,12 @@ Route::prefix('manajemen-lokasi')->name('manajemen-lokasi.')->group(function () 
     
 });
 
+
+Route::prefix('superadmin')->name('superadmin.')->middleware(['auth'])->group(function () {
+    Route::resource('satkers', SatkerController::class);
+    Route::patch('satkers/{satker}/set-active', [SatkerController::class, 'setActive'])
+        ->name('satkers.set-active');
+});
 Route::middleware('admin')->group(function () {
 Route::get('/surat-masuk/template', function () {
     return response()->download(

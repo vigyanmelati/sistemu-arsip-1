@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('page-title', 'Dashboard')
-@section('page-subtitle', 'Sistem Informasi Arsip KPU Provinsi Bali')
+@section('page-subtitle', 'Sistem Informasi Arsip KPU Bali')
 
 @section('content')
 

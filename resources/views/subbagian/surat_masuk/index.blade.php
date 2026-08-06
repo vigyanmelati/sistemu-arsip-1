@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('page-title', 'Surat Masuk')
-@section('page-subtitle', 'Daftar Surat Masuk KPU Provinsi Bali')
+@section('page-subtitle', 'Daftar Surat Masuk ' . $namaSatkerAktif)
 
 @section('content')
 <div class="container-fluid px-0">

@@ -57,7 +57,7 @@
             <div class="text-center mb-6">
                 <!-- Logo KPU -->
                 <img src="{{ asset('logo-sinar-v2-kotak.png') }}?v=1" alt="Logo SINAR KPU Bali V2" class="mx-auto login-logo">
-                <h1 class="text-2xl font-bold mt-4 text-gray-800">Sistem Informasi Arsip <br> KPU Provinsi Bali</h1>
+                <h1 class="text-2xl font-bold mt-4 text-gray-800">Sistem Informasi Arsip <br> {{ $namaSatkerAktif }}</h1>
                 <p class="text-gray-500 mt-1">Masukkan akun Anda untuk masuk</p>
             </div>
 
