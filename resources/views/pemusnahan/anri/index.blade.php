@@ -23,10 +23,10 @@
         </div>
 
         <div class="d-flex gap-2">
-            <a href="{{ route('pemusnahan.export.usul') }}"
-            class="btn btn-success">
-                📥 Export Daftar Arsip
-            </a>
+      <a href="{{ route('pemusnahan.export.usul', $pemusnahan->id) }}"
+   class="btn btn-success">
+    📥 Export Daftar Arsip
+</a>
 
             <a href="{{ route('pemusnahan.usulan.show', $pemusnahan->id) }}"
             class="btn btn-secondary">

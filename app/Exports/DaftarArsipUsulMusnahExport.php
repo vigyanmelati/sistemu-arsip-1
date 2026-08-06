@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\Arsip;
+use App\Models\Pemusnahan;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -12,6 +12,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use App\Models\Satker;
+
 class DaftarArsipUsulMusnahExport implements
     FromCollection,
     WithMapping,
@@ -19,18 +20,27 @@ class DaftarArsipUsulMusnahExport implements
     WithCustomStartCell
 {
     protected $no = 1;
+    protected $pemusnahan;
+    protected $onlyMusnah;
 
-    /**
-     * ================= DATA =================
-     */
-    public function collection()
+    // Terima Pemusnahan dari controller
+    public function __construct(Pemusnahan $pemusnahan, bool $onlyMusnah = false)
     {
-        return Arsip::where('status_arsip', 'HABIS_RETENSI')
-            ->where('keterangan_jra', 'MUSNAH')
-            ->orderBy('tahun_arsip', 'asc')
-            ->get();
+        $this->pemusnahan = $pemusnahan;
+        $this->onlyMusnah = $onlyMusnah;
     }
 
+    public function collection()
+    {
+        return $this->pemusnahan->details()
+            ->where('keputusan', 'musnah')
+            ->with('arsip')
+            ->get()
+            ->pluck('arsip')
+            ->filter() // buang null kalau arsip sudah terhapus
+            ->sortBy('tahun_arsip')
+            ->values();
+    }
     public function map($arsip): array
     {
         return [
@@ -43,10 +53,6 @@ class DaftarArsipUsulMusnahExport implements
         ];
     }
 
-    /**
-     * ================= DATA MULAI BARIS =================
-     * Header di baris 8, data mulai baris 9
-     */
     public function startCell(): string
     {
         return 'A9';
@@ -96,7 +102,7 @@ class DaftarArsipUsulMusnahExport implements
                 $namaSatker = $satkerAktif ? $satkerAktif->nama_satker : 'KPU PROVINSI BALI';
                 $sheet->setCellValue(
                     'A5',
-                    'Daftar Arsip Musnah'. strtoupper($namaSatker)
+                    'DAFTAR ARSIP MUSNAH '. strtoupper($namaSatker)
                 );
 
                 $sheet->getStyle('A5')->applyFromArray([

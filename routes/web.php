@@ -159,9 +159,9 @@ Route::get('arsip-masuk/cek-duplikat', [AdminArsipMasukController::class, 'cekDu
             // ===============================
             // EXPORT & DOKUMEN
             // ===============================
-            Route::get('/export/arsip-usul',
-                [PemusnahanController::class, 'daftarArsipExcel'])
-                ->name('export.usul');
+          Route::get('/export/arsip-usul/{pemusnahan}',
+            [PemusnahanController::class, 'daftarArsipExcel'])
+            ->name('export.usul');
 
             Route::get('/usulan/nota-dinas',
                 [PemusnahanController::class, 'notaDinasWord'])

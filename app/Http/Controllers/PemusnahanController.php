@@ -252,13 +252,23 @@ class PemusnahanController extends Controller
      * EXPORT EXCEL
      * ===============================
      */
-    public function daftarArsipExcel()
-    {
-        return Excel::download(
-            new DaftarArsipUsulMusnahExport,
-            'Daftar_Arsip_HABIS_RETENSI.xlsx'
-        );
-    }
+       public function daftarArsipExcel(Pemusnahan $pemusnahan)
+        {
+            $jumlahMusnah = $pemusnahan->details()
+                ->where('keputusan', 'musnah')
+                ->count();
+
+            if ($jumlahMusnah < 1) {
+                return back()->with('error',
+                    'Belum ada arsip yang diputuskan MUSNAH. Export tidak bisa dilakukan.'
+                );
+            }
+
+            return Excel::download(
+                new DaftarArsipUsulMusnahExport($pemusnahan),
+                'Daftar_Arsip_Musnah_' . $pemusnahan->id . '.xlsx'
+            );
+        }
 
     /**
      * ===============================
