@@ -100,10 +100,10 @@
                         <tr>
                             <th width="5%" class="text-center">No</th>
                             <th width="30%">Uraian Arsip</th>
-                            <th width="15%">Kode Arsip</th>
+                            <!-- <th width="15%">Kode Arsip</th> -->
                             <th width="10%" class="text-center">Tahun</th>
                             <th width="15%" class="text-center">Jumlah</th>
-                            <th width="15%" class="text-center">Retensi</th>
+                            <!-- <th width="15%" class="text-center">Retensi</th> -->
                         </tr>
                     </thead>
                     <tbody>
@@ -116,9 +116,9 @@
                                     <span>{{ $detail->arsip->uraian_arsip ?? '-' }}</span>
                                 </div>
                             </td>
-                            <td>
+                            <!-- <td>
                                 <code class="small">{{ $detail->arsip->kode_arsip ?? '-' }}</code>
-                            </td>
+                            </td> -->
                             <td class="text-center">
                                 <span class="px-2 py-1 rounded" style="background-color: #f1f5f9; font-size: 0.8rem;">
                                     {{ $detail->arsip->tahun_arsip ?? '-' }}
@@ -129,11 +129,11 @@
                                     {{ $detail->arsip->jumlah ?? 1 }} berkas
                                 </span>
                             </td>
-                            <td class="text-center">
+                            <!-- <td class="text-center">
                                 <span class="small text-muted">
                                     {{ $detail->arsip->retensi ?? '-' }} tahun
                                 </span>
-                            </td>
+                            </td> -->
                         </tr>
                         @empty
                         <tr>
