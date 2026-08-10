@@ -445,6 +445,27 @@ public function sidang(Request $request, Pemusnahan $pemusnahan)
         return response()->json(['success' => true]);
     }
 
+public function bulkUpdateKeputusan(Request $request, Pemusnahan $pemusnahan)
+{
+    $request->validate([
+        'ids'       => 'required|array|min:1',
+        'ids.*'     => 'integer',
+        'keputusan' => 'required|in:musnah,inaktif',
+    ]);
+
+    // Tidak pakai rule "exists" per-item (mahal untuk ribuan ID).
+    // Scoping ke pemusnahan_id di whereIn() otomatis mengabaikan
+    // ID yang tidak valid / bukan milik pemusnahan ini.
+    $updated = PemusnahanDetail::where('pemusnahan_id', $pemusnahan->id)
+        ->whereIn('id', $request->ids)
+        ->update(['keputusan' => $request->keputusan]);
+
+    return response()->json([
+        'success' => true,
+        'updated' => $updated,
+    ]);
+}
+
 public function kpu(Pemusnahan $pemusnahan)
 {
     if (!in_array($pemusnahan->status, ['disetujui_anri', 'menunggu_persetujuan_kpu'])) {

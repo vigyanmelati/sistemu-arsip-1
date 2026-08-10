@@ -295,6 +295,8 @@ Route::get(
 
 
 Route::middleware(['auth', 'nocache'])->group(function () {
+    Route::post('/pemusnahan/{pemusnahan}/sidang/bulk-update', [PemusnahanController::class, 'bulkUpdateKeputusan'])
+    ->name('pemusnahan.sidang.bulk.update');
 Route::get('/surat-masuk/cek-duplikasi', [
     SuratMasukController::class,
     'cekDuplikasi'
