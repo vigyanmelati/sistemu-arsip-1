@@ -201,7 +201,7 @@
                                required>
                         <i class="bi bi-cloud-upload fs-1 text-muted mb-2 d-block"></i>
                         <p class="mb-1">Klik atau drag & drop file di sini</p>
-                        <small class="text-muted">Format PDF maksimal 10MB</small>
+                        <small class="text-muted">Format PDF maksimal 50MB</small>
                         <div id="fileNameBA" class="mt-2 small text-success d-none">
                             <i class="bi bi-check-circle"></i> <span></span>
                         </div>
