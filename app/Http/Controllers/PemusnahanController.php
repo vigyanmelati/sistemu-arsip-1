@@ -314,7 +314,7 @@ class PemusnahanController extends Controller
  public function simpanEksekusi(Request $request, Pemusnahan $pemusnahan)
 {
     $request->validate([
-        'file_berita_acara' => 'required|file|mimes:pdf|max:10240',
+       'file_berita_acara' => 'required|file|mimes:pdf|max:51200',
         'file_sk_pemusnahan' => 'required|file|mimes:pdf|max:10240',
     ]);
 

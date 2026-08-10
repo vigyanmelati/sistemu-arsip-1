@@ -334,26 +334,28 @@
     
     uploadAreaBA.addEventListener('click', () => fileInputBA.click());
     
-    fileInputBA.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const fileName = file.name;
-            const fileSize = (file.size / 1024 / 1024).toFixed(2);
-            if (file.type === 'application/pdf' && fileSize <= 10) {
-                fileNameSpanBA.querySelector('span').textContent = `${fileName} (${fileSize} MB)`;
-                fileNameSpanBA.classList.remove('d-none');
-                uploadAreaBA.style.borderColor = '#28a745';
-                uploadAreaBA.style.backgroundColor = '#f8fff8';
-            } else {
-                alert('File harus berformat PDF dan maksimal 10MB');
-                fileInputBA.value = '';
-                fileNameSpanBA.classList.add('d-none');
-                uploadAreaBA.style.borderColor = '#dee2e6';
-                uploadAreaBA.style.backgroundColor = '#f8f9fa';
-            }
+   fileInputBA.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const fileName = file.name;
+        const fileSize = (file.size / 1024 / 1024).toFixed(2);
+
+        if (file.type === 'application/pdf' && fileSize <= 50) {
+            fileNameSpanBA.querySelector('span').textContent = `${fileName} (${fileSize} MB)`;
+            fileNameSpanBA.classList.remove('d-none');
+            uploadAreaBA.style.borderColor = '#28a745';
+            uploadAreaBA.style.backgroundColor = '#f8fff8';
+        } else {
+            alert('File harus berformat PDF dan maksimal 50MB');
+            fileInputBA.value = '';
+            fileNameSpanBA.classList.add('d-none');
+            uploadAreaBA.style.borderColor = '#dee2e6';
+            uploadAreaBA.style.backgroundColor = '#f8f9fa';
         }
-        checkFormComplete();
-    });
+    }
+
+    checkFormComplete();
+});
     
     // Upload area functionality for SK Pemusnahan
     const uploadAreaSK = document.getElementById('uploadAreaSK');
