@@ -42,7 +42,7 @@
             <li>Halaman ini digunakan untuk <b>sidang penilaian sekaligus tindak lanjut ANRI</b></li>
             <li>Jika terdapat <b>revisi dari ANRI</b>, data arsip dapat <b>langsung diperbaiki di halaman ini</b></li>
             <li>Perubahan data <b>tersimpan otomatis</b> saat diedit</li>
-            <li>Setelah <b>Surat Persetujuan Pemusnahan dari ANRI diterima</b>, silakan tekan tombol <b>“Disetujui ANRI”</b></li>
+            <li>Setelah <b>Surat Persetujuan Pemusnahan dari ANRI diterima</b>, silakan upload di kolom paling bawah halaman ini lalu tekan tombol <b>“Disetujui ANRI”</b></li>
             <li>Minimal <b>1 arsip</b> harus diputuskan <b>Musnah</b></li>
 
         </ul>

@@ -22,6 +22,7 @@ class DaftarArsipUsulMusnahExport implements
     protected $no = 1;
     protected $pemusnahan;
     protected $onlyMusnah;
+    protected $arsipList; // simpan data buat hitung total di AfterSheet
 
     // Terima Pemusnahan dari controller
     public function __construct(Pemusnahan $pemusnahan, bool $onlyMusnah = false)
@@ -32,7 +33,7 @@ class DaftarArsipUsulMusnahExport implements
 
     public function collection()
     {
-        return $this->pemusnahan->details()
+        $data = $this->pemusnahan->details()
             ->where('keputusan', 'musnah')
             ->with('arsip')
             ->get()
@@ -40,7 +41,13 @@ class DaftarArsipUsulMusnahExport implements
             ->filter() // buang null kalau arsip sudah terhapus
             ->sortBy('tahun_arsip')
             ->values();
+
+        // simpan buat dipakai di registerEvents (hitung total per satuan)
+        $this->arsipList = $data;
+
+        return $data;
     }
+
     public function map($arsip): array
     {
         return [
@@ -179,6 +186,65 @@ class DaftarArsipUsulMusnahExport implements
                 $sheet->getStyle("B9:B{$lastRow}")
                     ->getAlignment()
                     ->setWrapText(true);
+
+                /* =================================================
+                 | TOTAL ARSIP (LEMBAR / BENDEL / BUKU / dll)
+                 ================================================= */
+                $totalPerSatuan = collect($this->arsipList)
+                    ->groupBy(function ($arsip) {
+                        // normalisasi biar "lembar"/"Lembar" ga dianggap beda
+                        return strtolower(trim($arsip->satuan_arsip));
+                    })
+                    ->map(function ($group) {
+                        return $group->sum('jumlah_berkas');
+                    });
+
+                // ubah jadi teks per satuan, misal "4358 Lembar"
+                $bagian = $totalPerSatuan
+                    ->map(function ($jumlah, $satuan) {
+                        return $jumlah . ' ' . ucfirst($satuan);
+                    })
+                    ->values();
+
+                // gabung pakai koma, dan "dan" sebelum item terakhir
+                if ($bagian->count() > 1) {
+                    $terakhir = $bagian->pop();
+                    $ringkasan = $bagian->implode(', ') . ', dan ' . $terakhir;
+                } else {
+                    $ringkasan = $bagian->first();
+                }
+
+                $totalRow = $lastRow + 1; // langsung nempel di bawah tabel, tanpa jarak
+
+                // Label (gabung A:C)
+                $sheet->mergeCells("A{$totalRow}:C{$totalRow}");
+                $sheet->setCellValue("A{$totalRow}", 'Jumlah arsip yang dapat dimusnahkan');
+
+                // Isi total (gabung D:F biar lega)
+                $sheet->mergeCells("D{$totalRow}:F{$totalRow}");
+                $sheet->setCellValue("D{$totalRow}", $ringkasan);
+
+                // Border nyambung dengan tabel (A sampai F)
+                $sheet->getStyle("A{$totalRow}:F{$totalRow}")
+                    ->getBorders()
+                    ->getAllBorders()
+                    ->setBorderStyle(Border::BORDER_THIN);
+
+                // Alignment & wrap text
+                $sheet->getStyle("A{$totalRow}:C{$totalRow}")
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_LEFT)
+                    ->setVertical(Alignment::VERTICAL_CENTER)
+                    ->setWrapText(true);
+
+                $sheet->getStyle("D{$totalRow}:F{$totalRow}")
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(Alignment::VERTICAL_CENTER)
+                    ->setWrapText(true);
+
+                // Tinggi baris biar teks yang wrap kebaca jelas
+                // $sheet->getRowDimension($totalRow)->setRowHeight(60);
             }
         ];
     }
