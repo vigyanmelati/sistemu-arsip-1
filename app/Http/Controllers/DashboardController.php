@@ -90,7 +90,7 @@ class DashboardController extends Controller
             ->count();
 
         $arsipMusnah = (clone $baseQuery)
-            ->where('status_arsip', 'MUSNAH')
+            ->where('status_arsip', 'DISETUJUI_MUSNAH')
             ->count();
 
         $arsipPermanen = (clone $baseQuery)
