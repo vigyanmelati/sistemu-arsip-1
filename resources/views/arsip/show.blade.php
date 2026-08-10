@@ -351,14 +351,14 @@
                 </a>
 
 
-               @if(auth()->user()->canEditArsip($arsip))
+              @if(auth()->user()->canEditArsip($arsip) && $arsip->status_arsip !== 'DISETUJUI_MUSNAH')
     <a href="{{ route('arsip.edit', $arsip->id) }}"
        class="btn btn-warning">
         <i class="bi bi-pencil"></i> Edit Arsip
     </a>
 @endif
 
-@if(auth()->user()->canDeleteArsip($arsip))
+@if(auth()->user()->canDeleteArsip($arsip) && $arsip->status_arsip !== 'DISETUJUI_MUSNAH')
     <form action="{{ route('arsip.destroy', $arsip->id) }}"
           method="POST"
           class="d-inline">
