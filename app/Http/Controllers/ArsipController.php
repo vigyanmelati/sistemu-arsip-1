@@ -338,12 +338,10 @@ class ArsipController extends Controller
     private function getRuanganBySubBagian($subBagianId)
     {
         $mapping = [
-            1 => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
+            1 => 'RUANG_SUBBAGIAN_KEUANGAN_UMUM_LOGISTIK',
             2 => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
-            3 => 'RUANG_SUBBAGIAN_KEUANGAN',
-            4 => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
-            5 => 'RUANG_SUBBAGIAN_TEKNIS',
-            6 => 'RUANG_SUBBAGIAN_HUKUM',
+            7 => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
+            5 => 'RUANG_SUBBAGIAN_TEKNIS_HUKUM',
         ];
 
         return $mapping[$subBagianId] ?? null;

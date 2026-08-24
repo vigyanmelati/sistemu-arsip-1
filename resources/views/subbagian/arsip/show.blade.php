@@ -95,12 +95,10 @@
                         <td>: 
                             @php
                                 $lokasiLabels = [
-                                    'RUANG_SUBBAGIAN_UMUM_LOGISTIK' => 'Ruang Subbagian Umum & Logistik',
-                                    'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM' => 'Ruang Subbagian Parmas & SDM',
-                                    'RUANG_SUBBAGIAN_KEUANGAN' => 'Ruang Subbagian Keuangan',
-                                    'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI' => 'Ruang Subbagian Perencanaan, Data & Informasi',
-                                    'RUANG_SUBBAGIAN_TEKNIS' => 'Ruang Subbagian Teknis',
-                                    'RUANG_SUBBAGIAN_HUKUM' => 'Ruang Subbagian Hukum',
+                                    'RUANG_SUBBAGIAN_KEUANGAN_UMUM_LOGISTIK' => 'Ruang Subbagian Keuangan, Umum & Logistik',
+        'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM' => 'Ruang Subbagian Parmas & SDM',
+        'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI' => 'Ruang Subbagian Perencanaan, Data & Informasi',
+        'RUANG_SUBBAGIAN_TEKNIS_HUKUM' => 'Ruang Subbagian Teknis dan Hukum',
                                 ];
                                 $lokasiLabel = $lokasiLabels[$arsip->lokasi_arsip] ?? $arsip->lokasi_arsip ?? '-';
                             @endphp

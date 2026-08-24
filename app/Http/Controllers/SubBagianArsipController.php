@@ -398,12 +398,10 @@ class SubBagianArsipController extends Controller
         $namaSub = $user->subBagian->nama_sub_bagian ?? null;
 
         $mapLokasi = [
-            'Sub Bagian Umum dan Logistik' => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
+            'Sub Bagian Keuangan, Umum dan Logistik' => 'RUANG_SUBBAGIAN_KEUANGAN_UMUM_LOGISTIK',
             'Sub Bagian Partisipasi, Hubungan Masyarakat dan SDM' => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
-            'Sub Bagian Keuangan' => 'RUANG_SUBBAGIAN_KEUANGAN',
             'Sub Bagian Perencanaan, Data, dan Informasi' => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
-            'Sub Bagian Teknis Penyelenggaraan Pemilu' => 'RUANG_SUBBAGIAN_TEKNIS',
-            'Sub Bagian Hukum' => 'RUANG_SUBBAGIAN_HUKUM',
+            'Sub Bagian Teknis Penyelenggaraan Pemilu dan Hukum' => 'RUANG_SUBBAGIAN_TEKNIS_HUKUM',
         ];
 
         $validated['lokasi_arsip'] = $mapLokasi[$namaSub] ?? null;
@@ -973,12 +971,10 @@ public function ajukanPindahMultiple(Request $request)
 private function getLokasiArsip($user)
 {
     $mapLokasi = [
-        1 => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
+        1 => 'RUANG_SUBBAGIAN_KEUANGAN_UMUM_LOGISTIK',
         2 => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
-        3 => 'RUANG_SUBBAGIAN_KEUANGAN',
         7 => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
-        5 => 'RUANG_SUBBAGIAN_TEKNIS',
-        6 => 'RUANG_SUBBAGIAN_HUKUM',
+        5 => 'RUANG_SUBBAGIAN_TEKNIS_HUKUM',
     ];
 
     return $mapLokasi[$user->sub_bagian_id] ?? null;
@@ -988,12 +984,10 @@ private function getLokasiArsip($user)
 private function getLabelLokasi($lokasiKey)
 {
     $labels = [
-        'RUANG_SUBBAGIAN_UMUM_LOGISTIK' => 'Ruang Subbagian Umum & Logistik',
+        'RUANG_SUBBAGIAN_KEUANGAN_UMUM_LOGISTIK' => 'Ruang Subbagian Keuangan, Umum & Logistik',
         'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM' => 'Ruang Subbagian Parmas & SDM',
-        'RUANG_SUBBAGIAN_KEUANGAN' => 'Ruang Subbagian Keuangan',
         'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI' => 'Ruang Subbagian Perencanaan, Data & Informasi',
-        'RUANG_SUBBAGIAN_TEKNIS' => 'Ruang Subbagian Teknis',
-        'RUANG_SUBBAGIAN_HUKUM' => 'Ruang Subbagian Hukum',
+        'RUANG_SUBBAGIAN_TEKNIS_HUKUM' => 'Ruang Subbagian Teknis dan Hukum',
     ];
     return $labels[$lokasiKey] ?? $lokasiKey;
 }

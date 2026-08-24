@@ -147,12 +147,10 @@ class LokasiController extends Controller
     private function getLabelRuangan($key)
     {
         $labels = [
-            'RUANG_SUBBAGIAN_UMUM_LOGISTIK' => 'Subbagian Umum & Logistik',
+            'RUANG_SUBBAGIAN_KEUANGAN_UMUM_LOGISTIK' => 'Subbagian Keuangan, Umum & Logistik',
             'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM' => 'Subbagian Parmas & SDM',
-            'RUANG_SUBBAGIAN_KEUANGAN' => 'Subbagian Keuangan',
             'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI' => 'Subbagian Perencanaan, Data & Informasi',
-            'RUANG_SUBBAGIAN_TEKNIS' => 'Subbagian Teknis',
-            'RUANG_SUBBAGIAN_HUKUM' => 'Subbagian Hukum',
+            'RUANG_SUBBAGIAN_TEKNIS_HUKUM' => 'Subbagian Teknis dan Hukum',
             'RECORD_CENTER_PERMANEN' => 'Record Center Permanen',
             'RECORD_CENTER_INAKTIF' => 'Record Center Inaktif',
         ];

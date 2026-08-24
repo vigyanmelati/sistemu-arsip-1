@@ -11,12 +11,10 @@ return new class extends Migration
         Schema::create('master_raks', function (Blueprint $table) {
             $table->id();
             $table->enum('lokasi_arsip', [
-                'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
+                'RUANG_SUBBAGIAN_KEUANGAN_UMUM_LOGISTIK',
                 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
-                'RUANG_SUBBAGIAN_KEUANGAN',
                 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
-                'RUANG_SUBBAGIAN_TEKNIS',
-                'RUANG_SUBBAGIAN_HUKUM',
+                'RUANG_SUBBAGIAN_TEKNIS_HUKUM',
                 'RECORD_CENTER_PERMANEN',
                 'RECORD_CENTER_INAKTIF',
             ]);

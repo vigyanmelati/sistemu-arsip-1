@@ -237,12 +237,10 @@ class ArsipImportMasuk implements ToCollection, WithHeadingRow, WithCalculatedFo
         $kodeKlasifikasi = KodeKlasifikasi::where('kode', $kodeKlasifikasiText)->first();
         $subBagian = SubBagian::whereRaw('LOWER(nama_sub_bagian) = ?', [strtolower($subBagianText)])->first();
         $lokasiArsip = match ($subBagian->id) {
-            1 => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
+             1 => 'RUANG_SUBBAGIAN_KEUANGAN_UMUM_LOGISTIK',
             2 => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
-            3 => 'RUANG_SUBBAGIAN_KEUANGAN',
-            5 => 'RUANG_SUBBAGIAN_TEKNIS',
-            6 => 'RUANG_SUBBAGIAN_HUKUM',
             7 => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
+            5 => 'RUANG_SUBBAGIAN_TEKNIS_HUKUM',
             default => null,
         };
         // Pastikan BAP tersedia (dibuat otomatis kalau belum ada).

@@ -535,18 +535,18 @@
                 </div>
             </li>
 
-            <li class="nav-item">
+            {{-- <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('sinar-v1.*') ? 'active' : '' }}" href="{{ route('sinar-v1.index') }}">
                     <i class="bi bi-archive-fill"></i> <span>SINAR V1</span>
                     <small class="ms-1 opacity-75">Historis</small>
                 </a>
-            </li>
+            </li> --}}
             @if(in_array(strtolower((string) auth()->user()->role), ['admin','super_admin','tu']))
-                <li class="nav-item">
+                {{-- <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('sinar-v1.import*') ? 'active' : '' }}" href="{{ route('sinar-v1.import') }}">
                         <i class="bi bi-database-up"></i> <span>Import SINAR V1</span>
                     </a>
-                </li>
+                </li> --}}
             @endif
         @endauth
     </ul>

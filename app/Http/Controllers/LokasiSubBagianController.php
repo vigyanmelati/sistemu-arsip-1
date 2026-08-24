@@ -14,12 +14,10 @@ class LokasiSubBagianController extends Controller
    private function getRuanganBySubBagian($subBagianId)
 {
     $mapping = [
-        1 => 'RUANG_SUBBAGIAN_UMUM_LOGISTIK',
-        2 => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
-        3 => 'RUANG_SUBBAGIAN_KEUANGAN',
-        7 => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI', 
-        5 => 'RUANG_SUBBAGIAN_TEKNIS',
-        6 => 'RUANG_SUBBAGIAN_HUKUM',
+            1 => 'RUANG_SUBBAGIAN_KEUANGAN_UMUM_LOGISTIK',
+            2 => 'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM',
+            7 => 'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI',
+            5 => 'RUANG_SUBBAGIAN_TEKNIS_HUKUM',
     ];
     return $mapping[$subBagianId] ?? null;
 }
@@ -27,12 +25,10 @@ class LokasiSubBagianController extends Controller
     private function getSubBagianIdByRuangan($ruangan)
     {
         $mapping = [
-            'RUANG_SUBBAGIAN_UMUM_LOGISTIK' => 1,
+            'RUANG_SUBBAGIAN_KEUANGAN_UMUM_LOGISTIK' => 1,
             'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM' => 2,
-            'RUANG_SUBBAGIAN_KEUANGAN' => 3,
             'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI' => 7,
-            'RUANG_SUBBAGIAN_TEKNIS' => 5,
-            'RUANG_SUBBAGIAN_HUKUM' => 6,
+            'RUANG_SUBBAGIAN_TEKNIS_HUKUM' => 5,
         ];
         return $mapping[$ruangan] ?? null;
     }
@@ -50,12 +46,10 @@ class LokasiSubBagianController extends Controller
         $ruangans = [$ruanganUser];
 
         $ruanganLabels = [
-            'RUANG_SUBBAGIAN_UMUM_LOGISTIK' => 'Subbagian Umum & Logistik',
+            'RUANG_SUBBAGIAN_KEUANGAN_UMUM_LOGISTIK' => 'Subbagian Keuangan, Umum & Logistik',
             'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM' => 'Subbagian Parmas & SDM',
-            'RUANG_SUBBAGIAN_KEUANGAN' => 'Subbagian Keuangan',
             'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI' => 'Subbagian Perencanaan, Data & Informasi',
-            'RUANG_SUBBAGIAN_TEKNIS' => 'Subbagian Teknis',
-            'RUANG_SUBBAGIAN_HUKUM' => 'Subbagian Hukum',
+            'RUANG_SUBBAGIAN_TEKNIS_HUKUM' => 'Subbagian Teknis dan Hukum',
         ];
 
         // $arsipTanpaRuangan = Arsip::where('sub_bagian_id', $subBagianId)
@@ -229,12 +223,10 @@ public function listBox($ruangan, $rak)
     private function getLabelRuangan($key)
     {
         $labels = [
-            'RUANG_SUBBAGIAN_UMUM_LOGISTIK' => 'Subbagian Umum & Logistik',
+            'RUANG_SUBBAGIAN_KEUANGAN_UMUM_LOGISTIK' => 'Subbagian Keuangan,Umum & Logistik',
             'RUANG_SUBBAGIAN_PARTISIPASI_MASYARAKAT_SDM' => 'Subbagian Parmas & SDM',
-            'RUANG_SUBBAGIAN_KEUANGAN' => 'Subbagian Keuangan',
             'RUANG_SUBBAGIAN_PERENCANAAN_DATA_INFORMASI' => 'Subbagian Perencanaan, Data & Informasi',
-            'RUANG_SUBBAGIAN_TEKNIS' => 'Subbagian Teknis',
-            'RUANG_SUBBAGIAN_HUKUM' => 'Subbagian Hukum',
+            'RUANG_SUBBAGIAN_TEKNIS_HUKUM' => 'Subbagian Teknis dan Hukum',
         ];
         return $labels[$key] ?? $key;
     }
