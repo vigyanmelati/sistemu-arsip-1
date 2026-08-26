@@ -17,11 +17,20 @@
 
     <div class="action-buttons d-flex gap-2 flex-wrap">
         {{-- Import --}}
-        <button class="btn btn-gradient-green d-flex align-items-center gap-2 shadow-sm"
+        {{-- <button class="btn btn-gradient-green d-flex align-items-center gap-2 shadow-sm"
                 data-bs-toggle="modal"
                 data-bs-target="#importModal">
             <i class="bi bi-cloud-upload-fill"></i><span>Import</span>
-        </button>
+        </button> --}}
+       <button type="button"
+        class="btn btn-gradient-green d-flex align-items-center gap-2 shadow-sm"
+        data-bs-toggle="modal"
+        data-bs-target="#importSuratMasukModal">
+
+    <i class="bi bi-cloud-upload-fill"></i>
+    <span>Import</span>
+
+</button>
 
         {{-- Export --}}
         <a href="{{ route('surat-masuk.export') }}"
@@ -445,6 +454,170 @@
     </div>
 </div>
 
+<!-- MODAL IMPORT EXCEL SURAT MASUK -->
+<!-- MODAL IMPORT EXCEL SURAT MASUK -->
+<div class="modal fade"
+     id="importSuratMasukModal"
+     tabindex="-1"
+     aria-labelledby="importSuratMasukModalLabel"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+
+        <div class="modal-content border-0 rounded-4 shadow">
+
+            {{-- Header --}}
+            <div class="modal-header border-0">
+                <div>
+                    <h5 class="modal-title fw-bold" id="importSuratMasukModalLabel">
+                        <i class="fas fa-file-excel text-success me-2"></i>
+                        Import Excel Surat Masuk
+                    </h5>
+
+                    <small class="text-muted">
+                        Import data surat masuk menggunakan file Excel.
+                    </small>
+                </div>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                </button>
+            </div>
+
+            {{-- Body --}}
+            <div class="modal-body">
+
+                {{-- Download Template --}}
+                <div class="alert alert-success border-0 rounded-4">
+
+                    <div class="d-flex align-items-start">
+
+                        <i class="fas fa-file-excel fa-2x text-success me-3 mt-1"></i>
+
+                        <div class="flex-grow-1">
+
+                            <h6 class="fw-bold mb-1">
+                                Template Import Excel
+                            </h6>
+
+                            <p class="text-muted small mb-3">
+                                Gunakan template Excel yang telah disediakan
+                                agar format data sesuai dengan sistem.
+                            </p>
+
+                            <a href="{{ asset('template/template_import_surat_masuk.xlsx') }}"
+                               download="template_import_surat_masuk.xlsx"
+                               class="btn btn-success btn-sm">
+
+                                <i class="fas fa-download me-1"></i>
+                                Download Template Excel
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                {{-- Form Import --}}
+                <form action="{{ route('surat-masuk.import') }}"
+                      method="POST"
+                      enctype="multipart/form-data"
+                      id="importExcelSuratMasukForm">
+
+                    @csrf
+
+                    <div class="mb-3">
+
+                        <label for="fileImportSuratMasuk"
+                               class="form-label fw-semibold">
+
+                            Pilih File Excel
+
+                        </label>
+
+                        <input type="file"
+                               class="form-control"
+                               id="fileImportSuratMasuk"
+                               name="file"
+                               accept=".xlsx,.xls"
+                               required>
+
+                        <div class="form-text">
+                            Format yang diperbolehkan: XLSX atau XLS.
+                        </div>
+
+                    </div>
+
+                    {{-- Informasi --}}
+                    <div class="alert alert-info border-0 rounded-4 small">
+
+                        <div class="d-flex align-items-start">
+
+                            <i class="fas fa-info-circle me-2 mt-1"></i>
+
+                            <div>
+
+                                <strong>Perhatikan format Excel:</strong>
+
+                                <ul class="mb-0 mt-1 ps-3">
+
+                                    <li>
+                                        Data mulai dibaca dari <strong>baris ke-4</strong>.
+                                    </li>
+
+                                    <li>
+                                        Pastikan nama <strong>Sub Bagian</strong>
+                                        sesuai dengan data yang tersedia di sistem.
+                                    </li>
+
+                                    <li>
+                                        Jangan mengubah urutan kolom pada template.
+                                    </li>
+
+                                </ul>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {{-- Footer --}}
+                    <div class="modal-footer border-0 px-0 pb-0">
+
+                        <button type="button"
+                                class="btn btn-light"
+                                data-bs-dismiss="modal">
+
+                            <i class="fas fa-times me-1"></i>
+                            Batal
+
+                        </button>
+
+                        <button type="submit"
+                                class="btn btn-success"
+                                id="btnImportExcel">
+
+                            <i class="fas fa-upload me-1"></i>
+                            Import Excel
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
 @endsection
 
 @push('styles')
@@ -600,6 +773,7 @@
 @endpush
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
         // Inisialisasi tooltip Bootstrap
@@ -706,6 +880,95 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
+ const form = document.getElementById('importExcelSuratMasukForm');
+const button = document.getElementById('btnImportExcel');
+
+if (form) {
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return false;
+        }
+
+        const originalButtonHtml = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML =
+            '<span class="spinner-border spinner-border-sm me-2"></span>Mengimport...';
+
+        const formData = new FormData(form); // sudah otomatis bawa _token dari @csrf
+
+        fetch(form.action, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+            body: formData,
+        })
+        .then(async (response) => {
+            let data;
+            try {
+                data = await response.json();
+            } catch (err) {
+                throw new Error('Respons server tidak valid (kemungkinan session expired / halaman perlu di-refresh).');
+            }
+
+            if (!response.ok || !data.success) {
+                let htmlPesan = `<p class="mb-2">${data.message || 'Import gagal.'}</p>`;
+
+                if (data.errors && data.errors.length > 0) {
+                    htmlPesan += `
+                        <div style="max-height:260px;overflow-y:auto;text-align:left;">
+                            <ul style="padding-left:1.2rem;margin:0;">
+                                ${data.errors.map(err => `<li style="margin-bottom:4px;">${err}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Import Gagal',
+                    html: htmlPesan,
+                    confirmButtonText: 'Tutup',
+                    confirmButtonColor: '#dc3545',
+                    width: 500,
+                });
+                return;
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: data.message,
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#28a745',
+            }).then(() => {
+                location.reload();
+            });
+        })
+        .catch((err) => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Terjadi Kesalahan',
+                text: err.message || 'Gagal menghubungi server.',
+                confirmButtonText: 'Tutup',
+                confirmButtonColor: '#dc3545',
+            });
+        })
+        .finally(() => {
+            button.disabled = false;
+            button.innerHTML = originalButtonHtml;
+        });
+
+        return false;
+    });
+
+}
     });
 </script>
+
+
+
 @endpush

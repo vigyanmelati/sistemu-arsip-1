@@ -267,13 +267,19 @@ body {
     <div class="logo">
         <img src="{{ public_path('logo_kpu.png') }}" alt="Logo KPU">
     </div>
+@php
+    $satkerAktif = \App\Models\Satker::aktif();
+    $namaSatker = $satkerAktif ? $satkerAktif->nama_satker : 'KPU PROVINSI BALI';
 
-    <!-- HEADER -->
-    <div class="header">
-        <div>KOMISI PEMILIHAN UMUM</div>
-        <div>PROVINSI BALI</div>
-    </div>
+    // Ambil nama setelah "KPU"
+    $namaSatker = preg_replace('/^KPU\s+/i', '', $namaSatker);
+@endphp
 
+<!-- HEADER -->
+<div class="header">
+    <div>KOMISI PEMILIHAN UMUM</div>
+    <div>{{ strtoupper($namaSatker) }}</div>
+</div>
     <!-- JUDUL -->
     <div class="judul">LEMBAR DISPOSISI</div>
 

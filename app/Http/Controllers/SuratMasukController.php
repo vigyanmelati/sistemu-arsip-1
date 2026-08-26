@@ -15,6 +15,10 @@ use App\Exports\SuratMasukExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 use App\Models\Satker;
+use Carbon\Carbon;
+use App\Models\SubBagian;
+use App\Imports\SuratMasukImport;
+
 class SuratMasukController extends Controller
 {
     protected array $sortableColumns = [
@@ -353,121 +357,264 @@ class SuratMasukController extends Controller
         'surat_masuk.xlsx'
     );
 }
-
 public function import(Request $request)
 {
-    $validated = $request->validate([
-        'confirmation' => 'accepted',
-        'after_id' => ['nullable', 'integer', 'min:0'],
+    $request->validate([
+        'file' => [
+            'required',
+            'file',
+            'mimes:xlsx,xls',
+            'max:10240',
+        ],
+    ], [
+        'file.required' => 'File Excel wajib dipilih.',
+        'file.file' => 'File yang diupload tidak valid.',
+        'file.mimes' => 'File harus berformat XLS atau XLSX.',
+        'file.max' => 'Ukuran file maksimal 10 MB.',
     ]);
 
-    $stats = ['instansi_baru' => 0, 'surat_baru' => 0, 'surat_diperbarui' => 0, 'file_disalin' => 0];
-    $afterId = (int) ($validated['after_id'] ?? 0);
-    $batchSize = 50;
+    DB::beginTransaction();
 
     try {
-        $documents = SinarV1Document::where('legacy_category_id', 12)
-            ->where('id', '>', $afterId)
-            ->orderBy('id')
-            ->limit($batchSize)
-            ->get();
 
-        DB::transaction(function () use (&$stats, $afterId, $documents) {
-            // Master instansi cukup disinkronkan pada batch pertama.
-            if ($afterId === 0) {
-                SinarV1Instansi::orderBy('id')->chunk(200, function ($items) use (&$stats) {
-                    foreach ($items as $legacy) {
-                        $namaInstansi = trim((string) $legacy->nama_instansi);
-                        if ($namaInstansi === '') {
-                            continue;
-                        }
+        $import = new SuratMasukImport();
 
-                        $instansi = SuratInstansi::firstOrNew(['nama_instansi' => $namaInstansi]);
-                        $isNew = ! $instansi->exists;
-                        foreach (['alamat', 'telepon', 'fax', 'email', 'website'] as $field) {
-                            if ($legacy->{$field} !== null && $legacy->{$field} !== '') {
-                                $instansi->{$field} = $legacy->{$field};
-                            }
-                        }
-                        $instansi->aktif = true;
-                        $instansi->created_by ??= auth()->id();
-                        $instansi->save();
-                        $stats['instansi_baru'] += $isNew ? 1 : 0;
-                    }
-                });
+        /*
+        |--------------------------------------------------------------------------
+        | Baca seluruh data Excel untuk validasi
+        |--------------------------------------------------------------------------
+        */
+
+        $rows = Excel::toArray($import, $request->file('file'));
+
+        if (empty($rows) || empty($rows[0])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'File Excel tidak memiliki data.',
+            ], 422);
+        }
+
+       // Ambil sheet pertama
+// Catatan: SuratMasukImport implements WithStartRow (startRow() = 4),
+// jadi Excel::toArray() SUDAH otomatis mulai baca dari baris ke-4.
+// Tidak perlu array_slice lagi di sini.
+$data = $rows[0];
+
+// Buang baris yang benar-benar kosong
+$dataRows = array_values(array_filter($data, function ($row) {
+    return collect($row)->filter(function ($value) {
+        return $value !== null && trim((string) $value) !== '';
+    })->isNotEmpty();
+}));
+        if (empty($dataRows)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada data surat yang ditemukan mulai dari baris ke-4.',
+            ], 422);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validasi seluruh baris
+        |--------------------------------------------------------------------------
+        */
+
+        $import->validateExcel($dataRows);
+
+        if (!empty($import->errors)) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terdapat kesalahan pada file Excel.',
+                'errors' => $import->errors,
+            ], 422);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Simpan data
+        |--------------------------------------------------------------------------
+        */
+
+        $jumlahBerhasil = 0;
+
+        foreach ($dataRows as $row) {
+
+            $subBagian = null;
+
+            if (!empty($row[8])) {
+                $subBagian = SubBagian::where(
+                    'nama_sub_bagian',
+                    trim($row[8])
+                )->first();
             }
 
-            foreach ($documents as $legacy) {
-                $namaInstansi = trim($legacy->instansi_satker ?: 'Instansi tidak tercatat');
-                $instansi = SuratInstansi::firstOrCreate(
-                    ['nama_instansi' => $namaInstansi],
-                    ['aktif' => true, 'created_by' => auth()->id()]
-                );
+            SuratMasuk::create([
+                'nomor_agenda' => trim($row[0] ?? ''),
 
-                $surat = SuratMasuk::firstOrNew(['sinar_v1_document_id' => $legacy->id]);
-                $isNew = ! $surat->exists;
-                $fileName = $surat->file_input;
-                if ($legacy->file_path && Storage::disk('local')->exists($legacy->file_path)) {
-                    $fileName = 'sinar_v1_'.$legacy->id.'_'.basename($legacy->file_name_original ?: $legacy->file_path);
-                    $targetPath = 'surat_masuk/'.$fileName;
+                'tanggal_dokumen' => !empty($row[1])
+                    ? Carbon::parse($row[1])->format('Y-m-d')
+                    : null,
 
-                    if (! Storage::disk('public')->exists($targetPath)) {
-                        $stream = Storage::disk('local')->readStream($legacy->file_path);
-                        if ($stream === false) {
-                            throw new \RuntimeException('Lampiran tidak dapat dibaca: '.$legacy->file_path);
-                        }
+                'tanggal_penyelesaian' => !empty($row[2])
+                    ? Carbon::parse($row[2])->format('Y-m-d')
+                    : null,
 
-                        try {
-                            Storage::disk('public')->writeStream($targetPath, $stream);
-                        } finally {
-                            if (is_resource($stream)) {
-                                fclose($stream);
-                            }
-                        }
-                        $stats['file_disalin']++;
-                    }
-                }
+                'nomor_dokumen' => trim($row[3] ?? ''),
 
-                $tanggalDokumen = $legacy->tanggal_dokumen ?: $legacy->tanggal_penyelesaian ?: $legacy->legacy_created_at?->toDateString() ?: now()->toDateString();
-                $surat->fill([
-                    'sub_bagian_id' => $legacy->sub_bagian_id,
-                    'instansi_id' => $instansi->id,
-                    'instansi_satker' => $instansi->nama_instansi,
-                    'tanggal_dokumen' => $tanggalDokumen,
-                    'tanggal_penyelesaian' => $legacy->tanggal_penyelesaian ?: $tanggalDokumen,
-                    'nomor_dokumen' => $legacy->nomor_dokumen ?: 'TANPA-NOMOR-V1-'.$legacy->legacy_id,
-                    'nomor_agenda' => $legacy->nomor_agenda ?: 'V1-'.$legacy->legacy_id,
-                    'kepada' => $legacy->kepada ?: optional(Satker::aktif())->nama_satker ?? 'KPU Provinsi Bali',
-                    'perihal' => $legacy->perihal ?: 'Surat Masuk SINAR V1',
-                    'catatan' => $legacy->catatan,
-                    'file_input' => $fileName,
-                ])->save();
+                'kepada' => trim($row[4] ?? ''),
 
-                $stats[$isNew ? 'surat_baru' : 'surat_diperbarui']++;
-            }
-        });
+                'perihal' => trim($row[5] ?? ''),
 
-        $nextCursor = (int) ($documents->last()?->id ?? $afterId);
-        $hasMore = SinarV1Document::where('legacy_category_id', 12)
-            ->where('id', '>', $nextCursor)
-            ->exists();
+                'instansi_satker' => trim($row[6] ?? ''),
+
+                'catatan' => !empty($row[7])
+                    ? trim($row[7])
+                    : null,
+
+                'sub_bagian_id' => $subBagian?->id,
+            ]);
+
+            $jumlahBerhasil++;
+        }
+
+        DB::commit();
 
         return response()->json([
             'success' => true,
-            'done' => ! $hasMore,
-            'next_cursor' => $nextCursor,
-            'processed' => $documents->count(),
-            'total' => SinarV1Document::where('legacy_category_id', 12)->count(),
-            'stats' => $stats,
+            'message' => "Import berhasil. {$jumlahBerhasil} data surat masuk berhasil diimport.",
+            'jumlah' => $jumlahBerhasil,
         ]);
+
     } catch (\Throwable $e) {
-        Log::error('Import Surat Masuk SINAR V1 gagal', ['exception' => $e]);
+
+        DB::rollBack();
+
+        Log::error('Import Surat Masuk gagal', [
+            'exception' => $e,
+        ]);
+
         return response()->json([
             'success' => false,
-            'message' => 'Import gagal: '.$e->getMessage(),
+            'message' => 'Import gagal: ' . $e->getMessage(),
         ], 500);
     }
 }
+// public function import(Request $request)
+// {
+//     $validated = $request->validate([
+//         'confirmation' => 'accepted',
+//         'after_id' => ['nullable', 'integer', 'min:0'],
+//     ]);
+
+//     $stats = ['instansi_baru' => 0, 'surat_baru' => 0, 'surat_diperbarui' => 0, 'file_disalin' => 0];
+//     $afterId = (int) ($validated['after_id'] ?? 0);
+//     $batchSize = 50;
+
+//     try {
+//         $documents = SinarV1Document::where('legacy_category_id', 12)
+//             ->where('id', '>', $afterId)
+//             ->orderBy('id')
+//             ->limit($batchSize)
+//             ->get();
+
+//         DB::transaction(function () use (&$stats, $afterId, $documents) {
+//             // Master instansi cukup disinkronkan pada batch pertama.
+//             if ($afterId === 0) {
+//                 SinarV1Instansi::orderBy('id')->chunk(200, function ($items) use (&$stats) {
+//                     foreach ($items as $legacy) {
+//                         $namaInstansi = trim((string) $legacy->nama_instansi);
+//                         if ($namaInstansi === '') {
+//                             continue;
+//                         }
+
+//                         $instansi = SuratInstansi::firstOrNew(['nama_instansi' => $namaInstansi]);
+//                         $isNew = ! $instansi->exists;
+//                         foreach (['alamat', 'telepon', 'fax', 'email', 'website'] as $field) {
+//                             if ($legacy->{$field} !== null && $legacy->{$field} !== '') {
+//                                 $instansi->{$field} = $legacy->{$field};
+//                             }
+//                         }
+//                         $instansi->aktif = true;
+//                         $instansi->created_by ??= auth()->id();
+//                         $instansi->save();
+//                         $stats['instansi_baru'] += $isNew ? 1 : 0;
+//                     }
+//                 });
+//             }
+
+//             foreach ($documents as $legacy) {
+//                 $namaInstansi = trim($legacy->instansi_satker ?: 'Instansi tidak tercatat');
+//                 $instansi = SuratInstansi::firstOrCreate(
+//                     ['nama_instansi' => $namaInstansi],
+//                     ['aktif' => true, 'created_by' => auth()->id()]
+//                 );
+
+//                 $surat = SuratMasuk::firstOrNew(['sinar_v1_document_id' => $legacy->id]);
+//                 $isNew = ! $surat->exists;
+//                 $fileName = $surat->file_input;
+//                 if ($legacy->file_path && Storage::disk('local')->exists($legacy->file_path)) {
+//                     $fileName = 'sinar_v1_'.$legacy->id.'_'.basename($legacy->file_name_original ?: $legacy->file_path);
+//                     $targetPath = 'surat_masuk/'.$fileName;
+
+//                     if (! Storage::disk('public')->exists($targetPath)) {
+//                         $stream = Storage::disk('local')->readStream($legacy->file_path);
+//                         if ($stream === false) {
+//                             throw new \RuntimeException('Lampiran tidak dapat dibaca: '.$legacy->file_path);
+//                         }
+
+//                         try {
+//                             Storage::disk('public')->writeStream($targetPath, $stream);
+//                         } finally {
+//                             if (is_resource($stream)) {
+//                                 fclose($stream);
+//                             }
+//                         }
+//                         $stats['file_disalin']++;
+//                     }
+//                 }
+
+//                 $tanggalDokumen = $legacy->tanggal_dokumen ?: $legacy->tanggal_penyelesaian ?: $legacy->legacy_created_at?->toDateString() ?: now()->toDateString();
+//                 $surat->fill([
+//                     'sub_bagian_id' => $legacy->sub_bagian_id,
+//                     'instansi_id' => $instansi->id,
+//                     'instansi_satker' => $instansi->nama_instansi,
+//                     'tanggal_dokumen' => $tanggalDokumen,
+//                     'tanggal_penyelesaian' => $legacy->tanggal_penyelesaian ?: $tanggalDokumen,
+//                     'nomor_dokumen' => $legacy->nomor_dokumen ?: 'TANPA-NOMOR-V1-'.$legacy->legacy_id,
+//                     'nomor_agenda' => $legacy->nomor_agenda ?: 'V1-'.$legacy->legacy_id,
+//                     'kepada' => $legacy->kepada ?: optional(Satker::aktif())->nama_satker ?? 'KPU Provinsi Bali',
+//                     'perihal' => $legacy->perihal ?: 'Surat Masuk SINAR V1',
+//                     'catatan' => $legacy->catatan,
+//                     'file_input' => $fileName,
+//                 ])->save();
+
+//                 $stats[$isNew ? 'surat_baru' : 'surat_diperbarui']++;
+//             }
+//         });
+
+//         $nextCursor = (int) ($documents->last()?->id ?? $afterId);
+//         $hasMore = SinarV1Document::where('legacy_category_id', 12)
+//             ->where('id', '>', $nextCursor)
+//             ->exists();
+
+//         return response()->json([
+//             'success' => true,
+//             'done' => ! $hasMore,
+//             'next_cursor' => $nextCursor,
+//             'processed' => $documents->count(),
+//             'total' => SinarV1Document::where('legacy_category_id', 12)->count(),
+//             'stats' => $stats,
+//         ]);
+//     } catch (\Throwable $e) {
+//         Log::error('Import Surat Masuk SINAR V1 gagal', ['exception' => $e]);
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Import gagal: '.$e->getMessage(),
+//         ], 500);
+//     }
+// }
 
 public function cekDuplikasi()
 {
