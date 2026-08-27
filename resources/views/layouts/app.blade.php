@@ -475,6 +475,7 @@
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('superadmin.kode-klasifikasis.*') ? 'active' : '' }}" href="{{ route('superadmin.kode-klasifikasis.index') }}"><i class="bi bi-card-list"></i> <span>Kode Klasifikasi</span></a></li>
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('superadmin.satkers.*') ? 'active' : '' }}" href="{{ route('superadmin.satkers.index') }}"><i class="bi bi-building-fill-gear"></i> <span>Kelola Satker</span></a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('superadmin.users.*') ? 'active' : '' }}" href="{{ route('superadmin.users.index') }}"><i class="bi bi-shield-check"></i> <span>Manajemen User</span></a></li>
+                <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.backup.*') ? 'active' : '' }}" href="{{ route('admin.backup.index') }}"><i class="bi bi-cloud-arrow-down-fill"></i> <span>Backup Sistem</span></a></li>
             @endif
 
             @if(auth()->user()->role === 'user')

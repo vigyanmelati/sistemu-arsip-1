@@ -1,0 +1,6 @@
+<?php
+// config/backup.php
+
+return [
+    'mysqldump_path' => env('MYSQLDUMP_PATH', 'mysqldump'),
+];

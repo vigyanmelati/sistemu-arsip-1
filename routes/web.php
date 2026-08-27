@@ -25,10 +25,22 @@ use App\Http\Controllers\MasterBoxController;
 use App\Http\Controllers\SuratInstansiController;
 use App\Http\Controllers\TujuanDisposisiController;
 use App\Http\Controllers\SatkerController;
+use App\Http\Controllers\Admin\BackupController;
 
 
 require __DIR__.'/auth.php';
 
+
+Route::middleware(['auth', 'nocache']) 
+    ->prefix('admin/backup')
+    ->name('admin.backup.')
+    ->group(function () {
+        Route::get('/', [BackupController::class, 'index'])->name('index');
+        Route::post('/', [BackupController::class, 'store'])->name('store');
+        Route::get('/status/{key}', [BackupController::class, 'status'])->name('status');
+        Route::get('/download/{filename}', [BackupController::class, 'download'])->name('download');
+        Route::delete('/{filename}', [BackupController::class, 'destroy'])->name('destroy');
+    });
 
 Route::middleware(['auth', 'nocache'])->group(function () {
     Route::get('/sinar-v1', [SinarV1DocumentController::class, 'index'])->name('sinar-v1.index');
