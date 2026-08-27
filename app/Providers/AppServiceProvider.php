@@ -8,7 +8,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
 use App\Models\Satker;
-
+use App\Services\DiskSpaceChecker;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -29,5 +29,10 @@ class AppServiceProvider extends ServiceProvider
         View::composer('*', function ($view) {
             $view->with('namaSatkerAktif', Satker::aktif()->nama_satker ?? 'KPU Provinsi Bali');
         });
+
+   View::composer('*', function ($view) {
+        $checker = app(DiskSpaceChecker::class);
+        $view->with('diskUsages', $checker->getAllUsage());
+    });
     }
 }

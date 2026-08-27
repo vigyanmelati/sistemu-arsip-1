@@ -21,8 +21,43 @@
         cursor: pointer;
     }
 </style>
+@php
+    $checker = app(\App\Services\DiskSpaceChecker::class);
+@endphp
 
+@foreach($diskUsages as $diskUsage)
+    @php
+        $freeFormatted = $checker->formatBytes($diskUsage['free_bytes']);
+        $usedFormatted = $checker->formatBytes($diskUsage['used_bytes']);
+        $totalFormatted = $checker->formatBytes($diskUsage['total_bytes']);
+
+        if ($diskUsage['is_critical']) {
+            $bgColor = '#f8d7da'; $borderColor = '#f5c2c7'; $textColor = '#842029';
+            $icon = '⚠️'; $label = 'KRITIS - Segera Hubungi Admin IT';
+        } elseif ($diskUsage['is_warning']) {
+            $bgColor = '#fff3cd'; $borderColor = '#ffecb5'; $textColor = '#664d03';
+            $icon = '⚠️'; $label = 'PERINGATAN - Kapasitas Mulai Menipis';
+        } else {
+            $bgColor = '#d1e7dd'; $borderColor = '#badbcc'; $textColor = '#0f5132';
+            $icon = '✅'; $label = 'AMAN';
+        }
+    @endphp
+
+    <div class="alert" role="alert" style="background-color:{{ $bgColor }}; border-color:{{ $borderColor }}; color:{{ $textColor }}; margin-bottom:10px;">
+        <strong>{{ $icon }} Penyimpanan Server ({{ $diskUsage['path'] }}) — {{ $label }}</strong><br>
+        Kapasitas Terpakai: {{ $usedFormatted }} dari {{ $totalFormatted }} ({{ $diskUsage['percent_used'] }}%)<br>
+        <strong>Sisa Ruang Penyimpanan: {{ $freeFormatted }}</strong>
+    </div>
+@endforeach
+
+<!-- <div class="alert" role="alert" style="background-color:{{ $bgColor }}; border-color:{{ $borderColor }}; color:{{ $textColor }};">
+    <strong>{{ $icon }} Status Penyimpanan Server: {{ $label }}</strong><br>
+    Path: <code>{{ $diskUsage['path'] }}</code><br>
+    Terpakai: {{ $usedFormatted }} / {{ $totalFormatted }} ({{ $diskUsage['percent_used'] }}%)<br>
+    <strong>Sisa Penyimpanan: {{ $freeFormatted }}</strong>
+</div> -->
 <div class="row">
+    
     <!-- Total Arsip -->
     <div class="col-xl-3 col-lg-6 mb-4">
         <a href="{{ route('arsip.index') }}" class="stat-card-link">
