@@ -13,6 +13,7 @@ class SuratMasuk extends Model
     protected $casts = [
         'tanggal_dokumen' => 'date',
         'tanggal_penyelesaian' => 'date',
+        'bantuan' => 'array',
     ];
 
     public function subBagian()

@@ -4,6 +4,25 @@
     <meta charset="UTF-8">
     <title>Lembar Disposisi</title>
     <style>
+
+.custom-checkbox {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    border: 1px solid #000;
+    vertical-align: middle;
+    text-align: center;
+    line-height: 12px;
+    position: relative;
+}
+.custom-checkbox .mark {
+    font-family: "DejaVu Sans", sans-serif;
+    font-size: 16px;
+    font-weight: bold;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
         * {
             margin: 0;
             padding: 0;
@@ -335,37 +354,26 @@ body {
         <!-- Kolom kiri -->
         <td width="45%" style="vertical-align:top;">
 
-            <table class="list-checkbox">
-                <tr>
-                    <td class="label-yth">Yth.</td>
-                    <td class="cb"><span class="custom-checkbox"></span></td>
-                    <td>Ketua</td>
-                </tr>
+       @php
+    // Ambil id tujuan yang dipilih untuk surat ini
+    $idDipilih = $surat->tujuanDisposisis->pluck('id')->toArray();
+@endphp
 
-                <tr>
-                    <td></td>
-                    <td><span class="custom-checkbox"></span></td>
-                    <td>Sekretaris</td>
-                </tr>
-
-                <tr>
-                    <td></td>
-                    <td><span class="custom-checkbox"></span></td>
-                    <td>Kabag</td>
-                </tr>
-
-                <tr>
-                    <td></td>
-                    <td><span class="custom-checkbox"></span></td>
-                    <td>Kasubbag</td>
-                </tr>
-
-                <tr>
-                    <td></td>
-                    <td><span class="custom-checkbox"></span></td>
-                    <td>Staf</td>
-                </tr>
-            </table>
+<table class="list-checkbox">
+    @foreach($semuaTujuan as $index => $tujuan)
+        <tr>
+            <td class="label-yth">{{ $index === 0 ? 'Yth.' : '' }}</td>
+            <td class="cb">
+               <span class="custom-checkbox">
+    @if(in_array($tujuan->id, $idDipilih))
+        <span class="mark">✓</span>
+    @endif
+</span>
+            </td>
+            <td>{{ $tujuan->nama_tujuan }}</td>
+        </tr>
+    @endforeach
+</table>
 
         </td>
 
@@ -386,60 +394,64 @@ body {
 </table>
 
     <!-- SIFAT -->
-    <table class="list-checkbox">
+   @php
+    $sifatSurat = $surat->sifat;
+@endphp
+
+<table class="list-checkbox">
     <tr>
         <td class="label-yth">Sifat:</td>
-        <td class="cb"><span class="custom-checkbox"></span></td>
+        <td class="cb"><span class="custom-checkbox">@if($sifatSurat === 'biasa')<span class="mark">✓</span>@endif</span></td>
         <td>Biasa Mendesak</td>
     </tr>
-
     <tr>
         <td></td>
-        <td><span class="custom-checkbox"></span></td>
+        <td class="cb"><span class="custom-checkbox">@if($sifatSurat === 'penting')<span class="mark">✓</span>@endif</span></td>
         <td>Penting/Segera</td>
     </tr>
-
     <tr>
         <td></td>
-        <td><span class="custom-checkbox"></span></td>
+        <td class="cb"><span class="custom-checkbox">@if($sifatSurat === 'khusus')<span class="mark">✓</span>@endif</span></td>
         <td>Perlu Perhatian Khusus</td>
     </tr>
-
     <tr>
         <td></td>
-        <td><span class="custom-checkbox"></span></td>
+        <td class="cb"><span class="custom-checkbox">@if($sifatSurat === 'batas_waktu')<span class="mark">✓</span>@endif</span></td>
         <td>Perlu Perhatian Batas Waktu</td>
     </tr>
 </table>
 
     <!-- BANTUAN (2 kolom) -->
-    <table>
-        <tr><td colspan="2">Mohon bantuan Saudara untuk:</td></tr>
-        <tr>
-            <td width="50%">
-                <div class="checkbox-list small-gap">
-                    <div><span class="custom-checkbox"></span> Dokumentasi/File</div>
-                    <div><span class="custom-checkbox"></span> Mohon hadir mewakili saya</div>
-                    <div><span class="custom-checkbox"></span> Membicarakan dengan saya</div>
-                    <div><span class="custom-checkbox"></span> Membuat jawaban/tanggapan</div>
-                    <div><span class="custom-checkbox"></span> Ikut hadir</div>
-                    <div><span class="custom-checkbox"></span> Memonitor</div>
-                    <div><span class="custom-checkbox"></span> Menyiapkan konsep</div>
-                </div>
-            </td>
-            <td>
-                <div class="checkbox-list small-gap">
-                    <div><span class="custom-checkbox"></span> Diketahui/sbg. Informasi</div>
-                    <div><span class="custom-checkbox"></span> Mempelajari dan memberikan saran</div>
-                    <div><span class="custom-checkbox"></span> Melaksanakan/menindaklanjuti</div>
-                    <div><span class="custom-checkbox"></span> Memproses sesuai prosedur</div>
-                    <div><span class="custom-checkbox"></span> Menyelesaikan sebelum batas waktu</div>
-                    <div><span class="custom-checkbox"></span> Mengkoordinasikan</div>
-                </div>
-            </td>
-        </tr>
-    </table>
+ @php
+    $bantuanDipilih = $surat->bantuan ?? [];
+@endphp
 
+<table>
+    <tr><td colspan="2">Mohon bantuan Saudara untuk:</td></tr>
+    <tr>
+        <td width="50%">
+            <div class="checkbox-list small-gap">
+                <div><span class="custom-checkbox">@if(in_array('dokumentasi', $bantuanDipilih))<span class="mark">✓</span>@endif</span> Dokumentasi/File</div>
+                <div><span class="custom-checkbox">@if(in_array('hadir_mewakili', $bantuanDipilih))<span class="mark">✓</span>@endif</span> Mohon hadir mewakili saya</div>
+                <div><span class="custom-checkbox">@if(in_array('bicarakan', $bantuanDipilih))<span class="mark">✓</span>@endif</span> Membicarakan dengan saya</div>
+                <div><span class="custom-checkbox">@if(in_array('jawaban', $bantuanDipilih))<span class="mark">✓</span>@endif</span> Membuat jawaban/tanggapan</div>
+                <div><span class="custom-checkbox">@if(in_array('ikut_hadir', $bantuanDipilih))<span class="mark">✓</span>@endif</span> Ikut hadir</div>
+                <div><span class="custom-checkbox">@if(in_array('monitor', $bantuanDipilih))<span class="mark">✓</span>@endif</span> Memonitor</div>
+                <div><span class="custom-checkbox">@if(in_array('konsep', $bantuanDipilih))<span class="mark">✓</span>@endif</span> Menyiapkan konsep</div>
+            </div>
+        </td>
+        <td>
+            <div class="checkbox-list small-gap">
+                <div><span class="custom-checkbox">@if(in_array('diketahui', $bantuanDipilih))<span class="mark">✓</span>@endif</span> Diketahui/sbg. Informasi</div>
+                <div><span class="custom-checkbox">@if(in_array('saran', $bantuanDipilih))<span class="mark">✓</span>@endif</span> Mempelajari dan memberikan saran</div>
+                <div><span class="custom-checkbox">@if(in_array('laksanakan', $bantuanDipilih))<span class="mark">✓</span>@endif</span> Melaksanakan/menindaklanjuti</div>
+                <div><span class="custom-checkbox">@if(in_array('prosedur', $bantuanDipilih))<span class="mark">✓</span>@endif</span> Memproses sesuai prosedur</div>
+                <div><span class="custom-checkbox">@if(in_array('selesai_batas_waktu', $bantuanDipilih))<span class="mark">✓</span>@endif</span> Menyelesaikan sebelum batas waktu</div>
+                <div><span class="custom-checkbox">@if(in_array('koordinasi', $bantuanDipilih))<span class="mark">✓</span>@endif</span> Mengkoordinasikan</div>
+            </div>
+        </td>
+    </tr>
+</table>
     <!-- TTD SEKRETARIS -->
    <div class="box">
     <table>

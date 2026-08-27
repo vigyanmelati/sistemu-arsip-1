@@ -1,7 +1,24 @@
 @extends('layouts.app')
 
 @section('content')
-
+@push('styles')
+<style>
+    .form-check {
+        padding-left: 1.8em;
+    }
+    .form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+    .form-check-label {
+        cursor: pointer;
+        user-select: none;
+    }
+    .card-body .form-check:hover .form-check-label {
+        color: #0d6efd;
+    }
+</style>
+@endpush
 <div class="card">
     <div class="card-header">
         <h4>Edit Dokumen</h4>
@@ -178,6 +195,61 @@
                 </div>
 
             </div>
+
+           <div class="row">
+
+    {{-- SIFAT --}}
+    <div class="col-md-12 mb-4">
+        <label class="form-label fw-bold mb-2">Sifat</label>
+        <div class="card">
+            <div class="card-body py-3">
+                <div class="d-flex flex-wrap gap-3">
+                    @foreach([
+                        'biasa' => 'Biasa Mendesak',
+                        'penting' => 'Penting/Segera',
+                        'khusus' => 'Perlu Perhatian Khusus',
+                        'batas_waktu' => 'Perlu Perhatian Batas Waktu',
+                    ] as $value => $label)
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="sifat"
+                                   value="{{ $value }}" id="sifat_{{ $value }}"
+                                   @checked(old('sifat', $surat->sifat) === $value)>
+                            <label class="form-check-label" for="sifat_{{ $value }}">
+                                {{ $label }}
+                            </label>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        <small class="text-muted">Opsional — pilih salah satu tingkat kepentingan surat.</small>
+    </div>
+
+    {{-- BANTUAN --}}
+    <div class="col-md-12 mb-3">
+        <label class="form-label fw-bold mb-2">Mohon Bantuan Saudara Untuk</label>
+        <div class="card">
+            <div class="card-body py-3">
+                <div class="row g-2">
+                    @foreach($opsiBantuan as $key => $label)
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="bantuan[]"
+                                       value="{{ $key }}" id="bantuan_{{ $key }}"
+                                       @checked(in_array($key, $bantuanTerpilih))>
+                                <label class="form-check-label" for="bantuan_{{ $key }}">
+                                    {{ $label }}
+                                </label>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        <small class="text-muted">Opsional — boleh pilih lebih dari satu.</small>
+    </div>
+
+</div>
 
             <div class="row">
 
